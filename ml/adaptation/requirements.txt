@@ -1,0 +1,6 @@
+# Install separately from the API dependencies; do not install model weights into this repository.
+torch>=2.3
+# Torch wheels used by the supported adaptation environment require the NumPy 1.x ABI.
+numpy>=1.26,<2
+PyYAML>=6.0
+rasterio>=1.4

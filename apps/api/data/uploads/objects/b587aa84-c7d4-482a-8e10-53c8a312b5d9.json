@@ -1,0 +1,1 @@
+{"message": "GEOCHAT_MODEL_PATH is not configured; no model weights were loaded", "status": "NOT_IMPLEMENTED", "tool_name": "optical-vqa", "tool_version": "geochat-7B"}

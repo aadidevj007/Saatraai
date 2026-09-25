@@ -1,0 +1,23 @@
+dataset:
+  manifest_path: artifacts/adaptation-smoke/manifest.jsonl
+  labels: [Urban fabric, Arable land, Forests, Pastures]
+  validation_fraction: 0.25
+  image_size: 16
+  normalization_mean: [0.0, 0.0, 0.0]
+  normalization_std: [1.0, 1.0, 1.0]
+model:
+  architecture: small_cnn
+  in_channels: 3
+  feature_channels: 8
+  initial_checkpoint: null
+  freeze_backbone: false
+  version: small-cnn-smoke-v1
+training:
+  batch_size: 4
+  learning_rate: 0.001
+  epochs: 2
+  seed: 20260906
+  num_workers: 0
+  device: cpu
+  resume_checkpoint: null
+  output_dir: artifacts/adaptation-smoke/run

@@ -1,0 +1,28 @@
+dataset:
+  # A JSONL manifest using BigEarthNet v2 patch IDs, labels, split, and image or band_paths.
+  manifest_path: datasets/bigearthnet-v2/manifest.jsonl
+  labels:
+    - Urban fabric
+    - Arable land
+    - Forests
+    - Pastures
+  validation_fraction: 0.1
+  image_size: 120
+  normalization_mean: [0.0, 0.0, 0.0]
+  normalization_std: [1.0, 1.0, 1.0]
+model:
+  architecture: small_cnn
+  in_channels: 3
+  feature_channels: 32
+  initial_checkpoint: null
+  freeze_backbone: false
+  version: small-cnn-v1
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  epochs: 20
+  seed: 20260906
+  num_workers: 0
+  device: auto
+  resume_checkpoint: null
+  output_dir: artifacts/adaptation/bigearthnet-s2
