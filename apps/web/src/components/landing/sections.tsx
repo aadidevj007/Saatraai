@@ -17,7 +17,7 @@ import {
   Waypoints,
 } from 'lucide-react';
 
-import { Badge, Button } from '@/components/ui';
+import { Badge, Button, TiltCard } from '@/components/ui';
 
 function Section({
   id,
@@ -78,11 +78,14 @@ export function HowItWorks() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: i * 0.06 }}
-            className="rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30"
           >
-            <div className="font-mono text-[11px] tracking-[0.2em] text-primary">{step.n}</div>
-            <div className="mt-2 text-[13.5px] font-medium text-ink">{step.t}</div>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-ink-dim">{step.d}</p>
+            <TiltCard maxTilt={6} className="h-full rounded-xl">
+              <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
+                <div className="font-mono text-[11px] tracking-[0.2em] text-primary">{step.n}</div>
+                <div className="mt-2 text-[13.5px] font-medium text-ink">{step.t}</div>
+                <p className="mt-1.5 text-[12px] leading-relaxed text-ink-dim">{step.d}</p>
+              </div>
+            </TiltCard>
           </motion.li>
         ))}
       </ol>
@@ -168,18 +171,20 @@ export function ModalitiesSection() {
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {MODALITIES.map((m) => (
-          <div key={m.t} className="rounded-xl border border-line bg-card p-4">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
-                <m.icon className="h-4 w-4 text-primary" />
-              </span>
-              <span className="text-[13.5px] font-medium text-ink">{m.t}</span>
+          <TiltCard key={m.t} maxTilt={7} className="rounded-xl">
+            <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
+                  <m.icon className="h-4 w-4 text-primary" />
+                </span>
+                <span className="text-[13.5px] font-medium text-ink">{m.t}</span>
+              </div>
+              <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink-dim">{m.d}</p>
+              <div className="mt-3">
+                <Badge tone="warning">{m.note}</Badge>
+              </div>
             </div>
-            <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink-dim">{m.d}</p>
-            <div className="mt-3">
-              <Badge tone="warning">{m.note}</Badge>
-            </div>
-          </div>
+          </TiltCard>
         ))}
       </div>
     </Section>
@@ -401,10 +406,12 @@ export function UseCasesSection() {
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {USE_CASES.map((u) => (
-          <div key={u.t} className="rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
-            <div className="text-[13.5px] font-medium text-ink">{u.t}</div>
-            <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-dim">{u.d}</p>
-          </div>
+          <TiltCard key={u.t} maxTilt={7} className="rounded-xl">
+            <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
+              <div className="text-[13.5px] font-medium text-ink">{u.t}</div>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-dim">{u.d}</p>
+            </div>
+          </TiltCard>
         ))}
       </div>
     </Section>
@@ -439,7 +446,7 @@ export function TechnologySection() {
           </div>
         ))}
       </div>
-      <div className="mt-8 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center">
+      <div className="glow-edge mt-8 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center">
         <p className="text-[15px] font-medium text-ink">Ready to run your first investigation?</p>
         <p className="mx-auto mt-1.5 max-w-md text-[12.5px] text-ink-dim">
           Sign in with Google, ask a question, draw a region — the workspace assembles the evidence chain live.

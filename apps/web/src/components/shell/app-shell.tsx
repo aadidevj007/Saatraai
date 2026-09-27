@@ -3,7 +3,8 @@
 /** Application shell: auth guard + sidebar + topbar + palette + shortcuts. */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 import { CommandPalette } from '@/components/shell/command-palette';
 import { ShortcutsHelp } from '@/components/shell/shortcuts-help';
@@ -18,6 +19,7 @@ const SIDEBAR_KEY = 'saatraai.sidebar-collapsed';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { status, needsProfile } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -119,7 +121,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar collapsed={collapsed} onToggle={toggleSidebar} apiOnline={apiOnline} />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar apiOnline={apiOnline} onOpenPalette={() => setPaletteOpen(true)} />
-          <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
+          <main className="min-h-0 flex-1 overflow-y-auto">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.24, ease: 'easeOut' }}
+            >
+              {children}
+            </motion.div>
+          </main>
         </div>
       </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />

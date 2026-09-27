@@ -24,6 +24,7 @@ export default function SignInPage() {
 
   return (
     <main className="grid-bg relative min-h-screen overflow-hidden bg-void">
+      <div className="aurora" aria-hidden />
       {/* top status rail */}
       <div className="absolute inset-x-0 top-0 flex items-center justify-between px-6 py-4">
         <Link href="/" className="group flex items-center gap-2 text-ink-dim transition-colors hover:text-ink">
@@ -71,7 +72,7 @@ export default function SignInPage() {
         </section>
 
         {/* Right: sign-in card */}
-        <section className="rounded-2xl border border-line bg-surface p-7 shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:p-9">
+        <section className="glow-edge rounded-2xl border border-line bg-surface p-7 shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:p-9">
           <header className="mb-7">
             <p className="font-mono text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">Secure access</p>
             <h2 className="mt-2 text-[19px] font-semibold text-ink">Sign in to SAATRAAI</h2>

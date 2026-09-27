@@ -7,7 +7,18 @@ import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Activity, ArrowRight, Database, FileCheck2, Plus, Telescope, Zap } from 'lucide-react';
 
-import { Badge, Button, EmptyState, ErrorState, Metric, SectionHeader, Skeleton, StatusDot } from '@/components/ui';
+import {
+  Badge,
+  Button,
+  EmptyState,
+  ErrorState,
+  Metric,
+  Reveal,
+  SectionHeader,
+  Skeleton,
+  StatusDot,
+  TiltCard,
+} from '@/components/ui';
 import { useAuth } from '@/lib/auth/auth-context';
 import { errorMessage } from '@/lib/api';
 import type { Investigation } from '@/lib/api/types';
@@ -89,49 +100,77 @@ export default function OverviewPage() {
 
       {/* stats */}
       <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric
-          label="Active investigations"
-          value={investigationsQuery.isPending ? <Skeleton className="h-6 w-10" /> : counts.active}
-          hint={`of ${total} total`}
-          tone="primary"
-          icon={<Telescope className="h-3.5 w-3.5" />}
-        />
-        <Metric
-          label="Completed"
-          value={investigationsQuery.isPending ? <Skeleton className="h-6 w-10" /> : counts.completed}
-          hint="status = complete"
-          tone="success"
-          icon={<FileCheck2 className="h-3.5 w-3.5" />}
-        />
-        <Metric
-          label="Evidence collected"
-          value={
-            summariesLoading && evidenceAvailable ? (
-              <Skeleton className="h-6 w-10" />
-            ) : counts.evidenceKnown ? (
-              counts.evidence
-            ) : (
-              <span className="text-[13px] text-ink-faint">NOT AVAILABLE</span>
-            )
-          }
-          hint="across recent investigations (10)"
-          tone={counts.evidenceKnown ? 'warning' : 'neutral'}
-          icon={<Zap className="h-3.5 w-3.5" />}
-        />
-        <Metric
-          label="Datasets"
-          value={
-            summariesLoading && evidenceAvailable ? (
-              <Skeleton className="h-6 w-10" />
-            ) : counts.imagesKnown ? (
-              counts.images
-            ) : (
-              <span className="text-[13px] text-ink-faint">NOT AVAILABLE</span>
-            )
-          }
-          hint="ingested scenes (recent)"
-          icon={<Database className="h-3.5 w-3.5" />}
-        />
+        {[
+          {
+            key: 'active',
+            el: (
+              <Metric
+                label="Active investigations"
+                value={investigationsQuery.isPending ? <Skeleton className="h-6 w-10" /> : counts.active}
+                hint={`of ${total} total`}
+                tone="primary"
+                icon={<Telescope className="h-3.5 w-3.5" />}
+              />
+            ),
+          },
+          {
+            key: 'completed',
+            el: (
+              <Metric
+                label="Completed"
+                value={investigationsQuery.isPending ? <Skeleton className="h-6 w-10" /> : counts.completed}
+                hint="status = complete"
+                tone="success"
+                icon={<FileCheck2 className="h-3.5 w-3.5" />}
+              />
+            ),
+          },
+          {
+            key: 'evidence',
+            el: (
+              <Metric
+                label="Evidence collected"
+                value={
+                  summariesLoading && evidenceAvailable ? (
+                    <Skeleton className="h-6 w-10" />
+                  ) : counts.evidenceKnown ? (
+                    counts.evidence
+                  ) : (
+                    <span className="text-[13px] text-ink-faint">NOT AVAILABLE</span>
+                  )
+                }
+                hint="across recent investigations (10)"
+                tone={counts.evidenceKnown ? 'warning' : 'neutral'}
+                icon={<Zap className="h-3.5 w-3.5" />}
+              />
+            ),
+          },
+          {
+            key: 'datasets',
+            el: (
+              <Metric
+                label="Datasets"
+                value={
+                  summariesLoading && evidenceAvailable ? (
+                    <Skeleton className="h-6 w-10" />
+                  ) : counts.imagesKnown ? (
+                    counts.images
+                  ) : (
+                    <span className="text-[13px] text-ink-faint">NOT AVAILABLE</span>
+                  )
+                }
+                hint="ingested scenes (recent)"
+                icon={<Database className="h-3.5 w-3.5" />}
+              />
+            ),
+          },
+        ].map((item, i) => (
+          <Reveal key={item.key} delay={i * 0.06}>
+            <TiltCard maxTilt={5} className="rounded-xl">
+              {item.el}
+            </TiltCard>
+          </Reveal>
+        ))}
       </div>
 
       {/* API offline banner */}
@@ -221,42 +260,44 @@ function InvestigationCard({
   const tone = STATUS_TONE[investigation.status] ?? 'neutral';
 
   return (
-    <Link
-      href={`/investigations/${investigation.id}`}
-      className="card block p-4 focus-visible:outline-2 focus-visible:outline-primary"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-[14px] font-medium text-ink">{investigation.title}</h3>
-          <p className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-ink-dim">
-            {config?.question ?? 'Question not recorded on this device — open to inspect server-side queries.'}
-          </p>
+    <TiltCard maxTilt={4} className="rounded-xl">
+      <Link
+        href={`/investigations/${investigation.id}`}
+        className="card block p-4 focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-[14px] font-medium text-ink">{investigation.title}</h3>
+            <p className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-ink-dim">
+              {config?.question ?? 'Question not recorded on this device — open to inspect server-side queries.'}
+            </p>
+          </div>
+          <Badge tone={tone}>{investigation.status}</Badge>
         </div>
-        <Badge tone={tone}>{investigation.status}</Badge>
-      </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[10.5px] uppercase tracking-wider text-ink-faint">
-        <span>{config?.region.name ?? 'REGION NOT SET'}</span>
-        <span>
-          {config ? `${config.timeRange.start} → ${config.timeRange.end}` : 'PERIOD NOT SET'}
-        </span>
-        {config && <span className={config.mode === 'demo' ? 'text-[#c4b5fd]' : 'text-primary/70'}>
-          {config.mode === 'demo' ? 'DEMO DATA' : 'REAL MODE'}
-        </span>}
-      </div>
-
-      <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-        <div className="flex items-center gap-3 text-[11.5px] text-ink-faint">
-          <span className="flex items-center gap-1.5">
-            <Zap className="h-3 w-3" />
-            {stats?.evidence === null || stats?.evidence === undefined ? 'evidence —' : `${stats.evidence} evidence`}
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[10.5px] uppercase tracking-wider text-ink-faint">
+          <span>{config?.region.name ?? 'REGION NOT SET'}</span>
+          <span>
+            {config ? `${config.timeRange.start} → ${config.timeRange.end}` : 'PERIOD NOT SET'}
           </span>
-          <span>updated {timeAgo(investigation.updated_at)}</span>
+          {config && <span className={config.mode === 'demo' ? 'text-[#c4b5fd]' : 'text-primary/70'}>
+            {config.mode === 'demo' ? 'DEMO DATA' : 'REAL MODE'}
+          </span>}
         </div>
-        <span className="flex items-center gap-1 text-[12px] text-primary">
-          Open <ArrowRight className="h-3 w-3" />
-        </span>
-      </div>
-    </Link>
+
+        <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
+          <div className="flex items-center gap-3 text-[11.5px] text-ink-faint">
+            <span className="flex items-center gap-1.5">
+              <Zap className="h-3 w-3" />
+              {stats?.evidence === null || stats?.evidence === undefined ? 'evidence —' : `${stats.evidence} evidence`}
+            </span>
+            <span>updated {timeAgo(investigation.updated_at)}</span>
+          </div>
+          <span className="flex items-center gap-1 text-[12px] text-primary">
+            Open <ArrowRight className="h-3 w-3" />
+          </span>
+        </div>
+      </Link>
+    </TiltCard>
   );
 }

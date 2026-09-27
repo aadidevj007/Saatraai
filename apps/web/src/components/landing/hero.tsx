@@ -2,12 +2,24 @@
 
 /** Landing hero. */
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronDown, Telescope } from 'lucide-react';
 
-import { EarthVisual } from '@/components/auth/earth-visual';
 import { Button } from '@/components/ui';
+
+const EarthGlobe = dynamic(
+  () => import('@/components/three/earth-globe').then((m) => m.EarthGlobe),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex aspect-square w-full max-w-[520px] items-center justify-center">
+        <div className="h-40 w-40 animate-pulse-soft rounded-full border border-primary/20 bg-primary/5" />
+      </div>
+    ),
+  },
+);
 
 const TAGLINE = ['OBSERVE.', 'INVESTIGATE.', 'VERIFY.', 'EXPLAIN.'];
 
@@ -21,6 +33,8 @@ const TELEMETRY = [
 export function LandingHero() {
   return (
     <section className="relative overflow-hidden border-b border-line">
+      {/* ambient depth */}
+      <div className="aurora" aria-hidden />
       {/* moving scanline */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="animate-scan absolute inset-x-0 h-24 bg-[linear-gradient(180deg,transparent,rgba(34,211,238,0.05),transparent)]" />
@@ -42,7 +56,7 @@ export function LandingHero() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.06 }}
-            className="mt-6 font-mono text-[38px] font-semibold leading-none tracking-[0.2em] text-ink sm:text-[52px]"
+            className="text-glow mt-6 font-mono text-[38px] font-semibold leading-none tracking-[0.2em] sm:text-[52px]"
           >
             SAATRAAI
           </motion.h1>
@@ -111,9 +125,19 @@ export function LandingHero() {
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.15 }}
-          className="flex items-center justify-center"
+          className="relative flex items-center justify-center"
         >
-          <EarthVisual />
+          <div className="glow-edge relative aspect-square w-full max-w-[520px] rounded-full">
+            <EarthGlobe
+              markers={[
+                { lon: 77.55, lat: 9.17 },
+                { lon: 80.27, lat: 13.08 },
+                { lon: 88.36, lat: 22.57 },
+              ]}
+              satellites={3}
+              className="absolute inset-0"
+            />
+          </div>
         </motion.div>
       </div>
 

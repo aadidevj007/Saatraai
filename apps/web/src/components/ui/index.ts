@@ -12,3 +12,4 @@ export {
 } from './feedback';
 export { Input, Textarea, Select, Field, Segmented, Toggle, Slider } from './fields';
 export { Tabs, Tooltip, Dropdown, Metric, ConfidenceRing, ProgressBar, SectionHeader, Panel, type MenuItem } from './data';
+export { TiltCard, Reveal, Magnetic } from './motion';

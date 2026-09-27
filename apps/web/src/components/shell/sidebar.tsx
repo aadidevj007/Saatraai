@@ -106,11 +106,16 @@ export function Sidebar({
                 className={cn(
                   'group relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-[13px] transition-colors',
                   'focus-visible:outline-2 focus-visible:outline-primary',
-                  active ? 'bg-primary/10 text-primary' : 'text-ink-dim hover:bg-elevated hover:text-ink',
+                  active
+                    ? 'bg-primary/10 text-primary shadow-[inset_0_0_18px_rgba(34,211,238,0.06)]'
+                    : 'text-ink-dim hover:bg-elevated hover:text-ink',
                 )}
               >
                 {active && (
-                  <span className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-full bg-primary" aria-hidden />
+                  <span
+                    className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-full bg-primary shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                    aria-hidden
+                  />
                 )}
                 <Icon className="h-4 w-4 shrink-0" />
                 {!collapsed && <span className="truncate">{item.label}</span>}
