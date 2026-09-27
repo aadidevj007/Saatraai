@@ -243,6 +243,27 @@ class OrchestrationController:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Execution trace not found")
         return self._trace(db, task)
 
+    def list_traces(
+        self, db: Session, user: User, investigation_id: UUID
+    ) -> list[ExecutionTraceResponse]:
+        get_owned_investigation(db, investigation_id, user)
+        tasks = db.scalars(
+            select(Task)
+            .where(Task.investigation_id == investigation_id)
+            .order_by(Task.created_at.asc())
+        ).all()
+        traces: list[ExecutionTraceResponse] = []
+        for task in tasks:
+            run = db.scalar(
+                select(ModelRun)
+                .where(ModelRun.task_id == task.id)
+                .order_by(ModelRun.created_at.desc())
+            )
+            if run is None:
+                continue
+            traces.append(self._trace(db, task))
+        return traces
+
     def _resolve_inputs(
         self, db: Session, investigation_id: UUID, image_ids: list[UUID]
     ) -> ResolvedInputs:

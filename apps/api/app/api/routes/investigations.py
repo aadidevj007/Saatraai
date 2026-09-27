@@ -13,6 +13,7 @@ from app.schemas.projects import (
     InvestigationCreateRequest,
     InvestigationPageResponse,
     InvestigationQueryCreateRequest,
+    InvestigationQueryListResponse,
     InvestigationQueryResponse,
     InvestigationResponse,
 )
@@ -129,3 +130,36 @@ def create_query(
     return serialize_query(
         investigation_service.create_query(db, current_user, investigation_id, payload)
     )
+
+
+@router.get(
+    "/investigations/{investigation_id}/queries",
+    response_model=InvestigationQueryListResponse,
+    summary="List persisted queries for an owned investigation",
+    responses=ERROR_RESPONSES,
+)
+def list_queries(
+    investigation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> InvestigationQueryListResponse:
+    queries = investigation_service.list_queries(db, current_user, investigation_id)
+    return InvestigationQueryListResponse(items=[serialize_query(query) for query in queries])
+
+
+@router.delete(
+    "/investigations/{investigation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an owned investigation",
+    description=(
+        "Removes the investigation and its dependent rows. Stored raster artifacts and "
+        "evidence output blobs are retained for audit purposes."
+    ),
+    responses=ERROR_RESPONSES,
+)
+def delete_investigation(
+    investigation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    investigation_service.delete_investigation(db, current_user, investigation_id)

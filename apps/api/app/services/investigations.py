@@ -74,3 +74,20 @@ def create_query(
     db.commit()
     db.refresh(query)
     return query
+
+
+def list_queries(db: Session, user: User, investigation_id: UUID) -> list[Query]:
+    get_owned_investigation(db, investigation_id, user)
+    return list(
+        db.scalars(
+            select(Query)
+            .where(Query.investigation_id == investigation_id)
+            .order_by(Query.created_at.asc())
+        ).all()
+    )
+
+
+def delete_investigation(db: Session, user: User, investigation_id: UUID) -> None:
+    investigation = get_owned_investigation(db, investigation_id, user)
+    db.delete(investigation)
+    db.commit()

@@ -2,6 +2,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
@@ -9,7 +10,8 @@ from app.api.errors import ERROR_RESPONSES
 from app.db.session import get_db
 from app.models.eo import ImageModality, ImageRelationshipType, UploadedImage
 from app.models.identity import User
-from app.schemas.images import ImageIngestionResponse, IngestedImageResponse
+from app.schemas.images import ImageIngestionResponse, ImageListResponse, IngestedImageResponse
+from app.services.authorization import get_owned_investigation
 from app.services.ingestion import ingest_images
 from app.services.storage import ObjectStorage, get_object_storage
 
@@ -86,4 +88,26 @@ async def upload_images(
         investigation_id=investigation_id,
         input_configuration=configuration,
         images=[serialize_image(image) for image in images],
+    )
+
+
+@router.get(
+    "/investigations/{investigation_id}/images",
+    response_model=ImageListResponse,
+    summary="List ingested images for an owned investigation",
+    responses=ERROR_RESPONSES,
+)
+def list_images(
+    investigation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ImageListResponse:
+    get_owned_investigation(db, investigation_id, current_user)
+    images = db.scalars(
+        select(UploadedImage)
+        .where(UploadedImage.investigation_id == investigation_id)
+        .order_by(UploadedImage.created_at.desc())
+    ).all()
+    return ImageListResponse(
+        items=[serialize_image(image) for image in images if image.metadata_record is not None]
     )

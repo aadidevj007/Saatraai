@@ -59,3 +59,7 @@ class InvestigationQueryResponse(BaseModel):
     sequence: int
     created_at: datetime
     updated_at: datetime
+
+
+class InvestigationQueryListResponse(BaseModel):
+    items: list[InvestigationQueryResponse]

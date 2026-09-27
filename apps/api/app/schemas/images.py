@@ -26,3 +26,7 @@ class ImageIngestionResponse(BaseModel):
     investigation_id: UUID
     input_configuration: str
     images: list[IngestedImageResponse]
+
+
+class ImageListResponse(BaseModel):
+    items: list[IngestedImageResponse]

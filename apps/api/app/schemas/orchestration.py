@@ -12,6 +12,10 @@ class OrchestrationRequest(BaseModel):
     parameters: dict = Field(default_factory=dict)
 
 
+class ExecutionTraceListResponse(BaseModel):
+    items: list["ExecutionTraceResponse"]
+
+
 class ExecutionTraceResponse(BaseModel):
     task_id: UUID
     query_id: UUID
