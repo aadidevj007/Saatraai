@@ -1,28 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #04070c;
-  --foreground: #e5eef8;
+/* ─────────────────────────────────────────────
+   SAATRAAI DESIGN SYSTEM — dark Earth-observation interface
+───────────────────────────────────────────── */
+@theme {
+  /* Surfaces */
+  --color-void: #05080d;
+  --color-surface: #0a111a;
+  --color-elevated: #0f1924;
+  --color-panel: #0c1520;
+  --color-card: #101b28;
+  --color-card-hover: #142131;
+  --color-inputbg: #0b141f;
+
+  /* Lines */
+  --color-line: #16212e;
+  --color-line-strong: #1f2e40;
+
+  /* Brand accents */
+  --color-primary: #22d3ee;      /* electric cyan */
+  --color-primary-dim: #0e7490;
+  --color-secondary: #2dd4bf;    /* teal */
+  --color-accent: #3b82f6;       /* blue */
+
+  /* Semantic status */
+  --color-success: #34d399;
+  --color-warning: #f59e0b;
+  --color-danger: #f43f5e;
+
+  /* Text */
+  --color-ink: #e6f1fa;
+  --color-ink-dim: #93a7bc;
+  --color-ink-faint: #5d7086;
+
+  /* Type */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Motion */
+  --animate-pulse-soft: pulse-soft 3s ease-in-out infinite;
+  --animate-scan: scan 6s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-spin-slow: spin 1.8s linear infinite;
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+  @keyframes scan {
+    0% { transform: translateY(-8%); opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { transform: translateY(108%); opacity: 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.35); }
+    70% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+  }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ─────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--color-void);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
+body { overflow-x: hidden; }
+
+::selection { background: rgba(34, 211, 238, 0.25); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-html {
-  background: var(--background);
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1f2e40; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2c405a; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  margin: 0;
+/* ─────────────────────────────────────────────
+   COMPONENTS
+───────────────────────────────────────────── */
+@layer components {
+  .panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+  }
+
+  .card {
+    background: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+    transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+  }
+  .card:hover { border-color: var(--color-line-strong); background: var(--color-card-hover); }
+
+  .mono { font-family: var(--font-mono); }
+
+  /* technical label — coordinates, dataset ids, timestamps */
+  .tech {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+  }
+
+  .hairline { border-color: var(--color-line); }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(34, 211, 238, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 211, 238, 0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .scanlines {
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(255, 255, 255, 0.06) 2px,
+      rgba(255, 255, 255, 0.06) 3px
+    );
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, #101b28 0%, #172536 50%, #101b28 100%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   MAPLIBRE OVERRIDES
+───────────────────────────────────────────── */
+.maplibregl-ctrl-attrib, .maplibregl-ctrl-logo { display: none !important; }
+.maplibregl-ctrl-group {
+  background: var(--color-elevated) !important;
+  border: 1px solid var(--color-line) !important;
+  box-shadow: none !important;
+}
+.maplibregl-ctrl-group button { background: transparent !important; }
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--color-line) !important; }
+.maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon,
+.maplibregl-ctrl button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon { filter: invert(0.85) sepia(0.4) saturate(3) hue-rotate(160deg); }
+.maplibregl-canvas:focus { outline: none; }
+
+.maplibregl-popup-content {
+  background: var(--color-elevated) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-line-strong) !important;
+  border-radius: 8px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12.5px !important;
+  padding: 10px 12px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+}
+.maplibregl-popup-tip { border-top-color: var(--color-line-strong) !important; }
+.maplibregl-popup-close-button { color: var(--color-ink-dim) !important; font-size: 16px !important; }
+
+/* ─────────────────────────────────────────────
+   PRINT (report export via browser PDF)
+───────────────────────────────────────────── */
+@media print {
+  body { background: #fff !important; color: #101418 !important; overflow: visible !important; }
+  .no-print { display: none !important; }
+  .print-root { position: static !important; height: auto !important; overflow: visible !important; }
 }
