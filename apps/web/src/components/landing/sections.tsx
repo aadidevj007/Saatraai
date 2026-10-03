@@ -35,7 +35,7 @@ function Section({
   alt?: boolean;
 }) {
   return (
-    <section id={id} className={`border-b border-line ${alt ? 'bg-surface' : ''}`}>
+    <section id={id} className={`section-band border-b border-line ${alt ? 'bg-surface/70' : ''}`}>
       <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
@@ -44,7 +44,7 @@ function Section({
           transition={{ duration: 0.5 }}
         >
           <p className="font-mono text-[10.5px] uppercase tracking-[0.24em] text-primary">{eyebrow}</p>
-          <h2 className="mt-3 max-w-2xl text-[24px] font-semibold leading-tight text-ink sm:text-[28px]">{title}</h2>
+          <h2 className="display-font mt-3 max-w-2xl text-[25px] font-semibold leading-[1.12] text-ink sm:text-[31px]">{title}</h2>
           {description && <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-ink-dim">{description}</p>}
         </motion.div>
         <div className="mt-9">{children}</div>

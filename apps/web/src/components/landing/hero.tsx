@@ -33,15 +33,23 @@ const TELEMETRY = [
 export function LandingHero() {
   return (
     <section className="relative overflow-hidden border-b border-line">
+      <video
+        className="hero-video"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
+      >
+        <source src="https://videos.pexels.com/video-files/3129595/3129595-hd_1920_1080_25fps.mp4" type="video/mp4" />
+      </video>
+      <div className="hero-video-mask" aria-hidden="true" />
       {/* ambient depth */}
       <div className="aurora" aria-hidden />
-      {/* moving scanline */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-scan absolute inset-x-0 h-24 bg-[linear-gradient(180deg,transparent,rgba(34,211,238,0.05),transparent)]" />
-      </div>
       <div className="pointer-events-none absolute -right-32 top-1/4 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.08),transparent_65%)]" />
 
-      <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:py-28">
+      <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:py-28">
         <div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <div className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1">
@@ -56,7 +64,7 @@ export function LandingHero() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.06 }}
-            className="text-glow mt-6 font-mono text-[38px] font-semibold leading-none tracking-[0.2em] sm:text-[52px]"
+            className="text-glow display-font mt-6 text-[48px] font-semibold leading-none tracking-[0.12em] sm:text-[68px]"
           >
             SAATRAAI
           </motion.h1>
@@ -127,7 +135,7 @@ export function LandingHero() {
           transition={{ duration: 0.7, delay: 0.15 }}
           className="relative flex items-center justify-center"
         >
-          <div className="glow-edge relative aspect-square w-full max-w-[520px] rounded-full">
+          <div className="glow-edge hero-orbit relative aspect-square w-full max-w-[520px] rounded-full bg-void/30 backdrop-blur-[2px]">
             <EarthGlobe
               markers={[
                 { lon: 77.55, lat: 9.17 },
@@ -141,7 +149,7 @@ export function LandingHero() {
         </motion.div>
       </div>
 
-      <div className="flex justify-center pb-6 text-ink-faint">
+      <div className="relative z-10 flex justify-center pb-6 text-ink-faint">
         <ChevronDown className="h-4 w-4 animate-float" />
       </div>
     </section>

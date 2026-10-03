@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^git add --all; git diff --cached --stat; git status --short$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

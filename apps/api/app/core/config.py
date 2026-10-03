@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     geochat_model_base: str | None = None
     geochat_device: str = "cuda"
     geochat_max_new_tokens: int = 300
+    firebase_project_id: str | None = None
+    firebase_service_account_json: str | None = None
+    firebase_service_account_path: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

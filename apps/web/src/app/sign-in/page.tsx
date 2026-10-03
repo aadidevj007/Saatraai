@@ -23,7 +23,7 @@ export default function SignInPage() {
   }, [status, needsProfile, router]);
 
   return (
-    <main className="grid-bg relative min-h-screen overflow-hidden bg-void">
+    <main className="relative min-h-screen overflow-hidden bg-void">
       <div className="aurora" aria-hidden />
       {/* top status rail */}
       <div className="absolute inset-x-0 top-0 flex items-center justify-between px-6 py-4">

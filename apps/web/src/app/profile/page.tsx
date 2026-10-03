@@ -45,7 +45,8 @@ export default function ProfileSetupPage() {
   };
 
   return (
-    <main className="grid-bg flex min-h-screen items-center justify-center bg-void px-6 py-12">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-void px-6 py-12">
+      <div className="aurora" aria-hidden />
       <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-8 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
         <div className="flex flex-col items-center text-center">
           <Avatar src={google?.picture} name={name} size={72} />

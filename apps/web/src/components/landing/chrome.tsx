@@ -38,7 +38,7 @@ export function LandingHeader() {
           <span className="flex h-7 w-7 items-center justify-center rounded-md border border-primary/40 bg-primary/10">
             <Satellite className="h-3.5 w-3.5 text-primary" />
           </span>
-          <span className="font-mono text-[13.5px] font-semibold tracking-[0.24em] text-ink">SAATRAAI</span>
+          <span className="display-font text-[13.5px] font-semibold tracking-[0.2em] text-ink">SAATRAAI</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex" aria-label="Sections">
