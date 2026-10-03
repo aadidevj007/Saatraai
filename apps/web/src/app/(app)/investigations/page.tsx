@@ -167,6 +167,12 @@ export default function InvestigationsPage() {
         <ul className="mt-4 space-y-3">
           {sorted.map((inv) => {
             const config = getInvestigationConfig(inv.id);
+            const serverQuestion = inv.configuration?.question ?? null;
+            const serverRegion = inv.configuration?.region_name ?? null;
+            const serverRange =
+              inv.configuration?.time_start && inv.configuration?.time_end
+                ? `${inv.configuration.time_start} → ${inv.configuration.time_end}`
+                : null;
             const invStats = stats.get(inv.id);
             return (
               <li key={inv.id} className="card p-4">
@@ -178,11 +184,11 @@ export default function InvestigationsPage() {
                       {config?.mode === 'demo' && <Badge tone="demo">DEMO DATA</Badge>}
                     </div>
                     <p className="mt-1 line-clamp-2 text-[12.5px] text-ink-dim">
-                      {config?.question ?? 'Question recorded server-side; open the workspace to inspect queries.'}
+                      {config?.question ?? serverQuestion ?? 'Question recorded server-side; open the workspace to inspect queries.'}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10.5px] uppercase tracking-wider text-ink-faint">
-                      <span>{config?.region.name ?? 'region not set'}</span>
-                      <span>{config ? `${config.timeRange.start} → ${config.timeRange.end}` : 'period not set'}</span>
+                      <span>{config?.region.name ?? serverRegion ?? 'region not set'}</span>
+                      <span>{config ? `${config.timeRange.start} → ${config.timeRange.end}` : (serverRange ?? 'period not set')}</span>
                       <span>created {timeAgo(inv.created_at)}</span>
                       <span>updated {timeAgo(inv.updated_at)}</span>
                       {invStats?.evidence !== null && invStats?.evidence !== undefined && (

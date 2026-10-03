@@ -360,15 +360,26 @@ export function ControlPanel({
 }
 
 function TraceCard({ trace, expanded, onToggle }: { trace: ExecutionTrace; expanded: boolean; onToggle: () => void }) {
-  const ok = String(trace.status) === 'succeeded';
+  const status = String(trace.status);
+  const ok = status === 'succeeded';
+  const failed = status === 'failed' || status === 'cancelled';
+  const statusLabel = failed
+    ? 'EXECUTION FAILED'
+    : ok
+      ? 'SUCCEEDED'
+      : status === 'not_implemented'
+        ? 'NOT IMPLEMENTED'
+        : status.toUpperCase();
   return (
     <li className="rounded-lg border border-line bg-card">
       <button onClick={onToggle} className="flex w-full items-start gap-2 p-2.5 text-left">
-        <span className={cn('mt-0.5', ok ? 'text-success' : 'text-warning')}>{ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertOctagon className="h-3.5 w-3.5" />}</span>
+        <span className={cn('mt-0.5', ok ? 'text-success' : failed ? 'text-danger' : 'text-warning')}>
+          {ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertOctagon className="h-3.5 w-3.5" />}
+        </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[12px] text-ink">{trace.selected_task}</span>
           <span className="font-mono text-[10px] text-ink-faint">
-            {trace.selected_tool} · {trace.model_version ?? '—'} · {String(trace.status)}
+            {trace.selected_tool} · {trace.model_version ?? '—'} · <span className={cn(failed && 'text-danger', ok && 'text-success')}>{statusLabel}</span>
           </span>
         </span>
         {expanded ? <ChevronDown className="h-3.5 w-3.5 text-ink-faint" /> : <ChevronRight className="h-3.5 w-3.5 text-ink-faint" />}

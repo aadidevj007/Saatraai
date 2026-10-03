@@ -2,12 +2,13 @@
 
 /**
  * BaseMap — MapLibre GL instance with basemap switching, coordinate readout,
- * scale and fullscreen control. Parents receive the raw map via onLoad for
- * imperative layer / marker / fly-to control.
+ * loading/error honesty and a fullscreen control. Parents receive the raw
+ * map via onLoad for imperative layer / marker / fly-to control.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
+import { Maximize2, Minimize2 } from 'lucide-react';
 
 import { BASEMAP_LIST, BASEMAPS, type BasemapId } from '@/lib/map/styles';
 import { cn, formatCoord } from '@/lib/utils';
@@ -26,6 +27,44 @@ export interface BaseMapProps {
   className?: string;
   children?: React.ReactNode;
   showControls?: boolean;
+}
+
+/** Fullscreen toggle button for the BaseMap container. */
+function FullscreenButton({ targetRef }: { targetRef: React.RefObject<HTMLDivElement | null> }) {
+  const [active, setActive] = useState(false);
+
+  useEffect(() => {
+    const onChange = () => setActive(document.fullscreenElement === targetRef.current);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, [targetRef]);
+
+  const toggle = () => {
+    const el = targetRef.current;
+    if (!el) return;
+    if (document.fullscreenElement === el) {
+      void document.exitFullscreen();
+    } else {
+      void el.requestFullscreen().catch(() => {
+        /* browser refused (permissions / iframe); leave state honest */
+      });
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={active ? 'Exit fullscreen' : 'Enter fullscreen'}
+      title={active ? 'Exit fullscreen' : 'Enter fullscreen'}
+      className={cn(
+        'absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-surface/95 text-ink-dim backdrop-blur transition-colors hover:border-primary/50 hover:text-primary',
+        active && 'border-primary/60 text-primary',
+      )}
+    >
+      {active ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+    </button>
+  );
 }
 
 export function BaseMap({
@@ -48,6 +87,7 @@ export function BaseMap({
   const [ready, setReady] = useState(false);
   const [hover, setHover] = useState<[number, number] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  const [basemapFailed, setBasemapFailed] = useState<string | null>(null);
 
   /* keep latest callbacks without re-creating the map */
   const handlers = useRef({ onLoad, onMouseMove, onClick, onDblClick, onContextMenu });
@@ -87,6 +127,13 @@ export function BaseMap({
       instance.addControl(new gl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-left');
       instance.addControl(new gl.AttributionControl({ compact: true }));
 
+      instance.on('error', (e) => {
+        const message = e?.error?.message ?? '';
+        /* individual tile failures are noisy but not fatal — only surface style failures */
+        if (/style|Failed to fetch|Could not connect/i.test(message) && !disposed) {
+          setBasemapFailed(`Basemap tiles unreachable — pan/zoom still works over the last style, or switch basemap.`);
+        }
+      });
       instance.on('load', () => {
         if (disposed) return;
         setReady(true);
@@ -166,6 +213,21 @@ export function BaseMap({
               </button>
             ))}
           </div>
+
+          {/* fullscreen toggle */}
+          <FullscreenButton targetRef={containerRef} />
+
+          {/* basemap tile error — honest, dismissible */}
+          {basemapFailed && (
+            <button
+              type="button"
+              onClick={() => setBasemapFailed(null)}
+              className="absolute bottom-10 left-3 z-20 max-w-[calc(100%-1.5rem)] rounded-lg border border-warning/40 bg-surface/95 px-3 py-2 text-left text-[11.5px] text-warning backdrop-blur"
+              title="Dismiss"
+            >
+              {basemapFailed}
+            </button>
+          )}
 
           {/* coordinate readout */}
           <div className="pointer-events-none absolute right-14 top-3 z-10 rounded-md border border-line bg-surface/90 px-2 py-1 font-mono text-[10px] text-ink-dim backdrop-blur">

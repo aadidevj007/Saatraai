@@ -40,6 +40,7 @@ const STEPS = [
   { id: 'time', label: 'Time range', icon: CalendarRange },
   { id: 'sources', label: 'Data sources', icon: Layers },
   { id: 'configure', label: 'Configure', icon: Wand2 },
+  { id: 'review', label: 'Review', icon: Check },
 ] as const;
 
 const SUGGESTIONS = [
@@ -134,11 +135,19 @@ export default function NewInvestigationPage() {
         projectId = project.id;
       }
 
-      /* 2. create the investigation */
+      /* 2. create the investigation — region, period and sources persist server-side */
       const title = question.trim().length > 72 ? `${question.trim().slice(0, 69)}…` : question.trim();
-      const investigation = await investigationApi.create(projectId, title);
+      const investigation = await investigationApi.create(projectId, title, {
+        region_name: region!.name,
+        region_source: region!.source,
+        region_polygon: region!.polygon.map(([lng, lat]) => [lng, lat]),
+        time_start: start,
+        time_end: end,
+        evidence_sources: sources,
+        question: question.trim(),
+      });
 
-      /* 3. persist wizard configuration locally */
+      /* 3. persist wizard presentation config locally (mode, strictness, depth) */
       saveInvestigationConfig({
         investigationId: investigation.id,
         question: question.trim(),
@@ -151,7 +160,7 @@ export default function NewInvestigationPage() {
         createdAt: new Date().toISOString(),
       });
 
-      /* 4. persist the question server-side */
+      /* 4. persist the question server-side as the first investigation query */
       await investigationApi.addQuery(investigation.id, question.trim());
 
       toast({
@@ -174,7 +183,7 @@ export default function NewInvestigationPage() {
       {/* header + stepper */}
       <SectionHeader
         title="New investigation"
-        description="Five steps — every value becomes real application state persisted through the API."
+        description="Six steps — every value becomes real application state persisted through the API."
         action={
           <Badge tone={mode === 'demo' ? 'demo' : 'primary'}>{mode === 'demo' ? 'DEMO MODE' : 'REAL MODE'}</Badge>
         }
@@ -235,7 +244,7 @@ export default function NewInvestigationPage() {
               </div>
             </div>
             <div className="mt-5 flex justify-between">
-              <Button variant="ghost" onClick={() => router.push('/overview')} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
+              <Button variant="ghost" onClick={() => router.push('/dashboard')} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
                 Cancel
               </Button>
               <Button variant="primary" disabled={question.trim().length < 3} onClick={() => setStep(1)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
@@ -363,7 +372,7 @@ export default function NewInvestigationPage() {
 
         {/* ── STEP 5 · CONFIGURE + START ── */}
         {step === 4 && (
-          <Panel title="Configure and start" subtitle="Mode, evidence strictness and analysis depth">
+          <Panel title="Configure" subtitle="Mode, evidence strictness and analysis depth">
             <div className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3">
                 <div>
@@ -417,23 +426,51 @@ export default function NewInvestigationPage() {
                 />
               </div>
 
-              {/* summary */}
+              <div className="mt-5 flex justify-between">
+                <Button variant="ghost" onClick={() => setStep(3)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
+                  Back
+                </Button>
+                <Button variant="primary" onClick={() => setStep(5)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
+                  Review investigation
+                </Button>
+              </div>
+            </div>
+          </Panel>
+        )}
+
+        {/* ── STEP 6 · REVIEW + CREATE ── */}
+        {step === 5 && (
+          <Panel
+            title="Review before creating"
+            subtitle="Everything below is sent to the backend and persisted verbatim"
+            actions={<Badge tone={mode === 'demo' ? 'demo' : 'primary'}>{mode === 'demo' ? 'DEMO' : 'REAL'}</Badge>}
+          >
+            <div className="space-y-4">
               <div className="rounded-xl border border-line bg-elevated p-4">
-                <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Summary</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Research question</div>
                 <p className="mt-2 text-[13.5px] leading-relaxed text-ink">{question || '—'}</p>
-                <div className="mt-3 grid gap-x-6 gap-y-1.5 font-mono text-[11px] text-ink-dim sm:grid-cols-2">
-                  <div>REGION · {region?.name ?? '—'}</div>
-                  <div>PERIOD · {start} → {end}</div>
-                  <div>SOURCES · {sources.length ? sources.join(', ').toUpperCase() : 'none selected'}</div>
-                  <div>MODE · {mode.toUpperCase()} · {strictness.toUpperCase()} · {depth.toUpperCase()}</div>
-                  <div>RESEARCH INTEREST · {preferences?.research_interest ?? 'not set'}</div>
-                </div>
+              </div>
+
+              <div className="grid gap-x-6 gap-y-1.5 rounded-xl border border-line bg-elevated p-4 font-mono text-[11px] text-ink-dim sm:grid-cols-2">
+                <div>REGION · {region?.name ?? '—'}</div>
+                <div>REGION SOURCE · {region?.source ?? '—'}</div>
+                <div>VERTICES · {region?.polygon.length ?? 0}</div>
+                <div>PERIOD · {start} → {end}</div>
+                <div>SOURCES · {sources.length ? sources.join(', ').toUpperCase() : 'none selected'}</div>
+                <div>MODE · {mode.toUpperCase()} · {strictness.toUpperCase()} · {depth.toUpperCase()}</div>
+                <div>RESEARCH INTEREST · {preferences?.research_interest ?? 'not set'}</div>
+              </div>
+
+              <div className="rounded-lg border border-line bg-card px-3.5 py-2.5 text-[11.5px] leading-relaxed text-ink-faint">
+                On create: an investigation row is written to the database with this configuration (region polygon, period,
+                sources); the question is persisted as the first investigation query. No imagery is fetched, no analysis
+                runs, and no result exists yet — execution happens later from the workspace against uploaded imagery.
               </div>
 
               {startError && <p className="text-[12.5px] text-danger">{startError}</p>}
 
               <div className="flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(3)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
+                <Button variant="ghost" onClick={() => setStep(4)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
                   Back
                 </Button>
                 <Button
@@ -444,7 +481,7 @@ export default function NewInvestigationPage() {
                   onClick={startInvestigation}
                   icon={<Play className="h-4 w-4" />}
                 >
-                  Start investigation
+                  Create investigation
                 </Button>
               </div>
 

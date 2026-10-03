@@ -180,7 +180,7 @@ export default function ReportsPage() {
                       <li key={h.id} className="rounded-lg border border-line bg-card p-3 print:border-black/15">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-[11px] font-semibold text-primary print:text-black/70">H{i + 1}</span>
-                          <Badge tone={assessment.displayStatus === 'SUPPORTED' ? 'success' : assessment.displayStatus === 'CONTRADICTED' ? 'danger' : assessment.displayStatus === 'INSUFFICIENT' ? 'warning' : 'neutral'}>
+                          <Badge tone={assessment.displayStatus === 'SUPPORTED' ? 'success' : assessment.displayStatus === 'CONTRADICTED' ? 'danger' : assessment.displayStatus === 'INSUFFICIENT_EVIDENCE' ? 'warning' : 'neutral'}>
                             {assessment.displayStatus}
                           </Badge>
                         </div>

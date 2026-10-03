@@ -127,31 +127,54 @@ export function computeConfidence(evidence: EvidenceRecord[]): ConfidenceReport 
   };
 }
 
+export type HypothesisDisplayStatus =
+  | 'UNTESTED'
+  | 'TESTING'
+  | 'SUPPORTED'
+  | 'WEAKENED'
+  | 'CONTRADICTED'
+  | 'INSUFFICIENT_EVIDENCE';
+
 export interface HypothesisAssessment {
   hypothesis: HypothesisRecord;
   supporting: EvidenceRecord[];
   contradicting: EvidenceRecord[];
   neutral: EvidenceRecord[];
   insufficient: EvidenceRecord[];
-  displayStatus: 'SUPPORTED' | 'WEAKENED' | 'CONTRADICTED' | 'INSUFFICIENT' | 'UNDER INVESTIGATION';
+  displayStatus: HypothesisDisplayStatus;
   confidence: number | null;
 }
 
+/**
+ * Derive a display status from REAL records only: evidence polarity plus the
+ * backend's own assessment_state. Nothing is invented — each branch is
+ * justified by persisted data.
+ */
 export function assessHypothesis(hypothesis: HypothesisRecord): HypothesisAssessment {
   const supporting = hypothesis.evidence.filter((e) => e.polarity === 'supporting');
   const contradicting = hypothesis.evidence.filter((e) => e.polarity === 'contradicting');
   const neutral = hypothesis.evidence.filter((e) => e.polarity === 'neutral');
   const insufficient = hypothesis.evidence.filter((e) => e.polarity === 'insufficient');
 
-  let displayStatus: HypothesisAssessment['displayStatus'] = 'UNDER INVESTIGATION';
-  if (hypothesis.evidence.length === 0) displayStatus = 'UNDER INVESTIGATION';
-  else if (hypothesis.assessment_state === 'rejected' || contradicting.length > supporting.length)
+  const state = hypothesis.assessment_state;
+  let displayStatus: HypothesisDisplayStatus;
+
+  if (state === 'rejected' || contradicting.length > supporting.length) {
     displayStatus = 'CONTRADICTED';
-  else if (supporting.length > 0 && contradicting.length > 0) displayStatus = 'WEAKENED';
-  else if (supporting.length > 0 && supporting.length >= neutral.length + insufficient.length)
+  } else if (supporting.length > 0 && contradicting.length > 0) {
+    displayStatus = 'WEAKENED';
+  } else if (supporting.length > 0) {
     displayStatus = 'SUPPORTED';
-  else if (insufficient.length >= hypothesis.evidence.length && insufficient.length > 0)
-    displayStatus = 'INSUFFICIENT';
+  } else if (hypothesis.evidence.length === 0) {
+    /* nothing observed yet — the backend may have a run in flight (under_review) */
+    displayStatus = state === 'under_review' ? 'TESTING' : 'UNTESTED';
+  } else if (state === 'under_review') {
+    /* attempts recorded but nothing decisive, backend still reviewing */
+    displayStatus = 'TESTING';
+  } else {
+    /* only neutral / insufficient evidence exists — not enough to decide */
+    displayStatus = 'INSUFFICIENT_EVIDENCE';
+  }
 
   const decisive = supporting.length + contradicting.length;
   const confidence =

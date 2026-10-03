@@ -52,11 +52,24 @@ export interface Page<T> {
 
 export type InvestigationStatus = 'planned' | 'running' | 'complete' | 'blocked';
 
+/** Structured wizard configuration persisted server-side (analyst intent, not results). */
+export interface InvestigationConfiguration {
+  region_name?: string | null;
+  region_source?: string | null;
+  region_polygon?: number[][] | null;
+  time_start?: string | null;
+  time_end?: string | null;
+  evidence_sources?: string[] | null;
+  question?: string | null;
+}
+
 export interface Investigation {
   id: string;
   project_id: string;
   title: string;
   status: InvestigationStatus;
+  /** Present when the investigation was created through the wizard. */
+  configuration?: InvestigationConfiguration | null;
   created_at: string;
   updated_at: string;
 }

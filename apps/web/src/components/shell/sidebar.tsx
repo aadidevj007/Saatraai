@@ -31,7 +31,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: '/overview', label: 'Overview', icon: LayoutDashboard, match: (p) => p === '/overview' },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, match: (p) => p === '/dashboard' },
   {
     href: '/investigations',
     label: 'Investigations',
@@ -72,7 +72,7 @@ export function Sidebar({
     >
       {/* brand */}
       <div className="flex h-14 items-center justify-between border-b border-line px-4">
-        <Link href="/overview" className="flex items-center gap-2.5 overflow-hidden" aria-label="SAATRAAI overview">
+        <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden" aria-label="SAATRAAI overview">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/10">
             <Telescope className="h-3.5 w-3.5 text-primary" />
           </span>
@@ -167,7 +167,7 @@ export function Sidebar({
           <button
             onClick={() => {
               signOut();
-              router.replace('/sign-in');
+              router.replace('/auth/sign-in');
             }}
             className="mt-1 w-full rounded-lg px-2.5 py-1.5 text-left text-[12px] text-ink-faint transition-colors hover:bg-elevated hover:text-danger"
           >

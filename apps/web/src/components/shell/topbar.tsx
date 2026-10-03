@@ -44,7 +44,7 @@ export function TopBar({ apiOnline, onOpenPalette }: { apiOnline: boolean | null
     <header className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-line bg-surface px-4">
       {/* breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[12.5px]">
-        <Link href="/overview" className="text-ink-faint transition-colors hover:text-ink">
+        <Link href="/dashboard" className="text-ink-faint transition-colors hover:text-ink">
           SAATRAAI
         </Link>
         {segments.length === 0 && <ChevronRight className="h-3 w-3 text-ink-faint" />}
@@ -168,7 +168,7 @@ export function TopBar({ apiOnline, onOpenPalette }: { apiOnline: boolean | null
               danger: true,
               onSelect: () => {
                 signOut();
-                router.replace('/sign-in');
+                router.replace('/auth/sign-in');
               },
             },
           ]}

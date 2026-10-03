@@ -218,7 +218,7 @@ export default function SettingsPage() {
                 icon={<LogOut className="h-3.5 w-3.5" />}
                 onClick={() => {
                   signOut();
-                  router.replace('/sign-in');
+                  router.replace('/auth/sign-in');
                 }}
               >
                 Sign out

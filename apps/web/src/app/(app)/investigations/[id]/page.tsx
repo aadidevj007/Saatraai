@@ -35,6 +35,7 @@ import {
 import { RegionPicker } from '@/components/map/region-picker';
 import type { EvidenceRecord } from '@/lib/api/types';
 import type { RegionSelection } from '@/lib/investigation-config';
+import { errorMessage, investigationApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth/auth-context';
 import { getInvestigationConfig, saveInvestigationConfig } from '@/lib/investigation-config';
 import { useWorkspaceModel } from '@/lib/hooks/use-workspace-model';
@@ -112,23 +113,34 @@ export default function InvestigationWorkspacePage() {
     setScopeOpen(true);
   };
 
-  const saveScope = (nextRegion: RegionSelection | null) => {
-    const current = getInvestigationConfig(id);
-    if (!current) {
-      toast({
-        variant: 'warning',
-        title: 'Configuration not stored on this device',
-        description: 'This investigation was created elsewhere. Scope editing requires the local configuration record.',
-      });
-      return;
-    }
+  const saveScope = async (nextRegion: RegionSelection | null) => {
     if (!nextRegion || editStart >= editEnd) {
       toast({ variant: 'warning', title: 'Invalid scope', description: 'A region and a valid time range are required.' });
       return;
     }
-    saveInvestigationConfig({ ...current, region: nextRegion, timeRange: { start: editStart, end: editEnd } });
+    /* persist to the backend first — the server record is the source of truth */
+    try {
+      await investigationApi.updateConfiguration(id, {
+        region_name: nextRegion.name,
+        region_source: nextRegion.source,
+        region_polygon: nextRegion.polygon.map(([lng, lat]) => [lng, lat]),
+        time_start: editStart,
+        time_end: editEnd,
+        evidence_sources: config?.sources ?? [],
+        question: config?.question ?? investigation?.configuration?.question ?? null,
+      });
+    } catch (error) {
+      toast({ variant: 'error', title: 'Could not save scope to the server', description: errorMessage(error) });
+      return;
+    }
+    /* mirror presentation prefs locally */
+    const current = getInvestigationConfig(id);
+    if (current) {
+      saveInvestigationConfig({ ...current, region: nextRegion, timeRange: { start: editStart, end: editEnd } });
+    }
     setScopeVersion((v) => v + 1);
     setScopeOpen(false);
+    void refetchAll();
     toast({ variant: 'success', title: 'Scope updated', description: `${nextRegion.name} · ${editStart} → ${editEnd}` });
   };
 
@@ -309,7 +321,7 @@ export default function InvestigationWorkspacePage() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setScopeOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={() => saveScope(editRegion)}>
+            <Button variant="primary" onClick={() => void saveScope(editRegion)}>
               Save scope
             </Button>
           </>
@@ -323,7 +335,7 @@ export default function InvestigationWorkspacePage() {
           />
           <p className="text-[11.5px] text-ink-faint">
             Draw or pick a region above, adjust the dates, then press “Save scope” to persist this investigation’s
-            scope on this device.
+            scope through the backend.
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Start date" htmlFor="scope-start">

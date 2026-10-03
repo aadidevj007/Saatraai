@@ -20,6 +20,7 @@ import {
 
 import { BaseMap, upsertGeoJsonLayer } from '@/components/map/base-map';
 import { Button, Input, Select } from '@/components/ui';
+import { geocode, isPlaceQuery, type GeocodeResult } from '@/lib/map/geocode';
 import { parseCoordinate, REGION_PRESETS, searchRegions } from '@/lib/map/regions';
 import type { BasemapId } from '@/lib/map/styles';
 import { readSettings, saveSettings } from '@/lib/settings';
@@ -53,6 +54,8 @@ export function RegionPicker({
   const [pending, setPending] = useState<LngLat[]>([]); // in-progress vertices
   const [search, setSearch] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [placeResults, setPlaceResults] = useState<GeocodeResult[] | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
 
   const polygon = value?.polygon ?? null;
   const valueRef = useRef(value);
@@ -267,7 +270,19 @@ export function RegionPicker({
     [onChange, clearPreview],
   );
 
-  const runSearch = useCallback(() => {
+  const applyPlace = useCallback(
+    (result: GeocodeResult) => {
+      setPending([]);
+      setMode(null);
+      clearPreview();
+      onChange({ name: result.name, polygon: result.polygon, source: 'search' });
+      setSearchOpen(false);
+      toast({ variant: 'success', title: 'Location found', description: result.subtitle });
+    },
+    [onChange, clearPreview, toast],
+  );
+
+  const runSearch = useCallback(async () => {
     const coord = parseCoordinate(search);
     if (coord) {
       const half = 0.25;
@@ -277,6 +292,7 @@ export function RegionPicker({
         [coord.center[0] + half, coord.center[1] + half],
         [coord.center[0] - half, coord.center[1] + half],
       ];
+      setPlaceResults(null);
       onChange({ name: coord.name, polygon: ring, source: 'search' });
       setSearchOpen(false);
       toast({ variant: 'success', title: 'Coordinate region set', description: coord.name });
@@ -284,13 +300,32 @@ export function RegionPicker({
     }
     const hits = searchRegions(search);
     if (hits.length > 0) {
+      setPlaceResults(null);
       applyPreset(hits[0].id);
-    } else {
+      return;
+    }
+    if (!isPlaceQuery(search)) {
+      toast({ variant: 'warning', title: 'Nothing to search', description: 'Enter a place name, coordinates, or draw the region.' });
+      return;
+    }
+    /* real geocoder lookup — surface failures honestly */
+    setGeocoding(true);
+    try {
+      const results = await geocode(search);
+      setPlaceResults(results);
+      setSearchOpen(true);
+      if (results.length === 0) {
+        toast({ variant: 'warning', title: 'No location match', description: `Geocoder returned no results for “${search.trim()}”.` });
+      }
+    } catch (error) {
+      setPlaceResults(null);
       toast({
-        variant: 'warning',
-        title: 'No match',
-        description: 'No geocoder is configured — use a built-in region, coordinates, drawing or GeoJSON upload.',
+        variant: 'error',
+        title: 'Location search unavailable',
+        description: error instanceof Error ? error.message : 'Geocoder request failed — check network connectivity.',
       });
+    } finally {
+      setGeocoding(false);
     }
   }, [search, onChange, applyPreset, toast]);
 
@@ -338,7 +373,7 @@ export function RegionPicker({
     [onChange, toast],
   );
 
-  const matches = search.trim() ? searchRegions(search) : [];
+  const matches = search.trim() && !placeResults ? searchRegions(search) : [];
   const area = polygon ? polygonAreaKm2(polygon) : null;
   const center = polygon ? centroid(polygon) : null;
   const box = polygon ? bbox(polygon) : null;
@@ -353,14 +388,25 @@ export function RegionPicker({
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
+              setPlaceResults(null);
               setSearchOpen(true);
             }}
             onFocus={() => setSearchOpen(true)}
-            onKeyDown={(e) => e.key === 'Enter' && runSearch()}
-            placeholder="Search built-in region or coordinates (12.97, 77.59)"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void runSearch();
+              }
+            }}
+            placeholder="Search any place, coordinates, or presets"
             className="pl-9"
             aria-label="Search region"
           />
+          {searchOpen && geocoding && (
+            <div className="absolute z-30 mt-1 w-full rounded-lg border border-line-strong bg-elevated px-3 py-2 font-mono text-[11px] text-ink-faint shadow-xl">
+              Searching OpenStreetMap…
+            </div>
+          )}
           {searchOpen && matches.length > 0 && (
             <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-line-strong bg-elevated shadow-xl">
               {matches.map((m) => (
@@ -374,6 +420,25 @@ export function RegionPicker({
                 >
                   <div className="text-[12.5px] text-ink">{m.name}</div>
                   <div className="font-mono text-[10px] text-ink-faint">{m.subtitle}</div>
+                </button>
+              ))}
+            </div>
+          )}
+          {searchOpen && placeResults && placeResults.length > 0 && (
+            <div className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-line-strong bg-elevated shadow-xl">
+              {placeResults.map((r) => (
+                <button
+                  key={r.id}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    applyPlace(r);
+                  }}
+                  className="block w-full px-3 py-2 text-left transition-colors hover:bg-card"
+                >
+                  <div className="text-[12.5px] text-ink">{r.name}</div>
+                  <div className="truncate font-mono text-[10px] text-ink-faint" title={r.subtitle}>
+                    {r.subtitle}
+                  </div>
                 </button>
               ))}
             </div>

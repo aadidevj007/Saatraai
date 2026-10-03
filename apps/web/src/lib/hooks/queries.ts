@@ -23,7 +23,15 @@ import type {
   Project,
   RegisteredTool,
 } from '@/lib/api/types';
-import { getInvestigationConfig, type InvestigationConfig } from '@/lib/investigation-config';
+import {
+  getInvestigationConfig,
+  type AnalysisDepth,
+  type EvidenceSourceKind,
+  type EvidenceStrictness,
+  type InvestigationConfig,
+  type InvestigationMode,
+  type RegionSelection,
+} from '@/lib/investigation-config';
 
 export const queryKeys = {
   projects: (search?: string) => ['projects', search ?? ''] as const,
@@ -86,6 +94,31 @@ function items<T>(data: { items: T[] } | T[] | null | undefined): T[] | null {
   return Array.isArray(data) ? data : data.items;
 }
 
+/**
+ * Build the working config from the SERVER-persisted investigation record.
+ * Region, period, sources and the question live in the database; mode /
+ * strictness / depth are presentation preferences and stay local.
+ */
+function configFromServer(inv: Investigation | null): InvestigationConfig | null {
+  const c = inv?.configuration;
+  if (!inv || !c || !c.region_polygon || c.region_polygon.length < 3 || !c.time_start || !c.time_end) return null;
+  return {
+    investigationId: inv.id,
+    question: c.question ?? inv.title,
+    region: {
+      name: c.region_name ?? 'Region from server record',
+      polygon: c.region_polygon as RegionSelection['polygon'],
+      source: (c.region_source as RegionSelection['source'] | undefined) ?? 'preset',
+    },
+    timeRange: { start: c.time_start, end: c.time_end },
+    sources: (c.evidence_sources ?? []) as EvidenceSourceKind[],
+    mode: 'real' as InvestigationMode,
+    strictness: 'standard' as EvidenceStrictness,
+    depth: 'balanced' as AnalysisDepth,
+    createdAt: inv.created_at,
+  };
+}
+
 /** Full investigation bundle — workspace, reports and graph all consume this. */
 export function useInvestigationBundle(id: string | undefined): InvestigationBundle {
   const results = useQueries({
@@ -120,9 +153,24 @@ export function useInvestigationBundle(id: string | undefined): InvestigationBun
 
   const refetchAll = () => results.forEach((r) => r.refetch());
 
+  /* server record is the source of truth for region/period/sources; the local
+     record only contributes presentation preferences (mode/strictness/depth) */
+  const localConfig = id ? getInvestigationConfig(id) : null;
+  const serverConfig = configFromServer(invR.data ?? null);
+  const config: InvestigationConfig | null = (() => {
+    if (!serverConfig) return localConfig;
+    if (!localConfig) return serverConfig;
+    return {
+      ...serverConfig,
+      mode: localConfig.mode,
+      strictness: localConfig.strictness,
+      depth: localConfig.depth,
+    };
+  })();
+
   return {
     investigation: invR.data ?? null,
-    config: id ? getInvestigationConfig(id) : null,
+    config,
     queries: items(qR.data),
     images: items(imgR.data),
     executions: items(execR.data),

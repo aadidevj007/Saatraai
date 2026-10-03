@@ -11,11 +11,12 @@ import type { EvidenceRecord, HypothesisRecord } from '@/lib/api/types';
 import { cn, formatDate } from '@/lib/utils';
 
 const STATUS_TONE = {
+  UNTESTED: 'neutral',
+  TESTING: 'primary',
   SUPPORTED: 'success',
   WEAKENED: 'warning',
   CONTRADICTED: 'danger',
-  INSUFFICIENT: 'warning',
-  'UNDER INVESTIGATION': 'primary',
+  INSUFFICIENT_EVIDENCE: 'warning',
 } as const;
 
 export function HypothesisPanel({
@@ -139,8 +140,11 @@ export function HypothesisPanel({
       })}
 
       <p className="pt-1 text-[11.5px] leading-relaxed text-ink-faint">
-        Statuses are derived from linked evidence polarity: SUPPORTED means supporting evidence outweighs
-        contradicting evidence; CONTRADICTED means the reverse; INSUFFICIENT means no decisive observation exists.
+        Statuses derive only from persisted records: CONTRADICTED when contradicting evidence outweighs supporting
+        evidence (or the backend rejected the hypothesis); WEAKENED when both exist; SUPPORTED when supporting
+        evidence exists uncontested; TESTING while a run is under review; INSUFFICIENT_EVIDENCE when only neutral or
+        failed-tool evidence exists; UNTESTED when nothing has been observed. No status is simulated and none implies
+        causation.
       </p>
     </div>
   );

@@ -7,6 +7,7 @@ import type {
   ImageIngestionResponse,
   IngestedImage,
   Investigation,
+  InvestigationConfiguration,
   InvestigationQuery,
   InvestigationStatus,
   Page,
@@ -44,8 +45,17 @@ export const investigationApi = {
     return apiRequest<Page<Investigation>>(`/investigations?${query.toString()}`);
   },
   get: (id: string) => apiRequest<Investigation>(`/investigations/${id}`),
-  create: (project_id: string, title: string) =>
-    apiRequest<Investigation>('/investigations', { method: 'POST', body: { project_id, title } }),
+  create: (project_id: string, title: string, configuration?: InvestigationConfiguration) =>
+    apiRequest<Investigation>('/investigations', {
+      method: 'POST',
+      body: { project_id, title, configuration: configuration ?? undefined },
+    }),
+  /** Persist region / time range / sources on an existing investigation. */
+  updateConfiguration: (id: string, configuration: InvestigationConfiguration) =>
+    apiRequest<Investigation>(`/investigations/${id}/configuration`, {
+      method: 'PATCH',
+      body: { configuration },
+    }),
   addQuery: (investigationId: string, text: string, sequence?: number) =>
     apiRequest<InvestigationQuery>(`/investigations/${investigationId}/queries`, {
       method: 'POST',

@@ -41,7 +41,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   /* guards */
   useEffect(() => {
-    if (status === 'unauthenticated') router.replace('/sign-in');
+    if (status === 'unauthenticated') router.replace('/auth/sign-in');
     else if (status === 'authenticated' && needsProfile) router.replace('/profile');
   }, [status, needsProfile, router]);
 
@@ -87,7 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         i: '/investigations',
         g: '/graph',
         r: '/reports',
-        o: '/overview',
+        o: '/dashboard',
         d: '/datasets',
         p: '/projects',
         s: '/settings',

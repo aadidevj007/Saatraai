@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.models.identity import User
 from app.models.investigation import Investigation, InvestigationStatus, Query as InvestigationQuery
 from app.schemas.projects import (
+    InvestigationConfigurationUpdate,
     InvestigationCreateRequest,
     InvestigationPageResponse,
     InvestigationQueryCreateRequest,
@@ -28,6 +29,7 @@ def serialize_investigation(investigation: Investigation) -> InvestigationRespon
         project_id=investigation.project_id,
         title=investigation.title,
         status=investigation.status.value,
+        configuration=investigation.configuration,
         created_at=investigation.created_at,
         updated_at=investigation.updated_at,
     )
@@ -95,6 +97,28 @@ def list_investigations(
         page_size=page_size,
         total=total,
     )
+
+
+@router.patch(
+    "/investigations/{investigation_id}/configuration",
+    response_model=InvestigationResponse,
+    summary="Update the structured configuration of an owned investigation",
+    description=(
+        "Persists the analyst's requested region, time range and evidence sources. "
+        "This records intent only — never a measurement, model output, or result."
+    ),
+    responses=ERROR_RESPONSES,
+)
+def update_investigation_configuration(
+    investigation_id: UUID,
+    payload: InvestigationConfigurationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> InvestigationResponse:
+    investigation = investigation_service.update_configuration(
+        db, current_user, investigation_id, payload.configuration.model_dump(mode="json", exclude_none=True)
+    )
+    return serialize_investigation(investigation)
 
 
 @router.get(

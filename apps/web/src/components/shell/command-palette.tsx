@@ -43,7 +43,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     () => [
       { id: 'new', label: 'New Investigation', hint: 'N', icon: Plus, run: () => router.push('/investigations/new') },
       { id: 'list', label: 'Search Investigations', hint: 'I', icon: Telescope, run: () => router.push('/investigations') },
-      { id: 'overview', label: 'Open Overview', icon: LayoutDashboard, run: () => router.push('/overview') },
+      { id: 'dashboard', label: 'Open Dashboard', icon: LayoutDashboard, run: () => router.push('/dashboard') },
       { id: 'graph', label: 'Open Evidence Graph', hint: 'G', icon: Waypoints, run: () => router.push('/graph') },
       { id: 'reports', label: 'Open Reports', hint: 'R', icon: FileText, run: () => router.push('/reports') },
       { id: 'datasets', label: 'Open Datasets', icon: GitBranch, run: () => router.push('/datasets') },
@@ -58,7 +58,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
         icon: LogOut,
         run: () => {
           signOut();
-          router.replace('/sign-in');
+          router.replace('/auth/sign-in');
         },
       },
     ],

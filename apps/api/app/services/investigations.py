@@ -5,7 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.models.identity import Project, User
 from app.models.investigation import Investigation, InvestigationStatus, Query
-from app.schemas.projects import InvestigationCreateRequest, InvestigationQueryCreateRequest
+from app.schemas.projects import (
+    InvestigationConfiguration,
+    InvestigationCreateRequest,
+    InvestigationQueryCreateRequest,
+)
 from app.services.authorization import get_owned_investigation, get_owned_project
 
 
@@ -13,8 +17,31 @@ def create_investigation(
     db: Session, user: User, payload: InvestigationCreateRequest
 ) -> Investigation:
     get_owned_project(db, payload.project_id, user)
-    investigation = Investigation(project_id=payload.project_id, title=payload.title.strip())
+    investigation = Investigation(
+        project_id=payload.project_id,
+        title=payload.title.strip(),
+        configuration=(
+            payload.configuration.model_dump(mode="json", exclude_none=True)
+            if payload.configuration is not None
+            else None
+        ),
+    )
     db.add(investigation)
+    db.commit()
+    db.refresh(investigation)
+    return investigation
+
+
+def update_configuration(
+    db: Session,
+    user: User,
+    investigation_id: UUID,
+    configuration: dict,
+) -> Investigation:
+    """Persist the analyst's requested configuration verbatim (intent, not results)."""
+    InvestigationConfiguration.model_validate(configuration)  # shape check
+    investigation = get_owned_investigation(db, investigation_id, user)
+    investigation.configuration = configuration
     db.commit()
     db.refresh(investigation)
     return investigation
