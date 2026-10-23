@@ -33,21 +33,9 @@ const TELEMETRY = [
 export function LandingHero() {
   return (
     <section className="relative overflow-hidden border-b border-line">
-      <video
-        className="hero-video"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        aria-hidden="true"
-      >
-        <source src="https://videos.pexels.com/video-files/3129595/3129595-hd_1920_1080_25fps.mp4" type="video/mp4" />
-      </video>
-      <div className="hero-video-mask" aria-hidden="true" />
       {/* ambient depth */}
       <div className="aurora" aria-hidden />
-      <div className="pointer-events-none absolute -right-32 top-1/4 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(34,211,238,0.08),transparent_65%)]" />
+      <div className="pointer-events-none absolute -right-32 top-1/4 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(181,31,45,0.08),transparent_65%)]" />
 
       <div className="relative z-10 mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:py-28">
         <div>
@@ -89,7 +77,7 @@ export function LandingHero() {
               <span
                 key={word}
                 className="font-mono text-[15px] font-semibold tracking-[0.22em]"
-                style={{ color: i % 2 === 0 ? '#22d3ee' : '#93a7bc' }}
+                style={{ color: i === 0 ? '#b51f2d' : i === 1 ? '#81766e' : i === 2 ? '#b58a3a' : '#211b19' }}
               >
                 {word}
               </span>

@@ -60,6 +60,7 @@ export interface InvestigationConfiguration {
   time_start?: string | null;
   time_end?: string | null;
   evidence_sources?: string[] | null;
+  evidence_plan?: string[] | null;
   question?: string | null;
 }
 

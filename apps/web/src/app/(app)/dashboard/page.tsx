@@ -76,7 +76,7 @@ export default function OverviewPage() {
         <div>
           <p className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
             <Activity className="h-3 w-3 text-success" />
-            {greeting()} · {new Date().toISOString().slice(0, 10)}
+            {greeting()} · {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date())}
           </p>
           <h1 className="mt-2 text-[26px] font-semibold leading-tight text-ink">Ready to investigate Earth?</h1>
           <p className="mt-1 text-[13px] text-ink-dim">
@@ -282,7 +282,7 @@ function InvestigationCard({
           <span>
             {config ? `${config.timeRange.start} → ${config.timeRange.end}` : 'PERIOD NOT SET'}
           </span>
-          {config && <span className={config.mode === 'demo' ? 'text-[#c4b5fd]' : 'text-primary/70'}>
+          {config && <span className={config.mode === 'demo' ? 'text-secondary' : 'text-primary/70'}>
             {config.mode === 'demo' ? 'DEMO DATA' : 'REAL MODE'}
           </span>}
         </div>

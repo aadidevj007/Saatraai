@@ -1,7 +1,7 @@
-/** authApi — Google-bridge + backend session endpoints. */
+/** authApi — Google identity, Firebase verification, and backend sessions. */
 
-import { apiRequest } from './client';
 import type { GoogleProfile, TokenPair, User, UserProfile, UserPreferences } from './types';
+import { apiRequest } from './client';
 
 const PREFS_KEY = 'saatraai.profile.preferences';
 const NEW_FLAG_KEY = 'saatraai.profile.is-new';
@@ -9,6 +9,67 @@ const NEW_FLAG_KEY = 'saatraai.profile.is-new';
 export interface GoogleBridgeResponse extends TokenPair {
   user: User;
   google: GoogleProfile;
+}
+
+interface FirebaseIdentityResponse {
+  idToken: string;
+  localId: string;
+  email?: string;
+  displayName?: string;
+  photoUrl?: string;
+}
+
+interface FirebaseSessionResponse extends TokenPair {
+  firebase_uid: string;
+  user: User;
+}
+
+const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+async function exchangeGoogleCredentialForFirebase(credential: string): Promise<GoogleBridgeResponse> {
+  if (!FIREBASE_API_KEY) throw new Error('Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_API_KEY.');
+
+  const firebaseResponse = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=${encodeURIComponent(FIREBASE_API_KEY)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requestUri: window.location.origin,
+        postBody: `id_token=${encodeURIComponent(credential)}&providerId=google.com`,
+        returnIdpCredential: true,
+        returnSecureToken: true,
+      }),
+    },
+  );
+  const firebaseData = (await firebaseResponse.json().catch(() => null)) as
+    | (FirebaseIdentityResponse & { error?: { message?: string } })
+    | null;
+  if (!firebaseResponse.ok || !firebaseData?.idToken) {
+    const reason = firebaseData?.error?.message;
+    throw new Error(
+      reason === 'OPERATION_NOT_ALLOWED'
+        ? 'Enable Google as a sign-in provider in Firebase Authentication.'
+        : reason === 'API_KEY_INVALID'
+          ? 'Firebase rejected the web API key. Check the Firebase web app configuration.'
+          : reason ?? `Firebase sign-in failed (${firebaseResponse.status})`,
+    );
+  }
+
+  const session = await apiRequest<FirebaseSessionResponse>('/auth/firebase', {
+    method: 'POST',
+    body: { id_token: firebaseData.idToken },
+    auth: false,
+  });
+  return {
+    ...session,
+    google: {
+      sub: session.firebase_uid || firebaseData.localId,
+      email: firebaseData.email ?? session.user.email,
+      name: firebaseData.displayName ?? session.user.display_name,
+      picture: firebaseData.photoUrl ?? null,
+    },
+  };
 }
 
 async function exchangeGoogleCredential(credential: string): Promise<GoogleBridgeResponse> {
@@ -29,8 +90,9 @@ async function exchangeGoogleCredential(credential: string): Promise<GoogleBridg
 }
 
 export const authApi = {
-  /** Google ID token → verified profile → backend JWT pair. */
-  signInWithGoogle: exchangeGoogleCredential,
+  /** Google ID token → Firebase ID token → verified backend session. */
+  signInWithGoogle: (credential: string) =>
+    FIREBASE_API_KEY ? exchangeGoogleCredentialForFirebase(credential) : exchangeGoogleCredential(credential),
 
   async me(): Promise<User | null> {
     return apiRequest<User | null>('/users/me', { nullOn404: true });

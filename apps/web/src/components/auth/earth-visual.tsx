@@ -15,7 +15,7 @@ export function EarthVisual({ className }: { className?: string }) {
   return (
     <div className={cn('pointer-events-none relative aspect-square w-full max-w-[520px]', className)} aria-hidden>
       {/* soft field behind the globe */}
-      <div className="absolute inset-[8%] rounded-full bg-[radial-gradient(circle_at_35%_30%,rgba(34,211,238,0.10),rgba(59,130,246,0.05)_45%,transparent_70%)]" />
+      <div className="absolute inset-[8%] rounded-full bg-[radial-gradient(circle_at_35%_30%,rgba(181,31,45,0.12),rgba(181,138,58,0.08)_45%,transparent_70%)]" />
 
       <EarthGlobe
         satellites={2}

@@ -86,14 +86,14 @@ export function RegionPicker({
       type: 'Feature',
       properties: {},
       geometry: { type: 'LineString', coordinates: coords },
-    }, { line: '#22d3ee', lineWidth: 2 });
+    }, { line: '#b51f2d', lineWidth: 2 });
   }, []);
 
   const clearPreview = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
     if (map.getSource('roi-preview')) {
-      upsertGeoJsonLayer(map, 'roi-preview', { type: 'FeatureCollection', features: [] }, { line: '#22d3ee' });
+      upsertGeoJsonLayer(map, 'roi-preview', { type: 'FeatureCollection', features: [] }, { line: '#b51f2d' });
     }
   }, []);
 
@@ -110,7 +110,7 @@ export function RegionPicker({
           properties: { name: value?.name ?? 'ROI' },
           geometry: { type: 'Polygon', coordinates: [[...polygon, polygon[0]]] },
         },
-        { fill: '#22d3ee', line: '#22d3ee', fillOpacity: 0.16, lineWidth: 2 },
+        { fill: '#b51f2d', line: '#b51f2d', fillOpacity: 0.12, lineWidth: 2 },
       );
       const [minLng, minLat, maxLng, maxLat] = bbox(polygon);
       map.fitBounds(
@@ -121,7 +121,7 @@ export function RegionPicker({
         { padding: 70, duration: 600, maxZoom: 12 },
       );
     } else if (map.getSource('roi-polygon')) {
-      upsertGeoJsonLayer(map, 'roi-polygon', { type: 'FeatureCollection', features: [] }, { fill: '#22d3ee' });
+      upsertGeoJsonLayer(map, 'roi-polygon', { type: 'FeatureCollection', features: [] }, { fill: '#b51f2d' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, value?.name]);
@@ -149,8 +149,8 @@ export function RegionPicker({
           el.style.width = '10px';
           el.style.height = '10px';
           el.style.borderRadius = '50%';
-          el.style.background = '#22d3ee';
-          el.style.border = '2px solid #05080d';
+          el.style.background = '#b58a3a';
+          el.style.border = '2px solid #fffdfa';
           el.style.cursor = 'grab';
           const marker = new gl.Marker({ draggable: true, element: el, anchor: 'center' })
             .setLngLat(pt)

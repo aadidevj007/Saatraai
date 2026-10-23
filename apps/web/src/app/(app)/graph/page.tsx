@@ -18,26 +18,26 @@ import { cn } from '@/lib/utils';
 const COLUMN_ORDER: GraphNode['type'][] = ['question', 'dataset', 'analysis', 'model', 'evidence', 'hypothesis', 'conclusion'];
 
 const TYPE_STYLE: Record<GraphNode['type'], { color: string; label: string }> = {
-  question: { color: '#22d3ee', label: 'Question' },
-  dataset: { color: '#2dd4bf', label: 'Dataset' },
-  analysis: { color: '#3b82f6', label: 'Analysis' },
-  model: { color: '#a78bfa', label: 'Model' },
-  evidence: { color: '#f59e0b', label: 'Evidence' },
-  hypothesis: { color: '#f43f5e', label: 'Hypothesis' },
+  question: { color: '#b51f2d', label: 'Question' },
+  dataset: { color: '#b58a3a', label: 'Dataset' },
+  analysis: { color: '#77624d', label: 'Analysis' },
+  model: { color: '#8d5260', label: 'Model' },
+  evidence: { color: '#b58a3a', label: 'Evidence' },
+  hypothesis: { color: '#861923', label: 'Hypothesis' },
   conclusion: { color: '#34d399', label: 'Conclusion' },
 };
 
 const EDGE_COLOR: Record<string, string> = {
-  SUPPORTS: '#34d399',
-  CONTRADICTS: '#f43f5e',
-  WEAKENS: '#f43f5e',
-  PRODUCES: '#3b82f6',
-  ROUTES_TO: '#3b82f6',
-  EXECUTES: '#a78bfa',
-  INPUT_TO: '#2dd4bf',
-  ANSWERS: '#22d3ee',
-  CONCLUDES: '#34d399',
-  ASSOCIATED_WITH: '#93a7bc',
+  SUPPORTS: '#28734f',
+  CONTRADICTS: '#b51f2d',
+  WEAKENS: '#861923',
+  PRODUCES: '#77624d',
+  ROUTES_TO: '#77624d',
+  EXECUTES: '#8d5260',
+  INPUT_TO: '#b58a3a',
+  ANSWERS: '#b51f2d',
+  CONCLUDES: '#28734f',
+  ASSOCIATED_WITH: '#81766e',
 };
 
 const COL_WIDTH = 210;
@@ -215,7 +215,7 @@ export default function EvidenceGraphPage() {
             >
               <defs>
                 <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#4b5f75" />
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#81766e" />
                 </marker>
               </defs>
 
@@ -235,7 +235,7 @@ export default function EvidenceGraphPage() {
                       key={edge.id}
                       d={`M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`}
                       fill="none"
-                      stroke={EDGE_COLOR[edge.type] ?? '#4b5f75'}
+                      stroke={EDGE_COLOR[edge.type] ?? '#81766e'}
                       strokeWidth={1.4}
                       strokeOpacity={0.6}
                       strokeDasharray={edge.type === 'CONTRADICTS' ? '5 4' : undefined}
@@ -268,19 +268,19 @@ export default function EvidenceGraphPage() {
                         width={NODE_W}
                         height={NODE_H}
                         rx={9}
-                        fill={active ? '#142131' : '#0f1924'}
-                        stroke={active ? style.color : '#1f2e40'}
+                        fill={active ? '#fbf4ed' : '#fffdfa'}
+                        stroke={active ? style.color : '#d8c9bc'}
                         strokeWidth={active ? 2 : 1}
                       />
                       <rect width={4} height={NODE_H} rx={2} fill={style.color} />
                       <text x={14} y={20} fontSize={9} fill={style.color} fontFamily="IBM Plex Mono, monospace" letterSpacing={1.2}>
                         {style.label.toUpperCase()}
                       </text>
-                      <text x={14} y={38} fontSize={11} fill="#e6f1fa">
+                      <text x={14} y={38} fontSize={11} fill="#211b19">
                         {truncate(node.label, 26)}
                       </text>
                       {node.detail && (
-                        <text x={14} y={51} fontSize={9} fill="#5d7086" fontFamily="IBM Plex Mono, monospace">
+                        <text x={14} y={51} fontSize={9} fill="#81766e" fontFamily="IBM Plex Mono, monospace">
                           {truncate(node.detail, 30)}
                         </text>
                       )}
@@ -330,7 +330,7 @@ export default function EvidenceGraphPage() {
                               onClick={() => setActiveNode(other)}
                               className="w-full rounded-md border border-line bg-card px-2.5 py-1.5 text-left transition-colors hover:border-line-strong"
                             >
-                              <span className="font-mono text-[9.5px] uppercase tracking-wider" style={{ color: EDGE_COLOR[edge.type] ?? '#93a7bc' }}>
+                              <span className="font-mono text-[9.5px] uppercase tracking-wider" style={{ color: EDGE_COLOR[edge.type] ?? '#81766e' }}>
                                 {edge.source === activeNode.id ? `→ ${edge.type}` : `← ${edge.type}`}
                               </span>
                               <span className="block truncate text-[11.5px] text-ink-dim">{other.label}</span>

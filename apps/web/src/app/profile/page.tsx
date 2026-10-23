@@ -47,7 +47,7 @@ export default function ProfileSetupPage() {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-void px-6 py-12">
       <div className="aurora" aria-hidden />
-      <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-8 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+      <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-8 shadow-[0_24px_80px_rgba(42,28,20,0.12)]">
         <div className="flex flex-col items-center text-center">
           <Avatar src={google?.picture} name={name} size={72} />
           <p className="mt-4 font-mono text-[10.5px] uppercase tracking-[0.22em] text-primary">Welcome to SAATRAAI</p>

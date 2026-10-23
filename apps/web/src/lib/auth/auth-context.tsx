@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Central auth state: Google sign-in → backend JWT session → app profile.
+ * Central auth state: Google sign-in → Firebase verification → backend session → app profile.
  * Handles loading / authenticated / unauthenticated / token expiry / logout.
  */
 

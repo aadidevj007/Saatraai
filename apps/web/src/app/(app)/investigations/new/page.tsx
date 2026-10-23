@@ -33,6 +33,7 @@ import {
 } from '@/lib/investigation-config';
 import { useToast } from '@/lib/state/toast';
 import { readSettings } from '@/lib/settings';
+import { buildEvidencePlan } from '@/lib/analysis/planner';
 
 const STEPS = [
   { id: 'question', label: 'Question', icon: Sparkles },
@@ -118,6 +119,10 @@ export default function NewInvestigationPage() {
   }, [statusQuery.data]);
 
   const canStart = question.trim().length >= 3 && region !== null && start < end;
+  const evidencePlan = useMemo(
+    () => buildEvidencePlan(question || 'Research question', sources, { start, end }),
+    [question, sources, start, end],
+  );
 
   const startInvestigation = async () => {
     if (!canStart || starting) return;
@@ -144,6 +149,7 @@ export default function NewInvestigationPage() {
         time_start: start,
         time_end: end,
         evidence_sources: sources,
+        evidence_plan: evidencePlan,
         question: question.trim(),
       });
 
@@ -154,6 +160,7 @@ export default function NewInvestigationPage() {
         region: region!,
         timeRange: { start, end },
         sources,
+        evidencePlan,
         mode,
         strictness,
         depth,
@@ -459,6 +466,24 @@ export default function NewInvestigationPage() {
                 <div>SOURCES · {sources.length ? sources.join(', ').toUpperCase() : 'none selected'}</div>
                 <div>MODE · {mode.toUpperCase()} · {strictness.toUpperCase()} · {depth.toUpperCase()}</div>
                 <div>RESEARCH INTEREST · {preferences?.research_interest ?? 'not set'}</div>
+              </div>
+
+              <div className="rounded-xl border border-secondary/35 bg-secondary/5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-[13px] font-semibold text-ink">Suggested evidence protocol</h3>
+                  <Badge tone="warning">PLANNING GUIDE</Badge>
+                </div>
+                <p className="mt-1 text-[11.5px] text-ink-dim">
+                  A deterministic checklist from your question and selected sources. It is saved with the investigation; it contains no observations or model results.
+                </p>
+                <ol className="mt-3 space-y-2">
+                  {evidencePlan.map((item, index) => (
+                    <li key={`${index}-${item}`} className="flex gap-2.5 text-[11.5px] leading-relaxed text-ink-dim">
+                      <span className="font-mono text-[10px] text-secondary">{String(index + 1).padStart(2, '0')}</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
 
               <div className="rounded-lg border border-line bg-card px-3.5 py-2.5 text-[11.5px] leading-relaxed text-ink-faint">

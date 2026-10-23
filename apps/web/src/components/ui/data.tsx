@@ -162,7 +162,7 @@ export function Dropdown({
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.13 }}
             className={cn(
-              'absolute z-50 mt-1.5 min-w-48 overflow-hidden rounded-lg border border-line-strong bg-elevated py-1 shadow-[0_16px_48px_rgba(0,0,0,0.5)]',
+              'absolute z-50 mt-1.5 min-w-48 overflow-hidden rounded-xl border border-line-strong bg-surface py-1 shadow-[0_16px_48px_rgba(42,28,20,0.16)]',
               align === 'end' ? 'right-0' : 'left-0',
             )}
           >
@@ -245,13 +245,13 @@ export function ConfidenceRing({
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.min(1, Math.max(0, value));
-  const tone = clamped >= 0.7 ? '#34d399' : clamped >= 0.4 ? '#22d3ee' : clamped > 0 ? '#f59e0b' : '#5d7086';
+  const tone = clamped >= 0.7 ? '#28734f' : clamped >= 0.4 ? '#b51f2d' : clamped > 0 ? '#966319' : '#81766e';
 
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" role="img" aria-label={`${label}: ${(clamped * 100).toFixed(0)}%`}>
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#16212e" strokeWidth={stroke} />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e9dfd5" strokeWidth={stroke} />
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -301,7 +301,7 @@ export function ProgressBar({
             ? 'bg-accent'
             : 'bg-primary';
   return (
-    <div className={cn('w-full overflow-hidden rounded-full bg-[#16212e]', className)} style={{ height }}>
+    <div className={cn('w-full overflow-hidden rounded-full bg-line', className)} style={{ height }}>
       <div
         className={cn('h-full rounded-full transition-all duration-500', color)}
         style={{ width: `${Math.min(100, Math.max(0, value * 100))}%` }}

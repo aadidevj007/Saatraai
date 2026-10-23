@@ -39,6 +39,7 @@ class InvestigationConfiguration(BaseModel):
     time_start: str | None = Field(default=None, max_length=32)
     time_end: str | None = Field(default=None, max_length=32)
     evidence_sources: list[str] | None = None
+    evidence_plan: list[str] | None = Field(default=None, max_length=24)
     question: str | None = Field(default=None, max_length=2000)
 
 

@@ -32,7 +32,7 @@ export function LandingHeader() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-void/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2.5">
           <span className="flex h-7 w-7 items-center justify-center rounded-md border border-primary/40 bg-primary/10">

@@ -72,7 +72,7 @@ export default function SignInPage() {
         </section>
 
         {/* Right: sign-in card */}
-        <section className="glow-edge rounded-2xl border border-line bg-surface p-7 shadow-[0_24px_80px_rgba(0,0,0,0.45)] sm:p-9">
+        <section className="glow-edge rounded-2xl border border-line bg-surface p-7 shadow-[0_24px_80px_rgba(42,28,20,0.12)] sm:p-9">
           <header className="mb-7">
             <p className="font-mono text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">Secure access</p>
             <h2 className="mt-2 text-[19px] font-semibold text-ink">Sign in to SAATRAAI</h2>

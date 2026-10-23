@@ -32,6 +32,7 @@ import {
   type InvestigationMode,
   type RegionSelection,
 } from '@/lib/investigation-config';
+import { buildEvidencePlan } from '@/lib/analysis/planner';
 
 export const queryKeys = {
   projects: (search?: string) => ['projects', search ?? ''] as const,
@@ -112,6 +113,13 @@ function configFromServer(inv: Investigation | null): InvestigationConfig | null
     },
     timeRange: { start: c.time_start, end: c.time_end },
     sources: (c.evidence_sources ?? []) as EvidenceSourceKind[],
+    evidencePlan:
+      c.evidence_plan ??
+      buildEvidencePlan(
+        c.question ?? inv.title,
+        (c.evidence_sources ?? []) as EvidenceSourceKind[],
+        { start: c.time_start, end: c.time_end },
+      ),
     mode: 'real' as InvestigationMode,
     strictness: 'standard' as EvidenceStrictness,
     depth: 'balanced' as AnalysisDepth,

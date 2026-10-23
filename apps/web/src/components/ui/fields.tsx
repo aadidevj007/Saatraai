@@ -79,7 +79,7 @@ export function Segmented<T extends string>({
             className={cn(
               'rounded-md px-3 font-medium transition-colors disabled:opacity-40',
               size === 'sm' ? 'h-6 text-[11px]' : 'h-7 text-[12.5px]',
-              active ? 'bg-elevated text-primary shadow-[inset_0_0_0_1px_rgba(34,211,238,0.3)]' : 'text-ink-dim hover:text-ink',
+              active ? 'bg-elevated text-primary shadow-[inset_0_0_0_1px_rgba(181,31,45,0.24)]' : 'text-ink-dim hover:text-ink',
             )}
           >
             {option.label}
@@ -116,7 +116,7 @@ export function Slider({
       value={value}
       aria-label={ariaLabel}
       onChange={(e) => onChange(Number(e.target.value))}
-      className={cn('h-1 w-full cursor-pointer appearance-none rounded bg-[#16212e] accent-[#22d3ee]', className)}
+      className={cn('h-1 w-full cursor-pointer appearance-none rounded bg-line accent-primary', className)}
     />
   );
 }

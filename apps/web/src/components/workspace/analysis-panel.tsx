@@ -23,7 +23,7 @@ import type { ConclusionRecord, EvidenceRecord, HypothesisRecord } from '@/lib/a
 import type { MissingEvidenceItem } from '@/lib/hooks/use-workspace-model';
 import { formatDateTime, shortId } from '@/lib/utils';
 
-const PIE_COLORS = { supporting: '#34d399', contradicting: '#f43f5e', neutral: '#93a7bc', insufficient: '#f59e0b' };
+const PIE_COLORS = { supporting: '#28734f', contradicting: '#b51f2d', neutral: '#81766e', insufficient: '#b58a3a' };
 
 export function AnalysisPanel({
   confidence,
@@ -151,8 +151,8 @@ export function AnalysisPanel({
                     ))}
                   </Pie>
                   <ReTooltip
-                    contentStyle={{ background: '#0f1924', border: '1px solid #1f2e40', borderRadius: 8, fontSize: 12 }}
-                    itemStyle={{ color: '#e6f1fa' }}
+                    contentStyle={{ background: '#fffdfa', border: '1px solid #d8c9bc', borderRadius: 12, fontSize: 12, boxShadow: '0 12px 32px rgba(42,28,20,0.12)' }}
+                    itemStyle={{ color: '#211b19' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -174,14 +174,14 @@ export function AnalysisPanel({
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hypothesisBars} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                    <CartesianGrid stroke="#16212e" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: '#5d7086', fontSize: 10 }} axisLine={{ stroke: '#1f2e40' }} tickLine={false} />
-                    <YAxis domain={[0, 100]} tick={{ fill: '#5d7086', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <CartesianGrid stroke="#e9dfd5" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#81766e', fontSize: 10 }} axisLine={{ stroke: '#d8c9bc' }} tickLine={false} />
+                    <YAxis domain={[0, 100]} tick={{ fill: '#81766e', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <ReTooltip
-                      contentStyle={{ background: '#0f1924', border: '1px solid #1f2e40', borderRadius: 8, fontSize: 12 }}
-                      itemStyle={{ color: '#e6f1fa' }}
+                      contentStyle={{ background: '#fffdfa', border: '1px solid #d8c9bc', borderRadius: 12, fontSize: 12, boxShadow: '0 12px 32px rgba(42,28,20,0.12)' }}
+                      itemStyle={{ color: '#211b19' }}
                     />
-                    <Bar dataKey="value" fill="#22d3ee" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill="#b51f2d" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}

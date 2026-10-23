@@ -54,7 +54,7 @@ export function Modal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.985 }}
             transition={{ duration: 0.18 }}
-            className={cn('relative w-full rounded-xl border border-line-strong bg-surface shadow-[0_24px_64px_rgba(0,0,0,0.55)]', width)}
+            className={cn('relative w-full rounded-2xl border border-line-strong bg-surface shadow-[0_24px_64px_rgba(42,28,20,0.18)]', width)}
           >
             <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
               <div>
@@ -110,7 +110,7 @@ export function Drawer({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
-            className={cn('absolute right-0 top-0 h-full w-full border-l border-line-strong bg-surface shadow-[-24px_0_64px_rgba(0,0,0,0.5)] flex flex-col', width)}
+            className={cn('absolute right-0 top-0 h-full w-full border-l border-line-strong bg-surface shadow-[-24px_0_64px_rgba(42,28,20,0.14)] flex flex-col', width)}
           >
             <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 shrink-0">
               <div className="min-w-0">

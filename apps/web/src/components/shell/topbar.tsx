@@ -94,7 +94,7 @@ export function TopBar({ apiOnline, onOpenPalette }: { apiOnline: boolean | null
           >
             <Bell className="h-4 w-4" />
             {unread > 0 && (
-              <span className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 font-mono text-[9px] font-semibold text-[#04222b]">
+              <span className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-1 font-mono text-[9px] font-semibold text-white">
                 {unread}
               </span>
             )}

@@ -52,7 +52,7 @@ export function buildPipelineStages(
       state: model.hypotheses.length > 0 ? 'done' : model.demo ? 'active' : 'unavailable',
       detail: model.hypotheses.length > 0 ? `${model.hypotheses.length} hypotheses` : 'planner not configured on this deployment',
     },
-    { id: 'planning', label: 'EVIDENCE PLANNING', state: config ? 'done' : 'waiting', detail: config ? `${config.sources.length} source types selected` : 'configuration unknown' },
+    { id: 'planning', label: 'EVIDENCE PROTOCOL', state: config?.evidencePlan?.length ? 'done' : 'waiting', detail: config?.evidencePlan?.length ? `${config.evidencePlan.length} recommended checks` : 'no protocol saved' },
     { id: 'acquisition', label: 'DATA ACQUISITION', state: model.images.length > 0 ? 'done' : 'waiting', detail: model.images.length > 0 ? `${model.images.length} scene(s) ingested` : 'upload imagery to proceed' },
     {
       id: 'analysis',
@@ -198,7 +198,7 @@ export function ControlPanel({
           </div>
         )}
         {model.demo && model.demoNote && (
-          <p className="mt-2 rounded border border-[#7c3aed]/40 bg-[#7c3aed]/10 px-2 py-1.5 text-[11px] leading-snug text-[#c4b5fd]">
+          <p className="mt-2 rounded border border-secondary/40 bg-secondary/10 px-2 py-1.5 text-[11px] leading-snug text-[#806024]">
             {model.demoNote}
           </p>
         )}
@@ -270,6 +270,23 @@ export function ControlPanel({
           })}
         </ol>
       </div>
+
+      {config?.evidencePlan && config.evidencePlan.length > 0 && (
+        <details className="shrink-0 border-b border-line px-3.5 py-2.5">
+          <summary className="cursor-pointer text-[11px] font-semibold tracking-wide text-ink">
+            Suggested evidence protocol <span className="font-mono text-secondary">· {config.evidencePlan.length} checks</span>
+          </summary>
+          <p className="mt-2 text-[10.5px] leading-relaxed text-ink-faint">Planning guidance only. No imagery was acquired and no result is implied.</p>
+          <ol className="mt-2 space-y-2">
+            {config.evidencePlan.map((item, index) => (
+              <li key={`${index}-${item}`} className="flex gap-2 text-[10.5px] leading-relaxed text-ink-dim">
+                <span className="font-mono text-[9px] text-secondary">{String(index + 1).padStart(2, '0')}</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
 
       {/* executions */}
       <div className="min-h-0 flex-1 overflow-y-auto p-3.5">

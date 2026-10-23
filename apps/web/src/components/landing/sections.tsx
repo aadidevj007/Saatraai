@@ -312,7 +312,7 @@ export function TemporalSection() {
             { y: '2026', w: 73 },
           ].map(({ y, w }) => (
             <div key={y} className="flex-1">
-              <div className="h-1.5 rounded-full bg-[#16212e]">
+              <div className="h-1.5 rounded-full bg-line">
                 <div className="h-full rounded-full bg-gradient-to-r from-primary-dim to-primary" style={{ width: `${w}%` }} />
               </div>
               <div className="mt-1.5 text-center font-mono text-[10px] text-ink-faint">{y}</div>

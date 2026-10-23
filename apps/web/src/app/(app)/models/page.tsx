@@ -45,7 +45,24 @@ export default function ModelsPage() {
         ) : (
           <div className="space-y-3">
             {toolsQuery.data.map((tool) => {
-              const configured = tool.model_name !== 'unintegrated';
+              const integrated = tool.model_name !== 'unintegrated';
+              const isGeoChat = tool.model_name.toLowerCase().includes('geochat');
+              const runtimeUnavailable = isGeoChat && geochatState === 'not_configured';
+              const runtimeUnverified = isGeoChat && geochatState === 'degraded';
+              const badgeTone = !integrated || runtimeUnavailable
+                ? 'danger'
+                : runtimeUnverified
+                  ? 'warning'
+                  : 'success';
+              const badgeLabel = !integrated
+                ? 'MODEL UNAVAILABLE'
+                : runtimeUnavailable
+                  ? 'MODEL PATH REQUIRED'
+                  : runtimeUnverified
+                    ? 'CONFIGURED · UNVERIFIED'
+                    : !isGeoChat || geochatState === 'online'
+                      ? 'AVAILABLE'
+                      : 'STATUS UNKNOWN';
               const isOpen = expanded === tool.name;
               return (
                 <Panel
@@ -53,9 +70,7 @@ export default function ModelsPage() {
                   title={
                     <span className="flex items-center gap-2">
                       {tool.name}
-                      <Badge tone={configured ? (geochatState === 'degraded' ? 'warning' : 'success') : 'danger'}>
-                        {configured ? (geochatState === 'degraded' ? 'CONFIGURED · UNVERIFIED' : 'AVAILABLE') : 'MODEL UNAVAILABLE'}
-                      </Badge>
+                      <Badge tone={badgeTone}>{badgeLabel}</Badge>
                     </span>
                   }
                   subtitle={`${tool.task_type} · ${tool.model_name} @ ${tool.version}`}
@@ -78,11 +93,15 @@ export default function ModelsPage() {
                     <Fact
                       label="Runtime state"
                       value={
-                        !configured
+                        !integrated
                           ? 'placeholder adapter — executes as NOT_IMPLEMENTED'
-                          : geochatState === 'not_configured'
+                          : runtimeUnavailable
                             ? 'GEOCHAT_MODEL_PATH unset'
-                            : 'path configured; weights not verified by probe'
+                            : runtimeUnverified
+                              ? 'path configured; weights not verified by probe'
+                              : geochatState === 'online'
+                                ? 'model ready'
+                                : 'runtime status unavailable'
                       }
                     />
                   </div>
@@ -92,10 +111,11 @@ export default function ModelsPage() {
                     <SchemaBlock title="Output schema" schema={tool.output_schema} />
                   </div>
 
-                  {!configured && (
+                  {(!integrated || runtimeUnavailable) && (
                     <p className="mt-3 rounded border border-warning/25 bg-warning/5 px-3 py-2 text-[11.5px] leading-relaxed text-ink-dim">
-                      This tool is registered but its model is not integrated: executions complete with an
-                      INSUFFICIENT evidence record stating that no scientific output was produced. Nothing is faked.
+                      {runtimeUnavailable
+                        ? 'GeoChat is registered, but GEOCHAT_MODEL_PATH is unset. VQA and grounding cannot run until the model weights are configured on the API server.'
+                        : 'This tool is registered but its model is not integrated: executions complete with an INSUFFICIENT evidence record stating that no scientific output was produced. Nothing is faked.'}
                     </p>
                   )}
                 </Panel>

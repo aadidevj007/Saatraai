@@ -9,13 +9,13 @@ import type { TimelineEvent, TimelineEventKind } from '@/lib/analysis/timeline';
 import { cn, formatDate } from '@/lib/utils';
 
 const KIND_STYLE: Record<TimelineEventKind, { color: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }> = {
-  query: { color: '#22d3ee', icon: HelpCircle },
-  image: { color: '#2dd4bf', icon: Database },
-  execution: { color: '#3b82f6', icon: Radio },
-  evidence: { color: '#f59e0b', icon: FileSearch },
-  hypothesis: { color: '#a78bfa', icon: Zap },
+  query: { color: '#b51f2d', icon: HelpCircle },
+  image: { color: '#b58a3a', icon: Database },
+  execution: { color: '#77624d', icon: Radio },
+  evidence: { color: '#b58a3a', icon: FileSearch },
+  hypothesis: { color: '#861923', icon: Zap },
   conclusion: { color: '#34d399', icon: CalendarRange },
-  demo: { color: '#c4b5fd', icon: Zap },
+  demo: { color: '#b58a3a', icon: Zap },
 };
 
 export function TimelineRail({
@@ -80,7 +80,7 @@ export function TimelineRail({
                   >
                     <Icon className="h-3 w-3 shrink-0" style={{ color: style.color }} />
                     <span className="truncate text-[11px] text-ink-dim">{event.title}</span>
-                    {event.demo && <span className="font-mono text-[8.5px] text-[#c4b5fd]">DEMO</span>}
+                    {event.demo && <span className="font-mono text-[8.5px] text-secondary">DEMO</span>}
                   </button>
                 );
               })}

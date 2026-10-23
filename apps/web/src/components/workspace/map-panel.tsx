@@ -69,9 +69,9 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
     saveSettings({ defaultBasemap: next });
   };
   const [layers, setLayers] = useState<LayerDef[]>([
-    { id: 'roi', label: 'Region of interest', color: '#22d3ee', visible: true, opacity: 0.16 },
-    { id: 'footprints', label: 'Scene footprints', color: '#2dd4bf', visible: true, opacity: 0.2 },
-    { id: 'markers', label: 'Evidence markers', color: '#f59e0b', visible: true, opacity: 0.9 },
+    { id: 'roi', label: 'Region of interest', color: '#b51f2d', visible: true, opacity: 0.12 },
+    { id: 'footprints', label: 'Scene footprints', color: '#b58a3a', visible: true, opacity: 0.2 },
+    { id: 'markers', label: 'Evidence markers', color: '#211b19', visible: true, opacity: 0.9 },
   ]);
   const [compareAOverride, setCompareAOverride] = useState<string | null>(null);
   const [compareBOverride, setCompareBOverride] = useState<string | null>(null);
@@ -162,11 +162,11 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
             'supporting', '#34d399',
             'contradicting', '#f43f5e',
             'insufficient', '#f59e0b',
-            '#93a7bc',
+            '#625954',
           ],
           'circle-radius': 6,
           'circle-stroke-width': 1.5,
-          'circle-stroke-color': '#05080d',
+          'circle-stroke-color': '#fffdfa',
         },
       });
     }
@@ -180,8 +180,8 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
     const compareFeatures: GeoJSON.Feature[] = [];
     if (a) compareFeatures.push(polygonFeature(boundsPolygon(a.bounds as [number, number, number, number])));
     upsertGeoJsonLayer(map, 'ws-compare-a', { type: 'FeatureCollection', features: compareFeatures }, {
-      fill: '#22d3ee',
-      line: '#22d3ee',
+      fill: '#b51f2d',
+      line: '#b51f2d',
       fillOpacity: 0.0,
       lineWidth: 2.5,
     });
@@ -272,7 +272,7 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
                     max={100}
                     value={Math.round(layer.opacity * 100)}
                     onChange={(e) => setOpacity(layer.id, Number(e.target.value) / 100)}
-                    className="mt-1 h-1 w-full cursor-pointer appearance-none rounded bg-[#16212e] accent-[#22d3ee]"
+                    className="mt-1 h-1 w-full cursor-pointer appearance-none rounded bg-line accent-primary"
                     aria-label={`${layer.label} opacity`}
                   />
                 )}

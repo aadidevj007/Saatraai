@@ -8,6 +8,8 @@ artifacts/
 .env
 .env.*
 !.env.example
+# Firebase Admin private key
+apps/api/secrets/firebase-service-account.json
 __pycache__/
 *.py[cod]
 .pytest_cache/

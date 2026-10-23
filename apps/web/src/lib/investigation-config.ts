@@ -27,6 +27,7 @@ export interface InvestigationConfig {
   region: RegionSelection;
   timeRange: { start: string; end: string };
   sources: EvidenceSourceKind[];
+  evidencePlan?: string[];
   mode: InvestigationMode;
   strictness: EvidenceStrictness;
   depth: AnalysisDepth;

@@ -146,7 +146,7 @@ export function GoogleSignIn({
     return (
       <NotConfiguredState
         title="Google sign-in is not configured"
-        description="Set NEXT_PUBLIC_GOOGLE_CLIENT_ID and GOOGLE_BRIDGE_SECRET in .env.local (see .env.example), then restart the dev server. No alternative sign-in methods are offered — SAATRAAI is Google-only."
+        description="Set NEXT_PUBLIC_GOOGLE_CLIENT_ID to the web client ID enabled for Google sign-in in Firebase Authentication, then restart the dev server. Firebase-backed sign-in also requires a Firebase Admin service account on the API."
       />
     );
   }

@@ -37,6 +37,9 @@ The web app is available at `http://localhost:3000`; the API health endpoint is
 `http://localhost:8000/health`. API authentication and database setup are
 required before user-owned investigation data can be loaded into the web UI.
 
+See [docs/local-development.md](docs/local-development.md) for complete API,
+Firebase, database migration, and optional GeoChat setup instructions.
+
 ### Roadmap
 
 Next slices are authenticated web flows, persisted query interpretation and
