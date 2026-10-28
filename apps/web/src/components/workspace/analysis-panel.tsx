@@ -21,9 +21,10 @@ import { Badge, ConfidenceRing, EmptyState, NotConfiguredState, ProgressBar } fr
 import type { ConfidenceReport } from '@/lib/analysis/confidence';
 import type { ConclusionRecord, EvidenceRecord, HypothesisRecord } from '@/lib/api/types';
 import type { MissingEvidenceItem } from '@/lib/hooks/use-workspace-model';
+import { DESIGN_COLORS } from '@/lib/design-tokens';
 import { formatDateTime, shortId } from '@/lib/utils';
 
-const PIE_COLORS = { supporting: '#28734f', contradicting: '#b51f2d', neutral: '#81766e', insufficient: '#b58a3a' };
+const PIE_COLORS = { supporting: DESIGN_COLORS.success, contradicting: DESIGN_COLORS.danger, neutral: DESIGN_COLORS.neutral, insufficient: DESIGN_COLORS.warning };
 
 export function AnalysisPanel({
   confidence,
@@ -151,8 +152,8 @@ export function AnalysisPanel({
                     ))}
                   </Pie>
                   <ReTooltip
-                    contentStyle={{ background: '#fffdfa', border: '1px solid #d8c9bc', borderRadius: 12, fontSize: 12, boxShadow: '0 12px 32px rgba(42,28,20,0.12)' }}
-                    itemStyle={{ color: '#211b19' }}
+                    contentStyle={{ background: '#101116', border: '1px solid #3b3b46', borderRadius: 12, fontSize: 12, boxShadow: '0 12px 32px rgba(0,0,0,0.48)' }}
+                    itemStyle={{ color: '#f2eff0' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -174,14 +175,14 @@ export function AnalysisPanel({
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hypothesisBars} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                    <CartesianGrid stroke="#e9dfd5" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: '#81766e', fontSize: 10 }} axisLine={{ stroke: '#d8c9bc' }} tickLine={false} />
-                    <YAxis domain={[0, 100]} tick={{ fill: '#81766e', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <CartesianGrid stroke="#292a32" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#77737d', fontSize: 10 }} axisLine={{ stroke: '#3b3b46' }} tickLine={false} />
+                    <YAxis domain={[0, 100]} tick={{ fill: '#77737d', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <ReTooltip
-                      contentStyle={{ background: '#fffdfa', border: '1px solid #d8c9bc', borderRadius: 12, fontSize: 12, boxShadow: '0 12px 32px rgba(42,28,20,0.12)' }}
-                      itemStyle={{ color: '#211b19' }}
+                      contentStyle={{ background: '#101116', border: '1px solid #3b3b46', borderRadius: 12, fontSize: 12, boxShadow: '0 12px 32px rgba(0,0,0,0.48)' }}
+                      itemStyle={{ color: '#f2eff0' }}
                     />
-                    <Bar dataKey="value" fill="#b51f2d" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="value" fill={DESIGN_COLORS.primary} radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}

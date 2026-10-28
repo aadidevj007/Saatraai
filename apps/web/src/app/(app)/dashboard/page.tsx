@@ -9,7 +9,7 @@ import { Activity, ArrowRight, Database, FileCheck2, Plus, Telescope, Zap } from
 
 import {
   Badge,
-  Button,
+  ButtonLink,
   EmptyState,
   ErrorState,
   Metric,
@@ -85,16 +85,12 @@ export default function OverviewPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link href="/investigations/new">
-            <Button variant="primary" size="lg" icon={<Plus className="h-4 w-4" />}>
-              New Investigation
-            </Button>
-          </Link>
-          <Link href="/investigations">
-            <Button variant="secondary" size="lg" icon={<Telescope className="h-4 w-4" />}>
-              All investigations
-            </Button>
-          </Link>
+          <ButtonLink href="/investigations/new" variant="primary" size="lg" icon={<Plus className="h-4 w-4" />}>
+            New Investigation
+          </ButtonLink>
+          <ButtonLink href="/investigations" variant="secondary" size="lg" icon={<Telescope className="h-4 w-4" />}>
+            All investigations
+          </ButtonLink>
         </div>
       </div>
 
@@ -190,11 +186,9 @@ export default function OverviewPage() {
           title="Recent investigations"
           description="Question, region, time period and evidence-backed status for your latest work."
           action={
-            <Link href="/investigations">
-              <Button variant="ghost" size="sm" icon={<ArrowRight className="h-3.5 w-3.5" />}>
-                View all
-              </Button>
-            </Link>
+            <ButtonLink href="/investigations" variant="ghost" size="sm" icon={<ArrowRight className="h-3.5 w-3.5" />}>
+              View all
+            </ButtonLink>
           }
         />
 

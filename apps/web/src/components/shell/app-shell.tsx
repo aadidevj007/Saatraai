@@ -2,7 +2,7 @@
 
 /** Application shell: auth guard + sidebar + topbar + palette + shortcuts. */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
@@ -22,6 +22,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { status, needsProfile } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileNavTrigger = useRef<HTMLButtonElement>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
@@ -38,6 +40,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       return !prev;
     });
   }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const sidebar = document.getElementById('app-sidebar');
+    const focusable = () => Array.from(sidebar?.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ) ?? []).filter((element) => element.getClientRects().length > 0);
+    focusable()[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobileOpen(false);
+        mobileNavTrigger.current?.focus();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [mobileOpen]);
 
   /* guards */
   useEffect(() => {
@@ -118,9 +152,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <ShellProvider>
       <div className="flex h-screen overflow-hidden bg-void">
-        <Sidebar collapsed={collapsed} onToggle={toggleSidebar} apiOnline={apiOnline} />
+        {mobileOpen && (
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-black/65 backdrop-blur-[2px] md:hidden"
+            aria-label="Close navigation"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+        <Sidebar collapsed={collapsed} mobileOpen={mobileOpen} onNavigate={() => setMobileOpen(false)} onToggle={toggleSidebar} apiOnline={apiOnline} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar apiOnline={apiOnline} onOpenPalette={() => setPaletteOpen(true)} />
+          <TopBar apiOnline={apiOnline} mobileNavOpen={mobileOpen} mobileNavTrigger={mobileNavTrigger} onOpenPalette={() => setPaletteOpen(true)} onToggleSidebar={() => setMobileOpen((open) => !open)} />
           <main className="min-h-0 flex-1 overflow-y-auto">
             <motion.div
               key={pathname}

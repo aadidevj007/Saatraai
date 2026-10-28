@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 import { usePageTitle } from '@/components/shell/shell-context';
-import { Badge, Button, EmptyState, LoadingState, Select } from '@/components/ui';
+import { Badge, Button, ButtonLink, EmptyState, LoadingState, Select } from '@/components/ui';
 import { reportApi } from '@/lib/api';
 import { assessHypothesis } from '@/lib/analysis/confidence';
 import { useInvestigations } from '@/lib/hooks/queries';
@@ -86,11 +86,9 @@ export default function ReportsPage() {
             ))}
           </Select>
           {selectedId && (
-            <Link href={`/investigations/${selectedId}`}>
-              <Button variant="secondary" icon={<ArrowRight className="h-3.5 w-3.5" />}>
-                Workspace
-              </Button>
-            </Link>
+            <ButtonLink href={`/investigations/${selectedId}`} variant="secondary" icon={<ArrowRight className="h-3.5 w-3.5" />}>
+              Workspace
+            </ButtonLink>
           )}
         </div>
       </div>
@@ -146,7 +144,7 @@ export default function ReportsPage() {
                 <span>investigation id · {doc.provenance.investigation.id}</span>
                 <span>generated · {formatDateTime(doc.generated_at)}</span>
                 <span>generator · {doc.generator}</span>
-                <span>api · {doc.provenance.api_base}</span>
+                <span>api · {doc.provenance.api_base ?? 'not configured'}</span>
               </div>
             </header>
 

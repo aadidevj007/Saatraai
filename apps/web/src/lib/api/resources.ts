@@ -1,6 +1,6 @@
 /** Resource services — projects, investigations, queries, executions, images, tools, health. */
 
-import { apiBase, apiRequest } from './client';
+import { apiBase, apiRequest, API_BASE_CONFIGURED } from './client';
 import type {
   ExecutionTrace,
   HealthResponse,
@@ -79,7 +79,7 @@ export const executionApi = {
     apiRequest<ExecutionTrace>(`/investigations/${investigationId}/executions/${taskId}`),
   /** Extended read endpoint (added in apps/api); null when unavailable. */
   list: (investigationId: string) =>
-    apiRequest<ExecutionTrace[] | null>(`/investigations/${investigationId}/executions`, {
+    apiRequest<{ items: ExecutionTrace[] } | null>(`/investigations/${investigationId}/executions`, {
       nullOn404: true,
     }),
 };
@@ -106,6 +106,9 @@ export const toolApi = {
 export const healthApi = {
   /** Liveness lives at the API root, outside /api/v1. */
   probe: async (): Promise<HealthResponse> => {
+    if (!API_BASE_CONFIGURED) {
+      throw new Error('SAATRAAI API is not configured. Set NEXT_PUBLIC_API_URL and redeploy this web app.');
+    }
     const response = await fetch(`${apiBase()}/health`, { cache: 'no-store' });
     if (!response.ok) throw new Error(`API health returned ${response.status}`);
     return (await response.json()) as HealthResponse;

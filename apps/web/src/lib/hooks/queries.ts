@@ -12,6 +12,7 @@ import {
   reasoningApi,
   toolApi,
 } from '@/lib/api';
+import { errorMessage } from '@/lib/api';
 import type {
   ConclusionRecord,
   EvidenceRecord,
@@ -85,6 +86,7 @@ export interface InvestigationBundle {
   hypotheses: HypothesisRecord[] | null;
   conclusions: ConclusionRecord[] | null;
   isLoading: boolean;
+  failures: string[];
   /** Keys of sub-resources whose endpoint is unavailable on this backend. */
   unavailable: Set<string>;
   refetchAll: () => void;
@@ -145,7 +147,7 @@ export function useInvestigationBundle(id: string | undefined): InvestigationBun
     UseQueryResult<Investigation>,
     UseQueryResult<{ items: InvestigationQuery[] } | InvestigationQuery[] | null>,
     UseQueryResult<{ items: IngestedImage[] } | null>,
-    UseQueryResult<ExecutionTrace[] | null>,
+    UseQueryResult<{ items: ExecutionTrace[] } | null>,
     UseQueryResult<{ items: EvidenceRecord[] } | null>,
     UseQueryResult<{ items: HypothesisRecord[] } | null>,
     UseQueryResult<{ items: ConclusionRecord[] } | null>,
@@ -160,6 +162,11 @@ export function useInvestigationBundle(id: string | undefined): InvestigationBun
   if (conR.data === null) unavailable.add('conclusions');
 
   const refetchAll = () => results.forEach((r) => r.refetch());
+  const failures = results.flatMap((result, index) => {
+    if (!result.isError) return [];
+    const labels = ['investigation', 'queries', 'images', 'executions', 'evidence', 'hypotheses', 'conclusions'];
+    return [`${labels[index]}: ${errorMessage(result.error)}`];
+  });
 
   /* server record is the source of truth for region/period/sources; the local
      record only contributes presentation preferences (mode/strictness/depth) */
@@ -186,6 +193,7 @@ export function useInvestigationBundle(id: string | undefined): InvestigationBun
     hypotheses: items(hypR.data),
     conclusions: items(conR.data),
     isLoading: results.some((r) => r.isPending),
+    failures,
     unavailable,
     refetchAll,
   };

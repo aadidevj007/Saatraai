@@ -90,6 +90,8 @@ export default function NewInvestigationPage() {
   const [mode, setMode] = useState<InvestigationMode>('real');
   const [strictness, setStrictness] = useState<EvidenceStrictness>('standard');
   const [depth, setDepth] = useState<AnalysisDepth>('balanced');
+  const [projectChoice, setProjectChoice] = useState('');
+  const [newProjectName, setNewProjectName] = useState('');
 
   /* apply saved investigation defaults once on the client */
   useEffect(() => {
@@ -109,6 +111,11 @@ export default function NewInvestigationPage() {
     queryFn: () => providerApi.status(),
     retry: false,
   });
+  const projectsQuery = useQuery({
+    queryKey: ['projects', 'investigation-create'],
+    queryFn: () => projectApi.list({ page_size: 100 }),
+    retry: false,
+  });
 
   const availability = useMemo(() => {
     const map = new Map<string, { state: string; detail?: string }>();
@@ -118,7 +125,9 @@ export default function NewInvestigationPage() {
     return map;
   }, [statusQuery.data]);
 
-  const canStart = question.trim().length >= 3 && region !== null && start < end;
+  const canStart = question.trim().length >= 3 && region !== null && start < end &&
+    !projectsQuery.isPending && !projectsQuery.isError &&
+    (projectChoice !== '__new__' ? projectChoice.length > 0 : newProjectName.trim().length > 0);
   const evidencePlan = useMemo(
     () => buildEvidencePlan(question || 'Research question', sources, { start, end }),
     [question, sources, start, end],
@@ -129,16 +138,11 @@ export default function NewInvestigationPage() {
     setStarting(true);
     setStartError(null);
     try {
-      /* 1. ensure a project exists */
-      const projects = await projectApi.list({ page_size: 100 });
-      let projectId = projects.items[0]?.id;
-      if (!projectId) {
-        const project = await projectApi.create(
-          'Field Investigations',
-          'Default project for SAATRAAI Earth observation investigations',
-        );
-        projectId = project.id;
-      }
+      /* 1. use the analyst's explicit project selection or create the named project */
+      const projectId = projectChoice === '__new__'
+        ? (await projectApi.create(newProjectName.trim())).id
+        : projectChoice;
+      if (!projectId) throw new Error('Choose a project before creating the investigation.');
 
       /* 2. create the investigation — region, period and sources persist server-side */
       const title = question.trim().length > 72 ? `${question.trim().slice(0, 69)}…` : question.trim();
@@ -175,7 +179,7 @@ export default function NewInvestigationPage() {
         title: 'Investigation created',
         description: `${title.slice(0, 48)}${title.length > 48 ? '…' : ''} · ${mode === 'demo' ? 'DEMO' : 'REAL'} mode`,
       });
-      router.push(`/investigations/${investigation.id}?progress=1`);
+      router.push(`/investigations/${investigation.id}`);
     } catch (error) {
       const message = errorMessage(error);
       setStartError(message);
@@ -456,6 +460,41 @@ export default function NewInvestigationPage() {
               <div className="rounded-xl border border-line bg-elevated p-4">
                 <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Research question</div>
                 <p className="mt-2 text-[13.5px] leading-relaxed text-ink">{question || '—'}</p>
+              </div>
+
+              <div className="rounded-xl border border-line bg-card p-4">
+                <Field label="Project" htmlFor="investigation-project">
+                  {projectsQuery.isPending ? (
+                    <p role="status" className="mt-2 text-sm text-ink-dim">Loading your projects…</p>
+                  ) : projectsQuery.isError ? (
+                    <div className="mt-2 space-y-2">
+                      <p role="alert" className="text-sm text-danger">Could not load your projects: {errorMessage(projectsQuery.error)}</p>
+                      <Button size="sm" variant="secondary" onClick={() => void projectsQuery.refetch()}>Retry</Button>
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        id="investigation-project"
+                        value={projectChoice}
+                        onChange={(event) => setProjectChoice(event.target.value)}
+                        className="mt-1.5 h-10 w-full rounded-lg border border-line-strong bg-inputbg px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      >
+                        <option value="">Select a project…</option>
+                        {(projectsQuery.data?.items ?? []).map((project) => (
+                          <option key={project.id} value={project.id}>{project.name}</option>
+                        ))}
+                        <option value="__new__">Create a new project…</option>
+                      </select>
+                      {projectChoice === '__new__' && (
+                        <div className="mt-3">
+                          <Field label="New project name" htmlFor="new-project-name">
+                            <Input id="new-project-name" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="e.g. Coastal change study" />
+                          </Field>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </Field>
               </div>
 
               <div className="grid gap-x-6 gap-y-1.5 rounded-xl border border-line bg-elevated p-4 font-mono text-[11px] text-ink-dim sm:grid-cols-2">

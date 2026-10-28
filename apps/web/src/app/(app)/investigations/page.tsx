@@ -2,7 +2,6 @@
 
 /** Investigation history: filters, search, sort, open, delete. */
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +10,7 @@ import { ArrowRight, Plus, Search, Trash2 } from 'lucide-react';
 import {
   Badge,
   Button,
+  ButtonLink,
   EmptyState,
   ErrorState,
   Input,
@@ -94,9 +94,7 @@ export default function InvestigationsPage() {
           <h1 className="text-[22px] font-semibold text-ink">Investigations</h1>
           <p className="mt-1 text-[13px] text-ink-dim">Every investigation you own, newest first.</p>
         </div>
-        <Link href="/investigations/new">
-          <Button variant="primary" icon={<Plus className="h-4 w-4" />}>New Investigation</Button>
-        </Link>
+        <ButtonLink href="/investigations/new" variant="primary" icon={<Plus className="h-4 w-4" />}>New Investigation</ButtonLink>
       </div>
 
       {/* controls */}

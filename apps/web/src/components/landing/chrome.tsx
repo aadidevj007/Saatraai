@@ -4,21 +4,25 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Activity, ArrowRight, GitBranch, Satellite } from 'lucide-react';
+import { Activity, ArrowRight, GitBranch, Menu, X } from 'lucide-react';
 
-import { Button } from '@/components/ui';
+import { ButtonLink } from '@/components/ui';
+import { BrandLockup } from '@/components/brand/brand';
 import { healthApi } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 const NAV = [
-  { href: '#pipeline', label: 'Pipeline' },
-  { href: '#modalities', label: 'Modalities' },
-  { href: '#reasoning', label: 'Reasoning' },
+  { href: '#pipeline', label: 'Platform' },
+  { href: '#modalities', label: 'Capabilities' },
+  { href: '#reasoning', label: 'Research' },
   { href: '#use-cases', label: 'Use cases' },
-  { href: '#technology', label: 'Technology' },
+  { href: '#technology', label: 'About' },
 ];
 
 export function LandingHeader() {
   const [apiState, setApiState] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -31,17 +35,33 @@ export function LandingHeader() {
     };
   }, []);
 
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 12);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mobileOpen]);
+
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md border border-primary/40 bg-primary/10">
-            <Satellite className="h-3.5 w-3.5 text-primary" />
-          </span>
-          <span className="display-font text-[13.5px] font-semibold tracking-[0.2em] text-ink">SAATRAAI</span>
+    <header className={cn(
+      'sticky top-0 z-40 border-b transition-colors duration-300',
+      scrolled ? 'border-line bg-surface/95 shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl' : 'border-white/[0.06] bg-void/45 backdrop-blur-md',
+    )}>
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-7">
+        <Link href="/" className="rounded-sm" aria-label="SAATRAAI home">
+          <BrandLockup symbolClassName="h-8 w-8" wordmarkClassName="text-[13px]" />
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Sections">
+        <nav className="hidden items-center gap-7 md:flex" aria-label="Sections">
           {NAV.map((item) => (
             <a
               key={item.href}
@@ -62,18 +82,36 @@ export function LandingHeader() {
             />
             API {apiState === 'checking' ? 'CHECKING' : apiState.toUpperCase()}
           </span>
-          <Link href="/sign-in">
-            <Button variant="ghost" size="sm">
-              Sign in
-            </Button>
-          </Link>
-          <Link href="/sign-in">
-            <Button variant="primary" size="sm" icon={<ArrowRight className="h-3.5 w-3.5" />}>
-              Start investigation
-            </Button>
-          </Link>
+          <ButtonLink href="/sign-in" variant="ghost" size="sm">
+            Sign in
+          </ButtonLink>
+          <ButtonLink href="/sign-in" variant="primary" size="sm" className="hidden sm:inline-flex" icon={<ArrowRight className="h-3.5 w-3.5" />}>
+            Get started
+          </ButtonLink>
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line text-ink-dim transition-colors hover:border-line-strong hover:text-ink md:hidden"
+            aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={mobileOpen}
+            aria-controls="landing-mobile-navigation"
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
         </div>
       </div>
+      <nav id="landing-mobile-navigation" className={cn('border-t border-line px-5 py-3 md:hidden', mobileOpen ? 'block' : 'hidden')} aria-label="Mobile sections">
+        <div className="mx-auto grid max-w-7xl gap-1">
+          {NAV.map((item) => (
+            <a key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-[13px] text-ink-dim transition-colors hover:bg-elevated hover:text-ink">
+              {item.label}
+            </a>
+          ))}
+          <ButtonLink href="/sign-in" variant="primary" size="md" className="mt-2 sm:hidden" icon={<ArrowRight className="h-3.5 w-3.5" />}>
+            Get started
+          </ButtonLink>
+        </div>
+      </nav>
     </header>
   );
 }
@@ -84,10 +122,7 @@ export function LandingFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-6 py-12 md:grid-cols-4">
         <div className="md:col-span-2">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-primary/40 bg-primary/10">
-              <Satellite className="h-3.5 w-3.5 text-primary" />
-            </span>
-            <span className="font-mono text-[13.5px] font-semibold tracking-[0.24em] text-ink">SAATRAAI</span>
+            <BrandLockup symbolClassName="h-8 w-8" wordmarkClassName="text-[13px]" />
           </div>
           <p className="mt-3 max-w-sm text-[12.5px] leading-relaxed text-ink-dim">
             Satellite AI for Autonomous Temporal Reasoning and Analysis of Intelligence. Evidence-driven Earth

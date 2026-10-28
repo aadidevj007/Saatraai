@@ -4,10 +4,11 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Fragment, useState } from 'react';
-import { Bell, CheckCheck, ChevronRight, KeyRound, LogOut, Settings } from 'lucide-react';
+import { Fragment, useState, type RefObject } from 'react';
+import { Bell, CheckCheck, ChevronRight, KeyRound, LogOut, Menu, Settings, X } from 'lucide-react';
 
 import { Avatar } from '@/components/auth/google-sign-in';
+import { BrandSymbol } from '@/components/brand/brand';
 import { Dropdown, Kbd, StatusDot } from '@/components/ui';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useNotifications } from '@/lib/state/notifications';
@@ -28,7 +29,7 @@ const ROUTE_LABELS: Record<string, string> = {
   profile: 'Profile',
 };
 
-export function TopBar({ apiOnline, onOpenPalette }: { apiOnline: boolean | null; onOpenPalette: () => void }) {
+export function TopBar({ apiOnline, mobileNavOpen, mobileNavTrigger, onOpenPalette, onToggleSidebar }: { apiOnline: boolean | null; mobileNavOpen: boolean; mobileNavTrigger: RefObject<HTMLButtonElement | null>; onOpenPalette: () => void; onToggleSidebar: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { title } = useShell();
@@ -41,11 +42,23 @@ export function TopBar({ apiOnline, onOpenPalette }: { apiOnline: boolean | null
   const isInvestigation = segments[0] === 'investigations' && segments.length > 1 && segments[1] !== 'new';
 
   return (
-    <header className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-line bg-surface px-4">
+    <header className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-line bg-surface/85 px-4 backdrop-blur-xl">
       {/* breadcrumb */}
+      <button
+        ref={mobileNavTrigger}
+        type="button"
+        onClick={onToggleSidebar}
+        aria-label={mobileNavOpen ? 'Close navigation' : 'Open navigation'}
+        aria-expanded={mobileNavOpen}
+        aria-controls="app-sidebar"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line text-ink-dim transition-colors hover:bg-elevated hover:text-ink md:hidden"
+      >
+        {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+      </button>
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[12.5px]">
-        <Link href="/dashboard" className="text-ink-faint transition-colors hover:text-ink">
-          SAATRAAI
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-ink-faint transition-colors hover:text-ink" aria-label="SAATRAAI dashboard">
+          <BrandSymbol className="h-5 w-5" />
+          <span className="hidden font-mono text-[10px] tracking-[0.16em] sm:inline">SAATRAAI</span>
         </Link>
         {segments.length === 0 && <ChevronRight className="h-3 w-3 text-ink-faint" />}
         {segments.map((segment, i) => {

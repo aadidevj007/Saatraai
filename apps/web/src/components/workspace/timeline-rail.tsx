@@ -6,16 +6,17 @@ import { useMemo } from 'react';
 import { CalendarRange, Database, FileSearch, HelpCircle, Radio, Zap } from 'lucide-react';
 
 import type { TimelineEvent, TimelineEventKind } from '@/lib/analysis/timeline';
+import { DESIGN_COLORS } from '@/lib/design-tokens';
 import { cn, formatDate } from '@/lib/utils';
 
 const KIND_STYLE: Record<TimelineEventKind, { color: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }> = {
-  query: { color: '#b51f2d', icon: HelpCircle },
-  image: { color: '#b58a3a', icon: Database },
-  execution: { color: '#77624d', icon: Radio },
-  evidence: { color: '#b58a3a', icon: FileSearch },
-  hypothesis: { color: '#861923', icon: Zap },
-  conclusion: { color: '#34d399', icon: CalendarRange },
-  demo: { color: '#b58a3a', icon: Zap },
+  query: { color: DESIGN_COLORS.primary, icon: HelpCircle },
+  image: { color: DESIGN_COLORS.warning, icon: Database },
+  execution: { color: DESIGN_COLORS.neutral, icon: Radio },
+  evidence: { color: DESIGN_COLORS.warning, icon: FileSearch },
+  hypothesis: { color: DESIGN_COLORS.primaryDim, icon: Zap },
+  conclusion: { color: DESIGN_COLORS.success, icon: CalendarRange },
+  demo: { color: DESIGN_COLORS.warning, icon: Zap },
 };
 
 export function TimelineRail({

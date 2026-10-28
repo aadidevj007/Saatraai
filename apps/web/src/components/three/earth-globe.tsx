@@ -12,6 +12,8 @@
 import { Suspense, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { useReducedMotion } from 'framer-motion';
+import { DESIGN_COLORS } from '@/lib/design-tokens';
 
 export type GlobeProps = {
   /** Marker coordinates (lon, lat in degrees) — orbit-arc endpoints get markers. */
@@ -93,10 +95,10 @@ function GlobePoints() {
   return (
     <points geometry={geo}>
       <pointsMaterial
-        size={0.016}
-        color="#caa75e"
+        size={0.023}
+        color={DESIGN_COLORS.primary}
         transparent
-        opacity={0.75}
+        opacity={0.88}
         sizeAttenuation
         depthWrite={false}
       />
@@ -108,7 +110,7 @@ function GlobeCore() {
   return (
     <mesh>
       <sphereGeometry args={[R * 0.985, 48, 48]} />
-      <meshBasicMaterial color="#211b19" transparent opacity={0.96} />
+      <meshBasicMaterial color="#10090e" transparent opacity={0.98} />
     </mesh>
   );
 }
@@ -118,7 +120,7 @@ function Atmosphere() {
     <mesh scale={1.16}>
       <sphereGeometry args={[R, 48, 48]} />
       <meshBasicMaterial
-        color="#b51f2d"
+        color={DESIGN_COLORS.primary}
         transparent
         opacity={0.05}
         side={THREE.BackSide}
@@ -162,7 +164,7 @@ function Graticule() {
 
   return (
     <lineSegments geometry={geo}>
-      <lineBasicMaterial color="#caa75e" transparent opacity={0.2} depthWrite={false} />
+      <lineBasicMaterial color="#ff5548" transparent opacity={0.2} depthWrite={false} />
     </lineSegments>
   );
 }
@@ -202,11 +204,11 @@ function OrbitRings({ satellites }: { satellites: number }) {
         <group key={i}>
           <mesh>
             <sphereGeometry args={[0.032, 12, 12]} />
-            <meshBasicMaterial color="#fffdfa" />
+            <meshBasicMaterial color="#f2eff0" />
           </mesh>
           <mesh>
             <sphereGeometry args={[0.075, 12, 12]} />
-            <meshBasicMaterial color="#b51f2d" transparent opacity={0.24} depthWrite={false} />
+            <meshBasicMaterial color={DESIGN_COLORS.primary} transparent opacity={0.24} depthWrite={false} />
           </mesh>
         </group>
       ))}
@@ -230,7 +232,7 @@ function OrbitPath({ radius }: { radius: number }) {
   }, [radius]);
   return (
     <lineSegments geometry={geo}>
-      <lineBasicMaterial color="#caa75e" transparent opacity={0.32} depthWrite={false} />
+      <lineBasicMaterial color={DESIGN_COLORS.primary} transparent opacity={0.42} depthWrite={false} />
     </lineSegments>
   );
 }
@@ -250,7 +252,7 @@ function Marker({ lon, lat }: { lon: number; lat: number }) {
       </mesh>
       <mesh>
         <sphereGeometry args={[0.08, 12, 12]} />
-        <meshBasicMaterial color="#b58a3a" transparent opacity={0.24} depthWrite={false} />
+        <meshBasicMaterial color={DESIGN_COLORS.primary} transparent opacity={0.3} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -265,9 +267,11 @@ function SpinningGroup({ children, speed = 0.12 }: { children: React.ReactNode; 
 }
 
 export function EarthGlobe({ markers = [], satellites = 2, className }: GlobeProps) {
+  const reducedMotion = useReducedMotion();
   return (
     <div className={className} aria-hidden>
       <Canvas
+        frameloop={reducedMotion ? 'demand' : 'always'}
         camera={{ position: [0, 0.9, 4.4], fov: 42 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}

@@ -15,16 +15,16 @@ import {
 } from 'lucide-react';
 
 import { AnalysisPanel, ConclusionPanel } from '@/components/workspace/analysis-panel';
-import { ControlPanel, buildPipelineStages } from '@/components/workspace/control-panel';
+import { ControlPanel } from '@/components/workspace/control-panel';
 import { EvidencePanel } from '@/components/workspace/evidence-panel';
 import { HypothesisPanel } from '@/components/workspace/hypothesis-panel';
 import { MapPanel } from '@/components/workspace/map-panel';
-import { ProgressScreen } from '@/components/workspace/progress-screen';
 import { TimelineRail } from '@/components/workspace/timeline-rail';
 import { usePageTitle } from '@/components/shell/shell-context';
 import {
   Badge,
   Button,
+  ButtonLink,
   ErrorState,
   Field,
   Input,
@@ -56,7 +56,6 @@ export default function InvestigationWorkspacePage() {
   const [selectedEvidence, setSelectedEvidence] = useState<EvidenceRecord | null>(null);
   const [focusEvidence, setFocusEvidence] = useState<EvidenceRecord | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [showProgress, setShowProgress] = useState(false);
   const [scopeOpen, setScopeOpen] = useState(false);
   const [scopeVersion, setScopeVersion] = useState(0);
 
@@ -66,14 +65,6 @@ export default function InvestigationWorkspacePage() {
   const [editRegion, setEditRegion] = useState<RegionSelection | null>(null);
 
   usePageTitle(investigation?.title ?? (isLoading ? 'Loading…' : 'Investigation'), investigation?.status);
-
-  /* progress overlay on fresh creation */
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      if (window.location.search.includes('progress=1')) setShowProgress(true);
-    }, 0);
-    return () => window.clearTimeout(t);
-  }, []);
 
   /* open evidence drawer when picked from other panels */
   const openEvidence = useCallback((evidence: EvidenceRecord) => {
@@ -103,8 +94,6 @@ export default function InvestigationWorkspacePage() {
     () => model.timeline.find((e) => e.id === selectedEventId) ?? null,
     [model.timeline, selectedEventId],
   );
-
-  const stages = useMemo(() => buildPipelineStages(model, config), [model, config]);
 
   const openScopeEditor = () => {
     setEditStart(config?.timeRange.start ?? '');
@@ -162,9 +151,7 @@ export default function InvestigationWorkspacePage() {
           onRetry={refetchAll}
         />
         <div className="mt-3 flex justify-center">
-          <Link href="/investigations">
-            <Button variant="secondary" size="sm">Back to investigations</Button>
-          </Link>
+          <ButtonLink href="/investigations" variant="secondary" size="sm">Back to investigations</ButtonLink>
         </div>
       </div>
     );
@@ -204,21 +191,22 @@ export default function InvestigationWorkspacePage() {
           <Button size="sm" variant="secondary" onClick={openScopeEditor} icon={<SlidersHorizontal className="h-3.5 w-3.5" />}>
             Edit scope
           </Button>
-          <Link href={`/graph?inv=${investigation.id}`}>
-            <Button size="sm" variant="secondary" icon={<Waypoints className="h-3.5 w-3.5" />}>
-              Graph
-            </Button>
-          </Link>
-          <Link href={`/reports?inv=${investigation.id}`}>
-            <Button size="sm" variant="secondary" icon={<FileText className="h-3.5 w-3.5" />}>
-              Report
-            </Button>
-          </Link>
+          <ButtonLink href={`/graph?inv=${investigation.id}`} size="sm" variant="secondary" icon={<Waypoints className="h-3.5 w-3.5" />}>
+            Graph
+          </ButtonLink>
+          <ButtonLink href={`/reports?inv=${investigation.id}`} size="sm" variant="secondary" icon={<FileText className="h-3.5 w-3.5" />}>
+            Report
+          </ButtonLink>
         </div>
       </header>
 
       {/* body */}
       <div className="flex min-h-0 flex-1 flex-col xl:flex-row">
+        {bundle.failures.length > 0 && (
+          <div role="status" className="absolute left-3 right-3 top-16 z-30 rounded-lg border border-warning/50 bg-surface px-4 py-2.5 text-[12px] text-ink shadow-lg xl:left-[360px] xl:right-[420px]">
+            Some investigation records could not be loaded: {bundle.failures.join(' · ')}. Available records remain visible; retry with Refresh.
+          </div>
+        )}
         {/* LEFT */}
         <aside className="order-2 max-h-[46vh] w-full shrink-0 overflow-y-auto border-line xl:order-1 xl:max-h-none xl:w-[340px] xl:border-r">
           <ControlPanel investigationId={id} model={model} config={config} onRunStarted={refetchAll} />
@@ -305,11 +293,6 @@ export default function InvestigationWorkspacePage() {
           </div>
         </aside>
       </div>
-
-      {/* progress overlay */}
-      {showProgress && (
-        <ProgressScreen stages={stages} demo={model.demo} onDone={() => setShowProgress(false)} />
-      )}
 
       {/* scope editor */}
       <Modal

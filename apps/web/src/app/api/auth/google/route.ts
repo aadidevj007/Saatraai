@@ -30,14 +30,14 @@ const GOOGLE_TOKENINFO = 'https://oauth2.googleapis.com/tokeninfo';
 export async function POST(request: Request): Promise<NextResponse> {
   const clientId = process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const bridgeSecret = process.env.GOOGLE_BRIDGE_SECRET;
-  const backendBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+  const backendBase = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
 
-  if (!clientId || !bridgeSecret) {
+  if (!clientId || !bridgeSecret || !backendBase) {
     return NextResponse.json(
       {
         error: 'GOOGLE_SIGN_IN_NOT_CONFIGURED',
         detail:
-          'Google sign-in is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_BRIDGE_SECRET in apps/web/.env.local (see .env.example).',
+          'Google sign-in is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_BRIDGE_SECRET, and NEXT_PUBLIC_API_URL in the web server environment.',
       },
       { status: 501 },
     );

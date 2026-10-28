@@ -3,11 +3,10 @@
 /** Landing hero. */
 
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronDown, Telescope } from 'lucide-react';
 
-import { Button } from '@/components/ui';
+import { ButtonLink } from '@/components/ui';
 
 const EarthGlobe = dynamic(
   () => import('@/components/three/earth-globe').then((m) => m.EarthGlobe),
@@ -25,14 +24,14 @@ const TAGLINE = ['OBSERVE.', 'INVESTIGATE.', 'VERIFY.', 'EXPLAIN.'];
 
 const TELEMETRY = [
   { k: 'ROI', v: 'POLYGON / BBOX / DRAWN' },
-  { k: 'TEMPORAL', v: 'MULTI-YEAR STACKS' },
+  { k: 'TEMPORAL', v: 'USER-DEFINED WINDOW' },
   { k: 'PROVENANCE', v: 'TASK · TOOL · VERSION' },
   { k: 'FALSIFICATION', v: 'CONTRADICTION SEARCH' },
 ];
 
 export function LandingHero() {
   return (
-    <section className="relative overflow-hidden border-b border-line">
+    <section className="landing-space relative overflow-hidden border-b border-line">
       {/* ambient depth */}
       <div className="aurora" aria-hidden />
       <div className="pointer-events-none absolute -right-32 top-1/4 h-[560px] w-[560px] rounded-full bg-[radial-gradient(circle,rgba(181,31,45,0.08),transparent_65%)]" />
@@ -52,19 +51,18 @@ export function LandingHero() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.06 }}
-            className="text-glow display-font mt-6 text-[48px] font-semibold leading-none tracking-[0.12em] sm:text-[68px]"
+            className="text-glow display-font mt-7 max-w-[12ch] text-[48px] font-medium leading-[0.98] tracking-[-0.055em] sm:text-[64px] xl:text-[76px]"
           >
-            SAATRAAI
+            Investigate Earth with evidence.
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.12 }}
-            className="mt-4 max-w-xl text-[14px] leading-relaxed text-ink-dim"
+            className="mt-5 max-w-lg text-[15px] leading-[1.75] text-ink-dim sm:text-[16px]"
           >
-            <span className="text-ink">Satellite AI for Autonomous Temporal Reasoning and Analysis of Intelligence</span>{' '}
-            — an evidence-driven Earth observation investigator for hypothesis-based spatio-temporal analysis.
+            Ask a question about a place and time. SAATRAAI organizes the imagery, hypotheses, provenance, and evidence gaps so every conclusion stays auditable.
           </motion.p>
 
           <motion.div
@@ -77,7 +75,7 @@ export function LandingHero() {
               <span
                 key={word}
                 className="font-mono text-[15px] font-semibold tracking-[0.22em]"
-                style={{ color: i === 0 ? '#b51f2d' : i === 1 ? '#81766e' : i === 2 ? '#b58a3a' : '#211b19' }}
+                style={{ color: i === 0 ? '#ff5447' : i === 1 ? '#aaa6ad' : i === 2 ? '#ff9a70' : '#f2eff0' }}
               >
                 {word}
               </span>
@@ -90,15 +88,14 @@ export function LandingHero() {
             transition={{ duration: 0.5, delay: 0.28 }}
             className="mt-9 flex flex-wrap items-center gap-3"
           >
-            <Link href="/sign-in">
-              <Button variant="primary" size="lg" icon={<ArrowRight className="h-4 w-4" />}>
-                Start investigation
-              </Button>
-            </Link>
-            <a href="#pipeline">
-              <Button variant="secondary" size="lg">
-                Explore SAATRAAI
-              </Button>
+            <ButtonLink href="/sign-in" variant="primary" size="lg" icon={<ArrowRight className="h-4 w-4" />}>
+              Start investigation
+            </ButtonLink>
+            <a
+              href="#pipeline"
+              className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-xl border border-line-strong bg-elevated px-6 text-[14px] text-ink transition-colors hover:border-primary/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+            >
+              Explore SAATRAAI
             </a>
           </motion.div>
 
@@ -123,7 +120,7 @@ export function LandingHero() {
           transition={{ duration: 0.7, delay: 0.15 }}
           className="relative flex items-center justify-center"
         >
-          <div className="glow-edge hero-orbit relative aspect-square w-full max-w-[520px] rounded-full bg-void/30 backdrop-blur-[2px]">
+          <div className="glow-edge hero-orbit relative aspect-square w-full max-w-[540px] rounded-full border border-white/[0.06] bg-void/30 backdrop-blur-[2px]">
             <EarthGlobe
               markers={[
                 { lon: 77.55, lat: 9.17 },
@@ -133,6 +130,9 @@ export function LandingHero() {
               satellites={3}
               className="absolute inset-0"
             />
+            <span className="absolute bottom-[8%] left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-void/80 px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.16em] text-ink-faint backdrop-blur-md">
+              Illustrative globe · no live observations
+            </span>
           </div>
         </motion.div>
       </div>

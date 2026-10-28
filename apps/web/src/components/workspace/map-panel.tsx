@@ -14,6 +14,7 @@ import type { TimelineEvent } from '@/lib/analysis/timeline';
 import type { BasemapId } from '@/lib/map/styles';
 import { readSettings, saveSettings } from '@/lib/settings';
 import { formatCoord, round, type LngLat } from '@/lib/utils';
+import { DESIGN_COLORS } from '@/lib/design-tokens';
 
 export interface MapPanelProps {
   region: RegionSelection | null;
@@ -69,9 +70,9 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
     saveSettings({ defaultBasemap: next });
   };
   const [layers, setLayers] = useState<LayerDef[]>([
-    { id: 'roi', label: 'Region of interest', color: '#b51f2d', visible: true, opacity: 0.12 },
-    { id: 'footprints', label: 'Scene footprints', color: '#b58a3a', visible: true, opacity: 0.2 },
-    { id: 'markers', label: 'Evidence markers', color: '#211b19', visible: true, opacity: 0.9 },
+    { id: 'roi', label: 'Region of interest', color: DESIGN_COLORS.primary, visible: true, opacity: 0.12 },
+    { id: 'footprints', label: 'Scene footprints', color: '#ff5b48', visible: true, opacity: 0.2 },
+    { id: 'markers', label: 'Evidence markers', color: '#f2eff0', visible: true, opacity: 0.9 },
   ]);
   const [compareAOverride, setCompareAOverride] = useState<string | null>(null);
   const [compareBOverride, setCompareBOverride] = useState<string | null>(null);
@@ -162,11 +163,11 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
             'supporting', '#34d399',
             'contradicting', '#f43f5e',
             'insufficient', '#f59e0b',
-            '#625954',
+            '#aaa6ad',
           ],
           'circle-radius': 6,
           'circle-stroke-width': 1.5,
-          'circle-stroke-color': '#fffdfa',
+          'circle-stroke-color': '#101116',
         },
       });
     }
@@ -180,8 +181,8 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
     const compareFeatures: GeoJSON.Feature[] = [];
     if (a) compareFeatures.push(polygonFeature(boundsPolygon(a.bounds as [number, number, number, number])));
     upsertGeoJsonLayer(map, 'ws-compare-a', { type: 'FeatureCollection', features: compareFeatures }, {
-      fill: '#b51f2d',
-      line: '#b51f2d',
+      fill: DESIGN_COLORS.primary,
+      line: DESIGN_COLORS.primary,
       fillOpacity: 0.0,
       lineWidth: 2.5,
     });

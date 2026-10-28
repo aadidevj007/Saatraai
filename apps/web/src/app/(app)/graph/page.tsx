@@ -4,40 +4,40 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { ArrowRight, Waypoints } from 'lucide-react';
 
 import { usePageTitle } from '@/components/shell/shell-context';
-import { Badge, Button, EmptyState, LoadingState, Panel, Select } from '@/components/ui';
+import { Badge, ButtonLink, EmptyState, LoadingState, Panel, Select } from '@/components/ui';
 import { graphApi } from '@/lib/api';
 import type { GraphEdge, GraphNode } from '@/lib/analysis/graph';
 import { useInvestigations } from '@/lib/hooks/queries';
 import { useWorkspaceModel } from '@/lib/hooks/use-workspace-model';
 import { cn } from '@/lib/utils';
+import { DESIGN_COLORS } from '@/lib/design-tokens';
 
 const COLUMN_ORDER: GraphNode['type'][] = ['question', 'dataset', 'analysis', 'model', 'evidence', 'hypothesis', 'conclusion'];
 
 const TYPE_STYLE: Record<GraphNode['type'], { color: string; label: string }> = {
-  question: { color: '#b51f2d', label: 'Question' },
-  dataset: { color: '#b58a3a', label: 'Dataset' },
+  question: { color: DESIGN_COLORS.primary, label: 'Question' },
+  dataset: { color: DESIGN_COLORS.warning, label: 'Dataset' },
   analysis: { color: '#77624d', label: 'Analysis' },
   model: { color: '#8d5260', label: 'Model' },
-  evidence: { color: '#b58a3a', label: 'Evidence' },
-  hypothesis: { color: '#861923', label: 'Hypothesis' },
+  evidence: { color: DESIGN_COLORS.warning, label: 'Evidence' },
+  hypothesis: { color: DESIGN_COLORS.primaryDim, label: 'Hypothesis' },
   conclusion: { color: '#34d399', label: 'Conclusion' },
 };
 
 const EDGE_COLOR: Record<string, string> = {
-  SUPPORTS: '#28734f',
-  CONTRADICTS: '#b51f2d',
-  WEAKENS: '#861923',
+  SUPPORTS: DESIGN_COLORS.success,
+  CONTRADICTS: DESIGN_COLORS.danger,
+  WEAKENS: DESIGN_COLORS.primaryDim,
   PRODUCES: '#77624d',
   ROUTES_TO: '#77624d',
   EXECUTES: '#8d5260',
-  INPUT_TO: '#b58a3a',
-  ANSWERS: '#b51f2d',
-  CONCLUDES: '#28734f',
-  ASSOCIATED_WITH: '#81766e',
+  INPUT_TO: DESIGN_COLORS.warning,
+  ANSWERS: DESIGN_COLORS.primary,
+  CONCLUDES: DESIGN_COLORS.success,
+  ASSOCIATED_WITH: DESIGN_COLORS.neutral,
 };
 
 const COL_WIDTH = 210;
@@ -151,11 +151,9 @@ export default function EvidenceGraphPage() {
             ))}
           </Select>
           {selectedId && (
-            <Link href={`/investigations/${selectedId}`}>
-              <Button variant="secondary" icon={<ArrowRight className="h-3.5 w-3.5" />}>
-                Workspace
-              </Button>
-            </Link>
+            <ButtonLink href={`/investigations/${selectedId}`} variant="secondary" icon={<ArrowRight className="h-3.5 w-3.5" />}>
+              Workspace
+            </ButtonLink>
           )}
         </div>
       </div>
@@ -215,7 +213,7 @@ export default function EvidenceGraphPage() {
             >
               <defs>
                 <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#81766e" />
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill={DESIGN_COLORS.neutral} />
                 </marker>
               </defs>
 
@@ -235,7 +233,7 @@ export default function EvidenceGraphPage() {
                       key={edge.id}
                       d={`M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`}
                       fill="none"
-                      stroke={EDGE_COLOR[edge.type] ?? '#81766e'}
+                      stroke={EDGE_COLOR[edge.type] ?? DESIGN_COLORS.neutral}
                       strokeWidth={1.4}
                       strokeOpacity={0.6}
                       strokeDasharray={edge.type === 'CONTRADICTS' ? '5 4' : undefined}
@@ -268,19 +266,19 @@ export default function EvidenceGraphPage() {
                         width={NODE_W}
                         height={NODE_H}
                         rx={9}
-                        fill={active ? '#fbf4ed' : '#fffdfa'}
-                        stroke={active ? style.color : '#d8c9bc'}
+                        fill={active ? '#281317' : '#121319'}
+                        stroke={active ? style.color : '#3b3b46'}
                         strokeWidth={active ? 2 : 1}
                       />
                       <rect width={4} height={NODE_H} rx={2} fill={style.color} />
                       <text x={14} y={20} fontSize={9} fill={style.color} fontFamily="IBM Plex Mono, monospace" letterSpacing={1.2}>
                         {style.label.toUpperCase()}
                       </text>
-                      <text x={14} y={38} fontSize={11} fill="#211b19">
+                      <text x={14} y={38} fontSize={11} fill="#f2eff0">
                         {truncate(node.label, 26)}
                       </text>
                       {node.detail && (
-                        <text x={14} y={51} fontSize={9} fill="#81766e" fontFamily="IBM Plex Mono, monospace">
+                        <text x={14} y={51} fontSize={9} fill="#aaa6ad" fontFamily="IBM Plex Mono, monospace">
                           {truncate(node.detail, 30)}
                         </text>
                       )}
@@ -330,7 +328,7 @@ export default function EvidenceGraphPage() {
                               onClick={() => setActiveNode(other)}
                               className="w-full rounded-md border border-line bg-card px-2.5 py-1.5 text-left transition-colors hover:border-line-strong"
                             >
-                              <span className="font-mono text-[9.5px] uppercase tracking-wider" style={{ color: EDGE_COLOR[edge.type] ?? '#81766e' }}>
+                              <span className="font-mono text-[9.5px] uppercase tracking-wider" style={{ color: EDGE_COLOR[edge.type] ?? DESIGN_COLORS.neutral }}>
                                 {edge.source === activeNode.id ? `→ ${edge.type}` : `← ${edge.type}`}
                               </span>
                               <span className="block truncate text-[11.5px] text-ink-dim">{other.label}</span>

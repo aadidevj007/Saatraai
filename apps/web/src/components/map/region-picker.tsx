@@ -27,6 +27,7 @@ import { readSettings, saveSettings } from '@/lib/settings';
 import type { RegionSelection } from '@/lib/investigation-config';
 import { bbox, centroid, formatCoord, formatNumber, polygonAreaKm2, type LngLat } from '@/lib/utils';
 import { useToast } from '@/lib/state/toast';
+import { DESIGN_COLORS } from '@/lib/design-tokens';
 
 type DrawMode = 'polygon' | 'rectangle' | null;
 
@@ -86,14 +87,14 @@ export function RegionPicker({
       type: 'Feature',
       properties: {},
       geometry: { type: 'LineString', coordinates: coords },
-    }, { line: '#b51f2d', lineWidth: 2 });
+    }, { line: DESIGN_COLORS.primary, lineWidth: 2 });
   }, []);
 
   const clearPreview = useCallback(() => {
     const map = mapRef.current;
     if (!map) return;
     if (map.getSource('roi-preview')) {
-      upsertGeoJsonLayer(map, 'roi-preview', { type: 'FeatureCollection', features: [] }, { line: '#b51f2d' });
+      upsertGeoJsonLayer(map, 'roi-preview', { type: 'FeatureCollection', features: [] }, { line: DESIGN_COLORS.primary });
     }
   }, []);
 
@@ -110,7 +111,7 @@ export function RegionPicker({
           properties: { name: value?.name ?? 'ROI' },
           geometry: { type: 'Polygon', coordinates: [[...polygon, polygon[0]]] },
         },
-        { fill: '#b51f2d', line: '#b51f2d', fillOpacity: 0.12, lineWidth: 2 },
+        { fill: DESIGN_COLORS.primary, line: DESIGN_COLORS.primary, fillOpacity: 0.12, lineWidth: 2 },
       );
       const [minLng, minLat, maxLng, maxLat] = bbox(polygon);
       map.fitBounds(
@@ -121,7 +122,7 @@ export function RegionPicker({
         { padding: 70, duration: 600, maxZoom: 12 },
       );
     } else if (map.getSource('roi-polygon')) {
-      upsertGeoJsonLayer(map, 'roi-polygon', { type: 'FeatureCollection', features: [] }, { fill: '#b51f2d' });
+      upsertGeoJsonLayer(map, 'roi-polygon', { type: 'FeatureCollection', features: [] }, { fill: DESIGN_COLORS.primary });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapReady, value?.name]);
@@ -149,8 +150,8 @@ export function RegionPicker({
           el.style.width = '10px';
           el.style.height = '10px';
           el.style.borderRadius = '50%';
-          el.style.background = '#b58a3a';
-          el.style.border = '2px solid #fffdfa';
+          el.style.background = DESIGN_COLORS.warning;
+          el.style.border = `2px solid ${DESIGN_COLORS.surface}`;
           el.style.cursor = 'grab';
           const marker = new gl.Marker({ draggable: true, element: el, anchor: 'center' })
             .setLngLat(pt)

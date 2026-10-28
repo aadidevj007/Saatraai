@@ -1,6 +1,7 @@
 'use client';
 
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, type AnchorHTMLAttributes, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -32,6 +33,16 @@ const SIZES: Record<ButtonSize, string> = {
   lg: 'h-11 px-6 text-[14px] rounded-xl gap-2',
 };
 
+function buttonClassName(variant: ButtonVariant, size: ButtonSize, className?: string) {
+  return cn(
+    'inline-flex items-center justify-center whitespace-nowrap select-none transition-all',
+    'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+    VARIANTS[variant],
+    SIZES[size],
+    className,
+  );
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { className, variant = 'secondary', size = 'md', loading, icon, children, disabled, ...rest },
   ref,
@@ -40,19 +51,32 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       disabled={disabled || loading}
-      className={cn(
-        'inline-flex items-center justify-center whitespace-nowrap select-none transition-all',
-        'disabled:opacity-45 disabled:pointer-events-none',
-        'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
-        VARIANTS[variant],
-        SIZES[size],
-        className,
-      )}
+      className={cn(buttonClassName(variant, size, className), 'disabled:opacity-45 disabled:pointer-events-none')}
       {...rest}
     >
       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : icon}
       {children}
     </button>
+  );
+});
+
+interface ButtonLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
+  href: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  icon?: ReactNode;
+}
+
+/** A navigation link styled like a button, retaining native link semantics. */
+export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(function ButtonLink(
+  { href, className, variant = 'secondary', size = 'md', icon, children, ...rest },
+  ref,
+) {
+  return (
+    <Link ref={ref} href={href} className={buttonClassName(variant, size, className)} {...rest}>
+      {icon}
+      {children}
+    </Link>
   );
 });
 

@@ -3,8 +3,9 @@
  * No scattered fetch() anywhere else in the app.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-export const API_PREFIX = `${API_BASE_URL}/api/v1`;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/+$/, '') ?? '';
+export const API_PREFIX = API_BASE_URL ? `${API_BASE_URL}/api/v1` : '';
+export const API_BASE_CONFIGURED = Boolean(API_BASE_URL);
 
 const SESSION_KEY = 'saatraai.session';
 export const SESSION_EXPIRED_EVENT = 'saatraai:session-expired';
@@ -15,7 +16,7 @@ export interface StoredSession {
   expires_at: number;
 }
 
-export type ApiErrorKind = 'http' | 'network' | 'parse';
+export type ApiErrorKind = 'http' | 'network' | 'parse' | 'configuration';
 
 export class ApiError extends Error {
   readonly status: number;
@@ -89,7 +90,12 @@ async function parseError(response: Response): Promise<ApiError> {
   } catch {
     detail = null;
   }
-  const message =
+  const envelope = detail && typeof detail === 'object' && 'error' in detail
+    ? (detail as { error?: { message?: unknown; details?: unknown } }).error
+    : null;
+  const message = envelope && typeof envelope.message === 'string'
+    ? envelope.message
+    :
     typeof detail === 'string'
       ? detail
       : detail && typeof detail === 'object' && 'message' in detail
@@ -99,6 +105,13 @@ async function parseError(response: Response): Promise<ApiError> {
 }
 
 async function rawRequest<T>(path: string, options: RequestOptions, token?: string): Promise<T> {
+  if (!API_BASE_CONFIGURED) {
+    throw new ApiError(
+      'SAATRAAI API is not configured. Set NEXT_PUBLIC_API_URL to the API origin and redeploy this web app.',
+      0,
+      'configuration',
+    );
+  }
   const headers: Record<string, string> = { ...options.headers };
   if (options.body !== undefined && !(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
@@ -196,11 +209,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
 /** Probe reachability without auth — used for system status. */
 export async function probeApi(timeoutMs = 4000): Promise<boolean> {
+  if (!API_BASE_CONFIGURED) return false;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    await fetch(`${API_BASE_URL}/health`, { signal: controller.signal, cache: 'no-store' });
-    return true;
+    const response = await fetch(`${API_BASE_URL}/health`, { signal: controller.signal, cache: 'no-store' });
+    return response.ok;
   } catch {
     return false;
   } finally {

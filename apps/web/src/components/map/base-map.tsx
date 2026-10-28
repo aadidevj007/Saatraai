@@ -7,11 +7,20 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
+import {
+  AttributionControl,
+  Map as MapLibreMap,
+  NavigationControl,
+  ScaleControl,
+  setWorkerUrl,
+  type MapMouseEvent,
+} from 'maplibre-gl';
 import { Maximize2, Minimize2 } from 'lucide-react';
 
 import { BASEMAP_LIST, BASEMAPS, type BasemapId } from '@/lib/map/styles';
 import { cn, formatCoord } from '@/lib/utils';
+
+setWorkerUrl(new URL('maplibre-gl/dist/maplibre-gl-worker.mjs', import.meta.url).toString());
 
 export interface BaseMapProps {
   center?: [number, number];
@@ -58,7 +67,7 @@ function FullscreenButton({ targetRef }: { targetRef: React.RefObject<HTMLDivEle
       aria-label={active ? 'Exit fullscreen' : 'Enter fullscreen'}
       title={active ? 'Exit fullscreen' : 'Enter fullscreen'}
       className={cn(
-        'absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-surface/95 text-ink-dim backdrop-blur transition-colors hover:border-primary/50 hover:text-primary',
+        'absolute right-3 bottom-10 z-20 flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-surface/95 text-ink-dim backdrop-blur transition-colors hover:border-primary/50 hover:text-primary',
         active && 'border-primary/60 text-primary',
       )}
     >
@@ -86,7 +95,6 @@ export function BaseMap({
   const mapRef = useRef<MapLibreMap | null>(null);
   const [ready, setReady] = useState(false);
   const [hover, setHover] = useState<[number, number] | null>(null);
-  const [failed, setFailed] = useState<string | null>(null);
   const [basemapFailed, setBasemapFailed] = useState<string | null>(null);
 
   /* keep latest callbacks without re-creating the map */
@@ -99,20 +107,12 @@ export function BaseMap({
   useEffect(() => {
     let disposed = false;
 
-    const init = async () => {
-      let gl: typeof import('maplibre-gl');
-      try {
-        gl = await import('maplibre-gl');
-        await import('maplibre-gl/dist/maplibre-gl.css');
-      } catch {
-        if (!disposed) setFailed('MapLibre GL failed to load.');
-        return;
-      }
+    const init = () => {
       if (!containerRef.current || disposed) return;
 
       const style = BASEMAPS[basemap].style;
 
-      const instance = new gl.Map({
+      const instance = new MapLibreMap({
         container: containerRef.current,
         style: style as never,
         center,
@@ -123,9 +123,9 @@ export function BaseMap({
       });
       mapRef.current = instance;
 
-      instance.addControl(new gl.NavigationControl({ showCompass: true, visualizePitch: false }), 'top-right');
-      instance.addControl(new gl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-left');
-      instance.addControl(new gl.AttributionControl({ compact: true }));
+      instance.addControl(new NavigationControl({ showCompass: true, visualizePitch: false }), 'top-right');
+      instance.addControl(new ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-left');
+      instance.addControl(new AttributionControl({ compact: true }));
 
       instance.on('error', (e) => {
         const message = e?.error?.message ?? '';
@@ -151,7 +151,7 @@ export function BaseMap({
       instance.on('contextmenu', (e: MapMouseEvent) => handlers.current.onContextMenu?.([e.lngLat.lng, e.lngLat.lat]));
     };
 
-    void init();
+    init();
 
     return () => {
       disposed = true;
@@ -182,11 +182,7 @@ export function BaseMap({
 
   return (
     <div className={cn('relative h-full w-full overflow-hidden bg-void', className)} ref={containerRef}>
-      {failed && (
-        <div className="absolute inset-0 flex items-center justify-center text-[12.5px] text-danger">{failed}</div>
-      )}
-
-      {!ready && !failed && (
+      {!ready && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-void">
           <div className="flex flex-col items-center gap-3">
             <div className="h-7 w-7 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />

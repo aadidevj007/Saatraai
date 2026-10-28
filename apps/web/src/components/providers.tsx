@@ -2,10 +2,12 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
+import { MotionConfig } from 'framer-motion';
 
 import { AuthProvider } from '@/lib/auth/auth-context';
 import { NotificationsProvider } from '@/lib/state/notifications';
 import { ToastProvider } from '@/lib/state/toast';
+import { CustomCursor } from '@/components/ui/custom-cursor';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -27,11 +29,16 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={client}>
-      <ToastProvider>
-        <NotificationsProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </NotificationsProvider>
-      </ToastProvider>
+      <MotionConfig reducedMotion="user">
+        <ToastProvider>
+          <NotificationsProvider>
+            <AuthProvider>
+              {children}
+              <CustomCursor />
+            </AuthProvider>
+          </NotificationsProvider>
+        </ToastProvider>
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

@@ -2,19 +2,28 @@
 
 /** Google-only sign-in screen. */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Satellite } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
+import { BrandLockup } from '@/components/brand/brand';
 import { EarthVisual } from '@/components/auth/earth-visual';
 import { GoogleSignIn } from '@/components/auth/google-sign-in';
 import { Kbd } from '@/components/ui';
 import { useAuth } from '@/lib/auth/auth-context';
+import { API_BASE_CONFIGURED, probeApi } from '@/lib/api/client';
 
 export default function SignInPage() {
   const router = useRouter();
   const { status, needsProfile, google } = useAuth();
+  const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void probeApi().then((online) => { if (active) setApiOnline(online); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -33,9 +42,9 @@ export default function SignInPage() {
         </Link>
         <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">
           <span className="hidden sm:inline">AUTH · OAUTH 2.0 / OIDC</span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse-soft" />
-            API LINK READY
+            <span className="flex items-center gap-1.5" role="status">
+            <span className={`h-1.5 w-1.5 rounded-full ${apiOnline ? 'bg-success' : 'bg-warning'}`} />
+            {!API_BASE_CONFIGURED ? 'API URL NOT CONFIGURED' : apiOnline ? 'API ONLINE' : apiOnline === false ? 'API UNAVAILABLE' : 'CHECKING API'}
           </span>
         </div>
       </div>
@@ -43,15 +52,10 @@ export default function SignInPage() {
       <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr]">
         {/* Left: identity */}
         <section className="flex flex-col items-center lg:items-start">
-          <div className="mb-6 flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/40 bg-primary/10">
-              <Satellite className="h-4.5 w-4.5 text-primary" />
-            </span>
-            <div>
-              <div className="font-mono text-[15px] font-semibold tracking-[0.26em] text-ink">SAATRAAI</div>
-              <div className="font-mono text-[9.5px] uppercase tracking-[0.3em] text-ink-faint">
-                Earth Intelligence Platform
-              </div>
+          <div className="mb-6 flex flex-col items-center gap-1 lg:items-start">
+            <BrandLockup symbolClassName="h-10 w-10" wordmarkClassName="text-[15px] tracking-[0.26em]" />
+            <div className="pl-1 font-mono text-[9.5px] uppercase tracking-[0.3em] text-ink-faint">
+              Earth Intelligence Platform
             </div>
           </div>
 
@@ -72,13 +76,12 @@ export default function SignInPage() {
         </section>
 
         {/* Right: sign-in card */}
-        <section className="glow-edge rounded-2xl border border-line bg-surface p-7 shadow-[0_24px_80px_rgba(42,28,20,0.12)] sm:p-9">
+        <section className="glass-surface glow-edge rounded-xl p-7 sm:p-9">
           <header className="mb-7">
             <p className="font-mono text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">Secure access</p>
             <h2 className="mt-2 text-[19px] font-semibold text-ink">Sign in to SAATRAAI</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-ink-dim">
-              SAATRAAI uses Google Sign-In only. There are no passwords to create or manage — your Google identity is
-              exchanged for a scoped API session.
+              Sign in with the configured Google identity provider. The verified identity is exchanged for a scoped API session.
             </p>
           </header>
 

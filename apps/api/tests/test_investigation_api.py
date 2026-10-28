@@ -111,3 +111,28 @@ class InvestigationApiTests(unittest.TestCase):
         self.assertEqual(operation["summary"], "Create an investigation")
         self.assertIn("401", operation["responses"])
         self.assertIn("/api/v1/investigations/{investigation_id}/queries", document["paths"])
+
+    def test_blank_names_titles_and_queries_are_rejected(self) -> None:
+        headers = self.create_authenticated_user()
+        blank_project = self.client.post("/api/v1/projects", json={"name": "   "}, headers=headers)
+        self.assertEqual(blank_project.status_code, 422)
+
+        project = self.client.post("/api/v1/projects", json={"name": "Valid project"}, headers=headers).json()
+        blank_investigation = self.client.post(
+            "/api/v1/investigations",
+            json={"project_id": project["id"], "title": "   "},
+            headers=headers,
+        )
+        self.assertEqual(blank_investigation.status_code, 422)
+
+        investigation = self.client.post(
+            "/api/v1/investigations",
+            json={"project_id": project["id"], "title": "Valid investigation"},
+            headers=headers,
+        ).json()
+        blank_query = self.client.post(
+            f"/api/v1/investigations/{investigation['id']}/queries",
+            json={"text": "  "},
+            headers=headers,
+        )
+        self.assertEqual(blank_query.status_code, 422)

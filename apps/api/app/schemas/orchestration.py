@@ -3,13 +3,21 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class OrchestrationRequest(BaseModel):
     query: str = Field(min_length=1, max_length=10000)
     image_ids: list[UUID] = Field(min_length=1, max_length=2)
     parameters: dict = Field(default_factory=dict)
+
+    @field_validator("query")
+    @classmethod
+    def require_non_whitespace_query(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("query must contain a non-whitespace character")
+        return normalized
 
 
 class ExecutionTraceListResponse(BaseModel):

@@ -6,6 +6,7 @@ from pathlib import Path
 from app.core.config import get_settings
 from app.tools.adapters import ModelAdapter
 from app.tools.types import (
+    EvidencePreflightParameters,
     GroundingToolOutput,
     GroundingParameters,
     NotImplementedToolOutput,
@@ -20,8 +21,19 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from ml.common import ModelUnavailableError
+from ml.change_detection.evidence_preflight import assess_pair
 from ml.grounding import GeoChatGroundingRunner
 from ml.vqa import GeoChatVqaRunner, normalize_answer
+
+
+class BiTemporalEvidencePreflightAdapter(ModelAdapter):
+    """Checks temporal-pair provenance and data validity without inferring change."""
+
+    def execute(self, parameters: EvidencePreflightParameters, context: ToolExecutionContext | None = None):
+        del parameters
+        if context is None:
+            return assess_pair((), ())
+        return assess_pair(context.input_paths, context.input_ids, context.input_checksums)
 
 
 class GeoChatVqaAdapter(ModelAdapter):

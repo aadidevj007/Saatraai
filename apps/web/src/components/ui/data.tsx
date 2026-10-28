@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { DESIGN_COLORS } from '@/lib/design-tokens';
 
 /* ── Tabs ── */
 
@@ -245,13 +246,13 @@ export function ConfidenceRing({
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.min(1, Math.max(0, value));
-  const tone = clamped >= 0.7 ? '#28734f' : clamped >= 0.4 ? '#b51f2d' : clamped > 0 ? '#966319' : '#81766e';
+  const tone = clamped >= 0.7 ? DESIGN_COLORS.success : clamped >= 0.4 ? DESIGN_COLORS.danger : clamped > 0 ? DESIGN_COLORS.warning : DESIGN_COLORS.neutral;
 
   return (
     <div className="flex flex-col items-center gap-1.5">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" role="img" aria-label={`${label}: ${(clamped * 100).toFixed(0)}%`}>
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e9dfd5" strokeWidth={stroke} />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#292a32" strokeWidth={stroke} />
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -354,7 +355,7 @@ export function Panel({
   scroll?: boolean;
 }) {
   return (
-    <section className={cn('rounded-xl border border-line bg-surface', className)}>
+    <section className={cn('glass-surface overflow-hidden rounded-xl', className)}>
       {(title || actions) && (
         <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
           <div className="min-w-0">

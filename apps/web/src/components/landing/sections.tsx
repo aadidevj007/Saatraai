@@ -2,7 +2,6 @@
 
 /** Landing content sections. */
 
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -17,7 +16,7 @@ import {
   Waypoints,
 } from 'lucide-react';
 
-import { Badge, Button, TiltCard } from '@/components/ui';
+import { Badge, ButtonLink, TiltCard } from '@/components/ui';
 
 function Section({
   id,
@@ -166,7 +165,7 @@ export function ModalitiesSection() {
     <Section
       id="modalities"
       eyebrow="Multimodal Earth observation"
-      title="Seven evidence families, availability stated honestly"
+      title="Earth-observation evidence, availability stated honestly"
       description="SAATRAAI separates what it can measure today from what a deployment has not connected. Nothing below is simulated."
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -275,11 +274,9 @@ export function GraphSection() {
               <span className="text-danger">CONTRADICTS</span> or <span className="text-ink-dim">ASSOCIATED_WITH</span>.
             </p>
           </div>
-          <Link href="/sign-in" className="mt-4 inline-block">
-            <Button variant="secondary" size="sm" icon={<ArrowRight className="h-3.5 w-3.5" />}>
-              Open the graph
-            </Button>
-          </Link>
+          <ButtonLink href="/sign-in" className="mt-4" variant="secondary" size="sm" icon={<ArrowRight className="h-3.5 w-3.5" />}>
+            Open the graph
+          </ButtonLink>
         </div>
       </div>
     </Section>
@@ -293,14 +290,14 @@ export function TemporalSection() {
     <Section
       alt
       eyebrow="Temporal analysis"
-      title="Multi-year stacks, before / after / change"
-      description="Investigations span explicit time ranges; imagery, executions and evidence are laid out on an interactive timeline that drives the map."
+      title="Set the time window. Compare only what the evidence supports."
+      description="Investigations span explicit date ranges; uploaded imagery, executions, and evidence appear on a timeline that drives the map. A visual comparison alone does not produce a change estimate."
     >
       <div className="rounded-xl border border-line bg-card p-5">
         <div className="flex items-center gap-3">
           <CalendarRange className="h-4 w-4 text-primary" />
           <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-dim">
-            Preset ranges · last year / 3 years / 5 years / custom
+            Date range · preset or custom
           </span>
         </div>
         <div className="mt-5 flex items-center gap-1.5">
@@ -320,7 +317,7 @@ export function TemporalSection() {
           ))}
         </div>
         <p className="mt-4 text-[12.5px] text-ink-dim">
-          Comparison modes: split view, opacity slider and swipe — driven by the selected before/after dates.
+          Comparison modes: split view, opacity slider, and swipe — driven by the selected dates and uploaded scenes.
         </p>
       </div>
     </Section>
@@ -451,11 +448,9 @@ export function TechnologySection() {
         <p className="mx-auto mt-1.5 max-w-md text-[12.5px] text-ink-dim">
           Sign in with Google, ask a question, draw a region — the workspace assembles the evidence chain live.
         </p>
-        <Link href="/sign-in" className="mt-4 inline-block">
-          <Button variant="primary" size="lg" icon={<ArrowRight className="h-4 w-4" />}>
-            Start investigation
-          </Button>
-        </Link>
+        <ButtonLink href="/sign-in" className="mt-4" variant="primary" size="lg" icon={<ArrowRight className="h-4 w-4" />}>
+          Start investigation
+        </ButtonLink>
       </div>
     </Section>
   );

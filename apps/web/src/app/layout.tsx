@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { Providers } from '@/components/providers';
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
     description: 'Evidence-driven geospatial investigation powered by satellite AI',
     type: 'website',
   },
+  icons: { icon: '/favicon.svg', shortcut: '/favicon.svg' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

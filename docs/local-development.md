@@ -13,6 +13,8 @@ docker compose ps
 
 PostgreSQL/PostGIS is exposed on port `5432`; Redis is exposed on port `6379`. Both must be reachable from the API process.
 
+Docker is optional. You can instead install PostgreSQL 16 with PostGIS 3.4 and Redis 7 directly or use compatible local managed services. Create an empty `saatraai` database, start both services, and set `DATABASE_URL` and `REDIS_URL` in `apps/api/.env` to their addresses. Continue with the API setup below. See [API operations](../apps/api/README.md) for the non-Docker workflow and production configuration.
+
 ## 2. Configure and start the API
 
 From the repository root, copy the development template into the API working directory. `Settings` reads `.env` from the current working directory, so start the API from `apps/api`:
@@ -51,7 +53,7 @@ npm install
 npm run dev
 ```
 
-The API CORS policy currently allows `http://localhost:3000`. If you use another web origin or deploy, update the API CORS configuration for that exact origin before starting both services.
+In local development, the API allows `http://localhost:3000` by default. For other origins, set `CORS_ALLOWED_ORIGINS` in the API environment to a comma-separated list of exact origins. Production requires configured HTTPS origins without wildcards. The frontend reads `NEXT_PUBLIC_API_URL`, set to the API origin without an `/api/v1` suffix; details are in [API operations](../apps/api/README.md).
 
 ## 4. Optional GeoChat inference
 

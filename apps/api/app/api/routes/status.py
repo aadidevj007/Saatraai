@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import logging
+import os
 import socket
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,17 +18,16 @@ from app.models.identity import User
 from app.schemas.reasoning import ServiceStatusResponse, SystemStatusResponse
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
 
 
 def _tcp_reachable(url: str, timeout: float = 0.75) -> bool:
-    parsed = urlparse(url)
-    host = parsed.hostname or "localhost"
-    port = parsed.port or 6379
     try:
+        parsed = urlparse(url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 6379
         with socket.create_connection((host, port), timeout=timeout):
             return True
-    except OSError:
+    except (OSError, ValueError):
         return False
 
 
@@ -58,43 +57,38 @@ def system_status(
                 id="database",
                 label="PostgreSQL / PostGIS",
                 state="online",
-                detail=urlparse(settings.database_url).hostname or "configured",
+                detail="Connection successful",
             )
         )
     except Exception:  # noqa: BLE001 - status endpoint must never raise
-        logger.exception("database status probe failed")
         services.append(
             ServiceStatusResponse(id="database", label="PostgreSQL / PostGIS", state="offline")
         )
 
+    redis_online = _tcp_reachable(settings.redis_url)
     services.append(
         ServiceStatusResponse(
             id="redis",
             label="Redis",
-            state="online" if _tcp_reachable(settings.redis_url) else "offline",
-            detail=urlparse(settings.redis_url).netloc,
+            state="online" if redis_online else "offline",
+            detail="TCP endpoint reachable" if redis_online else "TCP endpoint unavailable",
         )
     )
 
     storage_path = Path(settings.local_storage_path)
-    if storage_path.exists():
-        services.append(
-            ServiceStatusResponse(
-                id="object_storage",
-                label="Object storage (local)",
-                state="online",
-                detail=str(storage_path),
-            )
+    storage_writable = storage_path.is_dir() and os.access(storage_path, os.W_OK)
+    services.append(
+        ServiceStatusResponse(
+            id="object_storage",
+            label="Object storage (local)",
+            state="online" if storage_writable else "degraded",
+            detail=(
+                "Storage directory is writable; durability is not tested by this probe"
+                if storage_writable
+                else "Storage directory is not writable or does not exist"
+            ),
         )
-    else:
-        services.append(
-            ServiceStatusResponse(
-                id="object_storage",
-                label="Object storage (local)",
-                state="degraded",
-                detail=f"path {storage_path} does not exist yet",
-            )
-        )
+    )
 
     if settings.geochat_model_path:
         services.append(

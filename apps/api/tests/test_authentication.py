@@ -76,6 +76,18 @@ class AuthenticationApiTests(unittest.TestCase):
         response = self.client.get("/api/v1/projects")
         self.assertEqual(response.status_code, 401)
 
+    def test_validation_errors_do_not_echo_passwords_or_tokens(self) -> None:
+        email = f"invalid-{uuid4()}@example.test"
+        self.created_emails.append(email)
+        password = "pw!"
+        response = self.client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": password},
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertNotIn(password, response.text)
+        self.assertNotIn('"input"', response.text)
+
     def test_current_user_requires_access_token(self) -> None:
         email, payload = self.register_user()
         unauthorized = self.client.get("/api/v1/users/me")

@@ -3,12 +3,20 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ProjectCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=2000)
+
+    @field_validator("name")
+    @classmethod
+    def require_non_whitespace_name(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("name must contain a non-whitespace character")
+        return normalized
 
 
 class ProjectResponse(BaseModel):
@@ -48,6 +56,14 @@ class InvestigationCreateRequest(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     configuration: InvestigationConfiguration | None = None
 
+    @field_validator("title")
+    @classmethod
+    def require_non_whitespace_title(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("title must contain a non-whitespace character")
+        return normalized
+
 
 class InvestigationConfigurationUpdate(BaseModel):
     configuration: InvestigationConfiguration
@@ -73,6 +89,14 @@ class InvestigationPageResponse(BaseModel):
 class InvestigationQueryCreateRequest(BaseModel):
     text: str = Field(min_length=1, max_length=10000)
     sequence: int | None = Field(default=None, ge=1)
+
+    @field_validator("text")
+    @classmethod
+    def require_non_whitespace_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("text must contain a non-whitespace character")
+        return normalized
 
 
 class InvestigationQueryResponse(BaseModel):

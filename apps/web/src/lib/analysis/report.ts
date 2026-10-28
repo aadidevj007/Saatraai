@@ -9,6 +9,7 @@ import type {
   Investigation,
   InvestigationQuery,
 } from '@/lib/api/types';
+import { apiBase } from '@/lib/api/client';
 import type { ConfidenceReport } from '@/lib/analysis/confidence';
 import type { TimelineEvent } from '@/lib/analysis/timeline';
 import type { InvestigationConfig } from '@/lib/investigation-config';
@@ -92,7 +93,7 @@ export function buildReportDocument(input: {
         hypotheses: input.hypotheses?.length ?? 0,
         conclusions: input.conclusions?.length ?? 0,
       },
-      api_base: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000',
+      api_base: apiBase() || undefined,
     },
     question: config?.question ?? input.queries?.[0]?.text ?? null,
     region: config?.region ?? null,

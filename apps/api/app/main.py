@@ -10,40 +10,45 @@ from app.api.errors import (
     validation_exception_handler,
 )
 from app.core.logging import configure_logging
-
-configure_logging()
-
-app = FastAPI(
-    title="SAATRAAI API",
-    description="Satellite AI for Autonomous Temporal Reasoning and Analysis of Intelligence",
-    version="0.1.0",
-)
-app.add_exception_handler(StarletteHTTPException, http_exception_handler)
-app.add_exception_handler(RequestValidationError, validation_exception_handler)
-app.add_exception_handler(Exception, unhandled_exception_handler)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(api_router)
+from app.core.config import Settings, get_settings
 
 
-@app.get("/health")
 async def health_check() -> dict[str, str]:
     return {
         "status": "ok",
         "service": "saatraai-api",
-        "version": "0.1.0",
+        "version": get_settings().app_version,
     }
 
 
-@app.get("/")
 async def root() -> dict[str, str]:
-    return {
-        "message": "SAATRAAI API is running",
-    }
+    return {"message": "SAATRAAI API is running"}
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    configure_logging()
+    resolved_settings = settings or get_settings()
+    application = FastAPI(
+        title=resolved_settings.app_name,
+        description="Satellite AI for Autonomous Temporal Reasoning and Analysis of Intelligence",
+        version=resolved_settings.app_version,
+    )
+    application.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    application.add_exception_handler(RequestValidationError, validation_exception_handler)
+    application.add_exception_handler(Exception, unhandled_exception_handler)
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=resolved_settings.allowed_cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Idempotency-Key"],
+    )
+    application.include_router(api_router)
+
+    application.add_api_route("/health", health_check, methods=["GET"])
+    application.add_api_route("/", root, methods=["GET"])
+
+    return application
+
+
+app = create_app()

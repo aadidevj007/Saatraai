@@ -1,4 +1,4 @@
-export { Button, IconButton, type ButtonVariant, type ButtonSize } from './button';
+export { Button, ButtonLink, IconButton, type ButtonVariant, type ButtonSize } from './button';
 export { Badge, StatusDot, Kbd, Pill, type BadgeTone } from './badge';
 export { Modal, Drawer } from './overlays';
 export {

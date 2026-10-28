@@ -15,21 +15,21 @@ export function EarthVisual({ className }: { className?: string }) {
   return (
     <div className={cn('pointer-events-none relative aspect-square w-full max-w-[520px]', className)} aria-hidden>
       {/* soft field behind the globe */}
-      <div className="absolute inset-[8%] rounded-full bg-[radial-gradient(circle_at_35%_30%,rgba(181,31,45,0.12),rgba(181,138,58,0.08)_45%,transparent_70%)]" />
+      <div className="absolute inset-[8%] rounded-full bg-[radial-gradient(circle_at_35%_30%,rgba(241,43,69,0.14),rgba(241,43,69,0.04)_48%,transparent_70%)]" />
 
       <EarthGlobe
         satellites={2}
         className="absolute inset-0"
       />
 
-      {/* telemetry corners */}
+      {/* These labels describe the illustration; no live collection or sensor metadata is shown. */}
       <div className="absolute left-0 top-[6%] space-y-1">
-        <TelemetryLine label="SENSOR" value="SAR + OPTICAL" />
-        <TelemetryLine label="PASS" value="DESCENDING" />
+        <TelemetryLine label="GLOBE" value="PROCEDURAL" />
+        <TelemetryLine label="MARKERS" value="DECORATIVE" />
       </div>
       <div className="absolute right-0 bottom-[6%] space-y-1 text-right">
-        <TelemetryLine label="GSD" value="10 m" align="end" />
-        <TelemetryLine label="REVISIT" value="6 days" align="end" />
+        <TelemetryLine label="OBSERVATIONS" value="NONE" align="end" />
+        <TelemetryLine label="STATUS" value="ILLUSTRATION" align="end" />
       </div>
     </div>
   );
