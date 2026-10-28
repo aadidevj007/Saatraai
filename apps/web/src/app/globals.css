@@ -1,28 +1,351 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #04070c;
-  --foreground: #e5eef8;
+/* ─────────────────────────────────────────────
+   SAATRAAI DESIGN SYSTEM — deep space, signal red and ember
+───────────────────────────────────────────── */
+@theme {
+  /* Surfaces */
+  --color-void: #07080b;
+  --color-surface: #0c0d12;
+  --color-elevated: #12141b;
+  --color-panel: #0e1016;
+  --color-card: #11131a;
+  --color-card-hover: #171922;
+  --color-inputbg: #090a0f;
+
+  /* Lines */
+  --color-line: #272a33;
+  --color-line-strong: #3c404b;
+
+  /* Brand accents */
+  --color-primary: #f12b45;
+  --color-primary-dim: #c91d36;
+  --color-secondary: #ff4358;
+  --color-accent: #f5f5f7;
+
+  /* Semantic status */
+  --color-success: #48b783;
+  --color-warning: #e6aa4d;
+  --color-danger: #f12b45;
+
+  /* Text */
+  --color-ink: #f5f5f7;
+  --color-ink-dim: #a4a8b3;
+  --color-ink-faint: #777c88;
+
+  /* Type */
+  --font-sans: Inter, ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Motion */
+  --animate-pulse-soft: pulse-soft 3s ease-in-out infinite;
+  --animate-scan: scan 6s linear infinite;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-spin-slow: spin 1.8s linear infinite;
+  --animate-orb: orb 22s ease-in-out infinite;
+  --animate-orb-rev: orb-rev 28s ease-in-out infinite;
+
+  @keyframes orb {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    33% { transform: translate3d(40px, -30px, 0) scale(1.08); }
+    66% { transform: translate3d(-24px, 22px, 0) scale(0.95); }
+  }
+  @keyframes orb-rev {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    40% { transform: translate3d(-52px, 26px, 0) scale(1.1); }
+    75% { transform: translate3d(30px, -18px, 0) scale(0.96); }
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+  @keyframes scan {
+    0% { transform: translateY(-8%); opacity: 0; }
+    12% { opacity: 1; }
+    88% { opacity: 1; }
+    100% { transform: translateY(108%); opacity: 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(181, 31, 45, 0.28); }
+    70% { box-shadow: 0 0 0 8px rgba(181, 31, 45, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(181, 31, 45, 0); }
+  }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ─────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────── */
+/* Tailwind Preflight handles margin/padding; keep this reset from overriding utilities. */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  background:
+    radial-gradient(ellipse at 3% 0%, rgba(181, 31, 45, 0.16), transparent 34rem),
+    radial-gradient(ellipse at 97% 10%, rgba(181, 31, 45, 0.07), transparent 32rem),
+    var(--color-void);
+  background-attachment: fixed;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
+body { overflow-x: hidden; }
+
+::selection { background: rgba(241, 43, 69, 0.36); color: #fff; }
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-html {
-  background: var(--background);
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #45414a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-primary); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  margin: 0;
+/* ─────────────────────────────────────────────
+   COMPONENTS
+───────────────────────────────────────────── */
+@layer components {
+  .panel {
+    background: linear-gradient(155deg, rgba(21, 23, 31, 0.82), rgba(12, 13, 18, 0.92));
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .card {
+    background: linear-gradient(155deg, rgba(20, 22, 30, 0.88), rgba(15, 16, 22, 0.94));
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: border-color 0.22s ease, background 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+  }
+  .card:hover {
+    border-color: rgba(241, 43, 69, 0.42);
+    background: linear-gradient(155deg, rgba(28, 23, 30, 0.94), rgba(16, 16, 23, 0.98));
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.38), 0 0 24px rgba(241, 43, 69, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transform: translateY(-3px) rotateX(1deg);
+  }
+
+  .glass-surface {
+    background: rgba(13, 14, 19, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 54px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  }
+  @supports (backdrop-filter: blur(12px)) {
+    .glass-surface { background: rgba(20, 22, 30, 0.62); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+  }
+
+  .mono { font-family: var(--font-mono); }
+
+  /* technical label — coordinates, dataset ids, timestamps */
+  .tech {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+  }
+
+  .hairline { border-color: var(--color-line); }
+
+  .shimmer {
+    background: linear-gradient(90deg, #17181f 0%, #29212a 50%, #17181f 100%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  /* Aurora backdrop — animated, subtle; used behind landing + sign-in */
+  .aurora {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .aurora::before,
+  .aurora::after {
+    content: '';
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.5;
+  }
+  .aurora::before {
+    width: 560px;
+    height: 560px;
+    top: -180px;
+    left: -120px;
+    background: radial-gradient(circle, rgba(181, 31, 45, 0.34), transparent 70%);
+    animation: var(--animate-orb);
+  }
+  .aurora::after {
+    width: 640px;
+    height: 640px;
+    bottom: -260px;
+    right: -160px;
+    background: radial-gradient(circle, rgba(181, 31, 45, 0.2), transparent 70%);
+    animation: var(--animate-orb-rev);
+  }
+
+  /* Soft elevated glow for hero panels */
+  .glow-edge {
+    box-shadow:
+      0 0 0 1px rgba(241, 43, 69, 0.14),
+      0 24px 72px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  /* Gradient headline text */
+  .text-glow {
+    background: linear-gradient(112deg, #f5f5f7 4%, #f12b45 58%, #ff7382 96%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .display-font { font-family: var(--font-display); }
+
+  .hero-orbit {
+    box-shadow: 0 0 0 1px rgba(255, 72, 59, 0.2), 0 28px 100px rgba(181, 31, 45, 0.2);
+  }
+
+  .section-band {
+    background:
+      radial-gradient(ellipse at 92% 20%, rgba(181, 31, 45, 0.12), transparent 30rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 46%);
+  }
+
+  .landing-space::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.42;
+    background-image:
+      radial-gradient(1px 1px at 9% 22%, rgba(255, 221, 215, 0.82), transparent 2px),
+      radial-gradient(1px 1px at 34% 71%, rgba(255, 91, 72, 0.82), transparent 2px),
+      radial-gradient(1.5px 1.5px at 74% 29%, rgba(255, 221, 215, 0.7), transparent 2.5px),
+      radial-gradient(1px 1px at 91% 66%, rgba(255, 91, 72, 0.72), transparent 2px);
+    background-size: 190px 170px, 230px 210px, 270px 250px, 310px 290px;
+    mask-image: linear-gradient(90deg, #000 0%, #000 70%, transparent 100%);
+  }
+
+  .landing-space::after {
+    content: '';
+    position: absolute;
+    top: 8%;
+    left: 52%;
+    width: min(46vw, 620px);
+    aspect-ratio: 1;
+    pointer-events: none;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(181, 31, 45, 0.12), transparent 68%);
+    filter: blur(14px);
+  }
+}
+
+/* Cinematic depth as cards enter the viewport. */
+@supports (animation-timeline: view()) {
+  .card {
+    animation: card-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 38%;
+  }
+  @keyframes card-rise {
+    from { opacity: 0.72; transform: perspective(1000px) translateY(28px) rotateX(3deg); }
+    to { opacity: 1; transform: perspective(1000px) translateY(0) rotateX(0); }
+  }
+}
+
+/* Respect reduced-motion for the new ambient loops */
+@media (prefers-reduced-motion: reduce) {
+  .aurora::before,
+  .aurora::after {
+    animation: none !important;
+  }
+
+  .aurora::before,
+  .aurora::after { mix-blend-mode: screen; }
+}
+
+/* ─────────────────────────────────────────────
+   MAPLIBRE OVERRIDES
+───────────────────────────────────────────── */
+.maplibregl-ctrl-attrib {
+  display: block !important;
+  color: var(--color-ink-dim) !important;
+  background: rgba(12, 13, 18, 0.94) !important;
+  border: 1px solid var(--color-line) !important;
+  border-radius: 5px 0 0 0 !important;
+  font: 10px/1.5 'IBM Plex Mono', ui-monospace, monospace !important;
+}
+.maplibregl-ctrl-attrib a { color: var(--color-ink-dim) !important; }
+.maplibregl-ctrl-logo { display: block !important; }
+.maplibregl-ctrl-group {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-line) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.48) !important;
+}
+.maplibregl-ctrl-group button { background: transparent !important; }
+.maplibregl-ctrl-group button + button { border-top: 1px solid var(--color-line) !important; }
+.maplibregl-ctrl button.maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon,
+.maplibregl-ctrl button.maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon { filter: none; }
+.maplibregl-canvas:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+
+.maplibregl-popup-content {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+  border: 1px solid var(--color-line-strong) !important;
+  border-radius: 8px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12.5px !important;
+  padding: 10px 12px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48) !important;
+}
+.maplibregl-popup-tip { border-top-color: var(--color-line-strong) !important; }
+.maplibregl-popup-close-button { color: var(--color-ink-dim) !important; font-size: 16px !important; }
+
+.custom-cursor { will-change: transform; }
+.has-custom-cursor, .has-custom-cursor * { cursor: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .custom-cursor { display: none !important; }
+  .has-custom-cursor, .has-custom-cursor * { cursor: auto !important; }
+}
+
+/* ─────────────────────────────────────────────
+   PRINT (report export via browser PDF)
+───────────────────────────────────────────── */
+@media print {
+  body { background: #fff !important; color: #101418 !important; overflow: visible !important; }
+  .no-print { display: none !important; }
+  .print-root { position: static !important; height: auto !important; overflow: visible !important; }
 }

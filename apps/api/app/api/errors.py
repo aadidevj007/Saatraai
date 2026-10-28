@@ -38,13 +38,23 @@ async def http_exception_handler(
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
+    # ValidationError entries include the rejected input by default. Redact it
+    # so invalid passwords, tokens, and private request values never echo back.
+    safe_details = [
+        {
+            key: value
+            for key, value in item.items()
+            if key in {"loc", "msg", "type"}
+        }
+        for item in exc.errors()
+    ]
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={
             "error": {
                 "code": "validation_error",
                 "message": "Request validation failed",
-                "details": jsonable_encoder(exc.errors()),
+                "details": jsonable_encoder(safe_details),
             }
         },
     )

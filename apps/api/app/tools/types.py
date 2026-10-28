@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from enum import Enum
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -28,6 +29,7 @@ class InputConfiguration(str, Enum):
 class ToolExecutionStatus(str, Enum):
     SUCCEEDED = "SUCCEEDED"
     NOT_IMPLEMENTED = "NOT_IMPLEMENTED"
+    INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
 
 
 class ToolInvocation(BaseModel):
@@ -43,11 +45,44 @@ class NotImplementedToolOutput(BaseModel):
     message: str
 
 
+class RasterEvidenceInput(BaseModel):
+    image_id: str
+    source_kind: str = "user_uploaded_raster"
+    source_checksum: str | None = None
+    acquisition_at: datetime | None
+    sensor_as_declared: str | None
+    crs: str | None
+    bounds: dict[str, float]
+    width: int
+    height: int
+    band_count: int
+    band_descriptions: list[str | None]
+    dtypes: list[str]
+    valid_pixel_count: int
+    valid_pixel_fraction: float
+
+
+class BiTemporalEvidenceOutput(BaseModel):
+    status: ToolExecutionStatus
+    analysis_status: Literal["INSUFFICIENT_EVIDENCE"] = "INSUFFICIENT_EVIDENCE"
+    tool_name: str
+    tool_version: str
+    message: str
+    inputs: list[RasterEvidenceInput]
+    same_grid: bool
+    common_valid_pixel_count: int
+    common_valid_pixel_fraction: float
+    temporal_gap_seconds: float | None
+    limitations: list[str]
+
+
 @dataclass(frozen=True)
 class ToolExecutionContext:
     """Resolved private input files supplied by storage, never by a client payload."""
 
     input_paths: tuple[Path, ...]
+    input_ids: tuple[str, ...] = ()
+    input_checksums: tuple[str | None, ...] = ()
 
 
 class VqaToolOutput(BaseModel):
@@ -89,6 +124,10 @@ class GroundingParameters(ToolParameters):
 
 class ChangeDetectionParameters(ToolParameters):
     threshold: float = Field(default=0.5, ge=0.0, le=1.0)
+
+
+class EvidencePreflightParameters(ToolParameters):
+    """No tunable analysis parameters: this tool only inspects input evidence."""
 
 
 class ChangeVqaParameters(ToolParameters):

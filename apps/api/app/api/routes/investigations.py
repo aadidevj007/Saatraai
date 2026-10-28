@@ -10,9 +10,11 @@ from app.db.session import get_db
 from app.models.identity import User
 from app.models.investigation import Investigation, InvestigationStatus, Query as InvestigationQuery
 from app.schemas.projects import (
+    InvestigationConfigurationUpdate,
     InvestigationCreateRequest,
     InvestigationPageResponse,
     InvestigationQueryCreateRequest,
+    InvestigationQueryListResponse,
     InvestigationQueryResponse,
     InvestigationResponse,
 )
@@ -27,6 +29,7 @@ def serialize_investigation(investigation: Investigation) -> InvestigationRespon
         project_id=investigation.project_id,
         title=investigation.title,
         status=investigation.status.value,
+        configuration=investigation.configuration,
         created_at=investigation.created_at,
         updated_at=investigation.updated_at,
     )
@@ -96,6 +99,28 @@ def list_investigations(
     )
 
 
+@router.patch(
+    "/investigations/{investigation_id}/configuration",
+    response_model=InvestigationResponse,
+    summary="Update the structured configuration of an owned investigation",
+    description=(
+        "Persists the analyst's requested region, time range and evidence sources. "
+        "This records intent only — never a measurement, model output, or result."
+    ),
+    responses=ERROR_RESPONSES,
+)
+def update_investigation_configuration(
+    investigation_id: UUID,
+    payload: InvestigationConfigurationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> InvestigationResponse:
+    investigation = investigation_service.update_configuration(
+        db, current_user, investigation_id, payload.configuration.model_dump(mode="json", exclude_none=True)
+    )
+    return serialize_investigation(investigation)
+
+
 @router.get(
     "/investigations/{investigation_id}",
     response_model=InvestigationResponse,
@@ -129,3 +154,36 @@ def create_query(
     return serialize_query(
         investigation_service.create_query(db, current_user, investigation_id, payload)
     )
+
+
+@router.get(
+    "/investigations/{investigation_id}/queries",
+    response_model=InvestigationQueryListResponse,
+    summary="List persisted queries for an owned investigation",
+    responses=ERROR_RESPONSES,
+)
+def list_queries(
+    investigation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> InvestigationQueryListResponse:
+    queries = investigation_service.list_queries(db, current_user, investigation_id)
+    return InvestigationQueryListResponse(items=[serialize_query(query) for query in queries])
+
+
+@router.delete(
+    "/investigations/{investigation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete an owned investigation",
+    description=(
+        "Removes the investigation and its dependent rows. Stored raster artifacts and "
+        "evidence output blobs are retained for audit purposes."
+    ),
+    responses=ERROR_RESPONSES,
+)
+def delete_investigation(
+    investigation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    investigation_service.delete_investigation(db, current_user, investigation_id)

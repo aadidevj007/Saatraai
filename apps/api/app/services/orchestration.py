@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.models.eo import ImageRelationship, ImageRelationshipType, UploadedImage
 from app.models.execution import ExecutionStatus, ModelRun, Task
 from app.models.identity import User
-from app.models.investigation import Query
+from app.models.investigation import InvestigationStatus, Query
 from app.models.reasoning import Evidence, EvidencePolarity
 from app.schemas.orchestration import ExecutionTraceResponse, OrchestrationRequest
 from app.services.authorization import get_owned_investigation
@@ -129,6 +129,7 @@ class OrchestrationController:
                 "parameters": invocation.parameters,
             },
         )
+        investigation.status = InvestigationStatus.RUNNING
         db.add_all([query, task])
         try:
             db.flush()
@@ -161,7 +162,9 @@ class OrchestrationController:
 
         try:
             context = ToolExecutionContext(
-                input_paths=tuple(storage.materialize(image.metadata_record.storage_location) for image in resolved.images)
+                input_paths=tuple(storage.materialize(image.metadata_record.storage_location) for image in resolved.images),
+                input_ids=tuple(str(image.id) for image in resolved.images),
+                input_checksums=tuple(image.metadata_record.checksum for image in resolved.images),
             )
             output = self.registry.execute(tool.name, invocation, context)
             normalized_output = output.model_dump(mode="json")
@@ -172,27 +175,46 @@ class OrchestrationController:
                 "output_references": [artifact.uri],
                 "normalized_output": normalized_output,
             }
-            if normalized_output.get("status") == ToolExecutionStatus.NOT_IMPLEMENTED.value:
+            run.completed_at = datetime.now(UTC)
+            output_status = normalized_output.get("status")
+            if output_status in {
+                ToolExecutionStatus.NOT_IMPLEMENTED.value,
+                ToolExecutionStatus.INSUFFICIENT_EVIDENCE.value,
+            }:
                 run.status = ExecutionStatus.FAILED
                 task.status = ExecutionStatus.FAILED
-                run.error_information = f"NOT_IMPLEMENTED: {normalized_output.get('message', 'model is unavailable')}"
+                run.error_information = f"{output_status}: {normalized_output.get('message', 'analysis is unavailable')}"
+                investigation.status = InvestigationStatus.BLOCKED
+                insufficient_evidence = output_status == ToolExecutionStatus.INSUFFICIENT_EVIDENCE.value
                 evidence = Evidence(
                     investigation_id=investigation.id,
                     query_id=query.id,
                     model_run_id=run.id,
                     polarity=EvidencePolarity.INSUFFICIENT,
-                    summary="Selected tool is not implemented; no scientific output was produced.",
+                    summary=(
+                        "Evidence preflight completed, but available inputs and methods do not support the requested scientific analysis."
+                        if insufficient_evidence
+                        else "Selected tool is not implemented; no scientific output was produced."
+                    ),
                     provenance={
                         "task_id": str(task.id),
                         "tool_name": tool.name,
                         "tool_version": tool.version,
-                        "adapter_status": ToolExecutionStatus.NOT_IMPLEMENTED.value,
+                        "adapter_status": output_status,
+                        "model_name": tool.model_name,
+                        "model_output_artifact": artifact.uri,
+                        "input_ids": [str(image.id) for image in resolved.images],
+                        "execution_started_at": run.started_at.isoformat() if run.started_at else None,
+                        "execution_completed_at": run.completed_at.isoformat() if run.completed_at else None,
+                        **({"tool_output": normalized_output} if insufficient_evidence else {}),
                     },
+                    source_uri=artifact.uri,
                 )
                 db.add(evidence)
             else:
                 run.status = ExecutionStatus.SUCCEEDED
                 task.status = ExecutionStatus.SUCCEEDED
+                investigation.status = InvestigationStatus.COMPLETE
                 evidence = Evidence(
                     investigation_id=investigation.id,
                     query_id=query.id,
@@ -214,7 +236,8 @@ class OrchestrationController:
         except Exception as error:
             run.status = ExecutionStatus.FAILED
             task.status = ExecutionStatus.FAILED
-            run.error_information = f"EXECUTION_ERROR: {error}"
+            run.error_information = "EXECUTION_ERROR: Tool execution failed; check model/runtime availability and server configuration."
+            investigation.status = InvestigationStatus.BLOCKED
             run.output_metadata = {"output_references": []}
             evidence = Evidence(
                 investigation_id=investigation.id,
@@ -226,7 +249,8 @@ class OrchestrationController:
             )
             db.add(evidence)
         finally:
-            run.completed_at = datetime.now(UTC)
+            if run.completed_at is None:
+                run.completed_at = datetime.now(UTC)
 
         db.commit()
         db.refresh(task)
@@ -242,6 +266,27 @@ class OrchestrationController:
         if task is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Execution trace not found")
         return self._trace(db, task)
+
+    def list_traces(
+        self, db: Session, user: User, investigation_id: UUID
+    ) -> list[ExecutionTraceResponse]:
+        get_owned_investigation(db, investigation_id, user)
+        tasks = db.scalars(
+            select(Task)
+            .where(Task.investigation_id == investigation_id)
+            .order_by(Task.created_at.asc())
+        ).all()
+        traces: list[ExecutionTraceResponse] = []
+        for task in tasks:
+            run = db.scalar(
+                select(ModelRun)
+                .where(ModelRun.task_id == task.id)
+                .order_by(ModelRun.created_at.desc())
+            )
+            if run is None:
+                continue
+            traces.append(self._trace(db, task))
+        return traces
 
     def _resolve_inputs(
         self, db: Session, investigation_id: UUID, image_ids: list[UUID]

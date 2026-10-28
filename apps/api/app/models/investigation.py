@@ -4,7 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Index, String, Text, Uuid
+from sqlalchemy import ForeignKey, Index, JSON, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -37,6 +37,10 @@ class Investigation(UUIDTimestampMixin, Base):
         default=InvestigationStatus.PLANNED,
         nullable=False,
     )
+    # Structured wizard configuration (question context, region polygon, time
+    # range, requested evidence sources). Stored verbatim — never interpreted
+    # as a measurement or result.
+    configuration: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     project: Mapped[Project] = relationship(back_populates="investigations")
     queries: Mapped[list[Query]] = relationship(back_populates="investigation", cascade="all, delete-orphan")

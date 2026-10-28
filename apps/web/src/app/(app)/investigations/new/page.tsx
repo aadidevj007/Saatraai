@@ -1,0 +1,596 @@
+'use client';
+
+/** Guided New Investigation wizard: question → region → time → sources → configure → start. */
+
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import { ArrowLeft, ArrowRight, CalendarRange, Check, Flag, Layers, Play, Sparkles, Wand2 } from 'lucide-react';
+
+import { RegionPicker } from '@/components/map/region-picker';
+import { usePageTitle } from '@/components/shell/shell-context';
+import {
+  Badge,
+  Button,
+  Field,
+  Input,
+  Panel,
+  SectionHeader,
+  Segmented,
+  Skeleton,
+  Textarea,
+} from '@/components/ui';
+import { errorMessage, providerApi, projectApi, investigationApi } from '@/lib/api';
+import { useAuth } from '@/lib/auth/auth-context';
+import {
+  saveInvestigationConfig,
+  type AnalysisDepth,
+  type EvidenceSourceKind,
+  type EvidenceStrictness,
+  type InvestigationMode,
+  type RegionSelection,
+} from '@/lib/investigation-config';
+import { useToast } from '@/lib/state/toast';
+import { readSettings } from '@/lib/settings';
+import { buildEvidencePlan } from '@/lib/analysis/planner';
+
+const STEPS = [
+  { id: 'question', label: 'Question', icon: Sparkles },
+  { id: 'region', label: 'Region', icon: Flag },
+  { id: 'time', label: 'Time range', icon: CalendarRange },
+  { id: 'sources', label: 'Data sources', icon: Layers },
+  { id: 'configure', label: 'Configure', icon: Wand2 },
+  { id: 'review', label: 'Review', icon: Check },
+] as const;
+
+const SUGGESTIONS = [
+  'Why has flooding increased in this region between 2022 and 2026?',
+  'How has urban expansion changed since 2019?',
+  'Where has vegetation declined over the last five years?',
+  'What changed after the cyclone make landfall?',
+  'How has coastline morphology changed between 2015 and 2025?',
+];
+
+interface SourceDef {
+  id: EvidenceSourceKind;
+  label: string;
+  description: string;
+  statusKey: string | null;
+}
+
+const SOURCES: SourceDef[] = [
+  { id: 'optical', label: 'Optical', description: 'Sentinel-2 multispectral imagery', statusKey: 'satellite_optical' },
+  { id: 'sar', label: 'SAR', description: 'Sentinel-1 C-band backscatter', statusKey: 'satellite_sar' },
+  { id: 'rainfall', label: 'Rainfall', description: 'Meteorological precipitation records', statusKey: 'rainfall' },
+  { id: 'dem', label: 'DEM', description: 'Elevation and slope derivatives', statusKey: null },
+  { id: 'landcover', label: 'Land cover', description: 'Classification and transitions', statusKey: null },
+  { id: 'vegetation', label: 'Vegetation', description: 'NDVI / biomass indices', statusKey: null },
+  { id: 'infrastructure', label: 'Infrastructure', description: 'Drainage and built assets', statusKey: null },
+];
+
+function isoMonthsAgo(months: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - months);
+  return d.toISOString().slice(0, 10);
+}
+
+export default function NewInvestigationPage() {
+  usePageTitle('New Investigation');
+  const router = useRouter();
+  const { toast } = useToast();
+  const { preferences } = useAuth();
+
+  const [step, setStep] = useState(0);
+  const [question, setQuestion] = useState('');
+  const [region, setRegion] = useState<RegionSelection | null>(null);
+  const [start, setStart] = useState(isoMonthsAgo(36));
+  const [end, setEnd] = useState(new Date().toISOString().slice(0, 10));
+  const [sources, setSources] = useState<EvidenceSourceKind[]>(['optical', 'sar']);
+  const [mode, setMode] = useState<InvestigationMode>('real');
+  const [strictness, setStrictness] = useState<EvidenceStrictness>('standard');
+  const [depth, setDepth] = useState<AnalysisDepth>('balanced');
+  const [projectChoice, setProjectChoice] = useState('');
+  const [newProjectName, setNewProjectName] = useState('');
+
+  /* apply saved investigation defaults once on the client */
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const s = readSettings();
+      setMode(s.defaultMode);
+      setStrictness(s.defaultStrictness);
+      setDepth(s.defaultDepth);
+    }, 0);
+    return () => window.clearTimeout(t);
+  }, []);
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+
+  const statusQuery = useQuery({
+    queryKey: ['system-status'],
+    queryFn: () => providerApi.status(),
+    retry: false,
+  });
+  const projectsQuery = useQuery({
+    queryKey: ['projects', 'investigation-create'],
+    queryFn: () => projectApi.list({ page_size: 100 }),
+    retry: false,
+  });
+
+  const availability = useMemo(() => {
+    const map = new Map<string, { state: string; detail?: string }>();
+    for (const service of statusQuery.data?.services ?? []) {
+      map.set(service.id, { state: service.state, detail: service.detail });
+    }
+    return map;
+  }, [statusQuery.data]);
+
+  const canStart = question.trim().length >= 3 && region !== null && start < end &&
+    !projectsQuery.isPending && !projectsQuery.isError &&
+    (projectChoice !== '__new__' ? projectChoice.length > 0 : newProjectName.trim().length > 0);
+  const evidencePlan = useMemo(
+    () => buildEvidencePlan(question || 'Research question', sources, { start, end }),
+    [question, sources, start, end],
+  );
+
+  const startInvestigation = async () => {
+    if (!canStart || starting) return;
+    setStarting(true);
+    setStartError(null);
+    try {
+      /* 1. use the analyst's explicit project selection or create the named project */
+      const projectId = projectChoice === '__new__'
+        ? (await projectApi.create(newProjectName.trim())).id
+        : projectChoice;
+      if (!projectId) throw new Error('Choose a project before creating the investigation.');
+
+      /* 2. create the investigation — region, period and sources persist server-side */
+      const title = question.trim().length > 72 ? `${question.trim().slice(0, 69)}…` : question.trim();
+      const investigation = await investigationApi.create(projectId, title, {
+        region_name: region!.name,
+        region_source: region!.source,
+        region_polygon: region!.polygon.map(([lng, lat]) => [lng, lat]),
+        time_start: start,
+        time_end: end,
+        evidence_sources: sources,
+        evidence_plan: evidencePlan,
+        question: question.trim(),
+      });
+
+      /* 3. persist wizard presentation config locally (mode, strictness, depth) */
+      saveInvestigationConfig({
+        investigationId: investigation.id,
+        question: question.trim(),
+        region: region!,
+        timeRange: { start, end },
+        sources,
+        evidencePlan,
+        mode,
+        strictness,
+        depth,
+        createdAt: new Date().toISOString(),
+      });
+
+      /* 4. persist the question server-side as the first investigation query */
+      await investigationApi.addQuery(investigation.id, question.trim());
+
+      toast({
+        variant: 'success',
+        title: 'Investigation created',
+        description: `${title.slice(0, 48)}${title.length > 48 ? '…' : ''} · ${mode === 'demo' ? 'DEMO' : 'REAL'} mode`,
+      });
+      router.push(`/investigations/${investigation.id}`);
+    } catch (error) {
+      const message = errorMessage(error);
+      setStartError(message);
+      toast({ variant: 'error', title: 'Could not start investigation', description: message });
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-5xl px-6 py-7">
+      {/* header + stepper */}
+      <SectionHeader
+        title="New investigation"
+        description="Six steps — every value becomes real application state persisted through the API."
+        action={
+          <Badge tone={mode === 'demo' ? 'demo' : 'primary'}>{mode === 'demo' ? 'DEMO MODE' : 'REAL MODE'}</Badge>
+        }
+      />
+
+      <ol className="mt-5 flex flex-wrap gap-2" aria-label="Wizard steps">
+        {STEPS.map((s, i) => {
+          const state = i < step ? 'done' : i === step ? 'active' : 'pending';
+          const Icon = s.icon;
+          return (
+            <li key={s.id}>
+              <button
+                onClick={() => i <= step && setStep(i)}
+                disabled={i > step}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] transition-colors ${
+                  state === 'active'
+                    ? 'border-primary/50 bg-primary/10 text-primary'
+                    : state === 'done'
+                      ? 'border-line bg-card text-ink-dim hover:border-line-strong'
+                      : 'border-line bg-transparent text-ink-faint'
+                }`}
+              >
+                <span className="font-mono text-[10px]">{state === 'done' ? <Check className="h-3 w-3" /> : String(i + 1).padStart(2, '0')}</span>
+                {s.label}
+                <Icon className="h-3.5 w-3.5" />
+              </button>
+            </li>
+          );
+        })}
+      </ol>
+
+      <motion.div key={step} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="mt-5">
+        {/* ── STEP 1 · QUESTION ── */}
+        {step === 0 && (
+          <Panel title="What would you like to investigate?" subtitle="Natural language — the planner routes it into tasks">
+            <Field label="Research question" htmlFor="question" hint="Minimum 3 characters. The exact text is persisted as your first investigation query.">
+              <Textarea
+                id="question"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Why has flooding increased in this region between 2022 and 2026?"
+                className="min-h-[120px] text-[14px]"
+                autoFocus
+              />
+            </Field>
+            <div className="mt-4">
+              <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Example prompts</div>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTIONS.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setQuestion(s)}
+                    className="rounded-lg border border-line bg-card px-3 py-1.5 text-left text-[12px] text-ink-dim transition-colors hover:border-primary/40 hover:text-ink"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-5 flex justify-between">
+              <Button variant="ghost" onClick={() => router.push('/dashboard')} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
+                Cancel
+              </Button>
+              <Button variant="primary" disabled={question.trim().length < 3} onClick={() => setStep(1)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
+                Select region
+              </Button>
+            </div>
+          </Panel>
+        )}
+
+        {/* ── STEP 2 · REGION ── */}
+        {step === 1 && (
+          <Panel title="Define the region of interest" subtitle="Search a preset or coordinates, draw a polygon or rectangle, or upload GeoJSON">
+            <RegionPicker value={region} onChange={setRegion} />
+            <div className="mt-5 flex justify-between">
+              <Button variant="ghost" onClick={() => setStep(0)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
+                Back
+              </Button>
+              <Button variant="primary" disabled={!region} onClick={() => setStep(2)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
+                Set time range
+              </Button>
+            </div>
+          </Panel>
+        )}
+
+        {/* ── STEP 3 · TIME ── */}
+        {step === 2 && (
+          <Panel title="Select the time range" subtitle="Imagery, evidence and the timeline are bounded by these dates">
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'Last year', months: 12 },
+                { label: 'Last 3 years', months: 36 },
+                { label: 'Last 5 years', months: 60 },
+              ].map((p) => (
+                <Button
+                  key={p.label}
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setStart(isoMonthsAgo(p.months));
+                    setEnd(new Date().toISOString().slice(0, 10));
+                  }}
+                >
+                  {p.label}
+                </Button>
+              ))}
+            </div>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Field label="Start date" htmlFor="start">
+                <Input id="start" type="date" value={start} max={end} onChange={(e) => setStart(e.target.value)} />
+              </Field>
+              <Field label="End date" htmlFor="end">
+                <Input id="end" type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} />
+              </Field>
+            </div>
+
+            <TimeSpanBar start={start} end={end} />
+
+            <div className="mt-5 flex justify-between">
+              <Button variant="ghost" onClick={() => setStep(1)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
+                Back
+              </Button>
+              <Button variant="primary" disabled={start >= end} onClick={() => setStep(3)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
+                Choose data sources
+              </Button>
+            </div>
+          </Panel>
+        )}
+
+        {/* ── STEP 4 · SOURCES ── */}
+        {step === 3 && (
+          <Panel
+            title="Select evidence types"
+            subtitle="Availability is read from live system status — nothing is faked"
+            actions={
+              statusQuery.isPending ? <Skeleton className="h-4 w-24" /> : <Badge tone={statusQuery.data ? 'primary' : 'warning'}>{statusQuery.data ? 'LIVE STATUS' : 'STATUS UNAVAILABLE'}</Badge>
+            }
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              {SOURCES.map((source) => {
+                const selected = sources.includes(source.id);
+                const info = source.statusKey
+                  ? availability.get(source.statusKey)
+                  : { state: 'not_configured', detail: 'No service entry on this deployment' };
+                const state = info?.state ?? 'not_configured';
+                return (
+                  <button
+                    key={source.id}
+                    onClick={() =>
+                      setSources((prev) => (prev.includes(source.id) ? prev.filter((s) => s !== source.id) : [...prev, source.id]))
+                    }
+                    aria-pressed={selected}
+                    className={`rounded-xl border p-4 text-left transition-colors ${
+                      selected ? 'border-primary/50 bg-primary/5' : 'border-line bg-card hover:border-line-strong'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[13.5px] font-medium text-ink">{source.label}</span>
+                      <Badge tone={state === 'online' ? 'success' : state === 'degraded' ? 'warning' : 'warning'}>
+                        {state === 'online' ? 'AVAILABLE' : state === 'degraded' ? 'DEGRADED' : 'NOT CONFIGURED'}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-[12px] text-ink-dim">{source.description}</p>
+                    {info?.detail && <p className="mt-1.5 font-mono text-[10.5px] leading-snug text-ink-faint">{info.detail}</p>}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 rounded-lg border border-warning/25 bg-warning/5 px-3 py-2.5 text-[12px] leading-relaxed text-ink-dim">
+              Unconfigured providers do not block an investigation: imagery is uploaded manually to the workspace, and
+              executions route through the registered tool registry.
+            </div>
+
+            <div className="mt-5 flex justify-between">
+              <Button variant="ghost" onClick={() => setStep(2)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
+                Back
+              </Button>
+              <Button variant="primary" onClick={() => setStep(4)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
+                Configure
+              </Button>
+            </div>
+          </Panel>
+        )}
+
+        {/* ── STEP 5 · CONFIGURE + START ── */}
+        {step === 4 && (
+          <Panel title="Configure" subtitle="Mode, evidence strictness and analysis depth">
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3">
+                <div>
+                  <div className="text-[13px] font-medium text-ink">Investigation mode</div>
+                  <div className="text-[12px] text-ink-dim">
+                    DEMO runs the marked demonstration workflow · REAL executes against uploaded imagery and the tool registry
+                  </div>
+                </div>
+                <Segmented
+                  value={mode}
+                  onChange={setMode}
+                  options={[
+                    { value: 'real', label: 'REAL' },
+                    { value: 'demo', label: 'DEMO' },
+                  ]}
+                  ariaLabel="Investigation mode"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3">
+                <div>
+                  <div className="text-[13px] font-medium text-ink">Evidence strictness</div>
+                  <div className="text-[12px] text-ink-dim">Recorded with the investigation configuration and shown in reports</div>
+                </div>
+                <Segmented
+                  value={strictness}
+                  onChange={setStrictness}
+                  options={[
+                    { value: 'standard', label: 'Standard' },
+                    { value: 'strict', label: 'Strict' },
+                    { value: 'research', label: 'Research' },
+                  ]}
+                  ariaLabel="Evidence strictness"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3">
+                <div>
+                  <div className="text-[13px] font-medium text-ink">Analysis depth</div>
+                  <div className="text-[12px] text-ink-dim">Fast · Balanced · Deep — recorded in the execution context</div>
+                </div>
+                <Segmented
+                  value={depth}
+                  onChange={setDepth}
+                  options={[
+                    { value: 'fast', label: 'Fast' },
+                    { value: 'balanced', label: 'Balanced' },
+                    { value: 'deep', label: 'Deep' },
+                  ]}
+                  ariaLabel="Analysis depth"
+                />
+              </div>
+
+              <div className="mt-5 flex justify-between">
+                <Button variant="ghost" onClick={() => setStep(3)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
+                  Back
+                </Button>
+                <Button variant="primary" onClick={() => setStep(5)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
+                  Review investigation
+                </Button>
+              </div>
+            </div>
+          </Panel>
+        )}
+
+        {/* ── STEP 6 · REVIEW + CREATE ── */}
+        {step === 5 && (
+          <Panel
+            title="Review before creating"
+            subtitle="Everything below is sent to the backend and persisted verbatim"
+            actions={<Badge tone={mode === 'demo' ? 'demo' : 'primary'}>{mode === 'demo' ? 'DEMO' : 'REAL'}</Badge>}
+          >
+            <div className="space-y-4">
+              <div className="rounded-xl border border-line bg-elevated p-4">
+                <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Research question</div>
+                <p className="mt-2 text-[13.5px] leading-relaxed text-ink">{question || '—'}</p>
+              </div>
+
+              <div className="rounded-xl border border-line bg-card p-4">
+                <Field label="Project" htmlFor="investigation-project">
+                  {projectsQuery.isPending ? (
+                    <p role="status" className="mt-2 text-sm text-ink-dim">Loading your projects…</p>
+                  ) : projectsQuery.isError ? (
+                    <div className="mt-2 space-y-2">
+                      <p role="alert" className="text-sm text-danger">Could not load your projects: {errorMessage(projectsQuery.error)}</p>
+                      <Button size="sm" variant="secondary" onClick={() => void projectsQuery.refetch()}>Retry</Button>
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        id="investigation-project"
+                        value={projectChoice}
+                        onChange={(event) => setProjectChoice(event.target.value)}
+                        className="mt-1.5 h-10 w-full rounded-lg border border-line-strong bg-inputbg px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      >
+                        <option value="">Select a project…</option>
+                        {(projectsQuery.data?.items ?? []).map((project) => (
+                          <option key={project.id} value={project.id}>{project.name}</option>
+                        ))}
+                        <option value="__new__">Create a new project…</option>
+                      </select>
+                      {projectChoice === '__new__' && (
+                        <div className="mt-3">
+                          <Field label="New project name" htmlFor="new-project-name">
+                            <Input id="new-project-name" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="e.g. Coastal change study" />
+                          </Field>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </Field>
+              </div>
+
+              <div className="grid gap-x-6 gap-y-1.5 rounded-xl border border-line bg-elevated p-4 font-mono text-[11px] text-ink-dim sm:grid-cols-2">
+                <div>REGION · {region?.name ?? '—'}</div>
+                <div>REGION SOURCE · {region?.source ?? '—'}</div>
+                <div>VERTICES · {region?.polygon.length ?? 0}</div>
+                <div>PERIOD · {start} → {end}</div>
+                <div>SOURCES · {sources.length ? sources.join(', ').toUpperCase() : 'none selected'}</div>
+                <div>MODE · {mode.toUpperCase()} · {strictness.toUpperCase()} · {depth.toUpperCase()}</div>
+                <div>RESEARCH INTEREST · {preferences?.research_interest ?? 'not set'}</div>
+              </div>
+
+              <div className="rounded-xl border border-secondary/35 bg-secondary/5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-[13px] font-semibold text-ink">Suggested evidence protocol</h3>
+                  <Badge tone="warning">PLANNING GUIDE</Badge>
+                </div>
+                <p className="mt-1 text-[11.5px] text-ink-dim">
+                  A deterministic checklist from your question and selected sources. It is saved with the investigation; it contains no observations or model results.
+                </p>
+                <ol className="mt-3 space-y-2">
+                  {evidencePlan.map((item, index) => (
+                    <li key={`${index}-${item}`} className="flex gap-2.5 text-[11.5px] leading-relaxed text-ink-dim">
+                      <span className="font-mono text-[10px] text-secondary">{String(index + 1).padStart(2, '0')}</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div className="rounded-lg border border-line bg-card px-3.5 py-2.5 text-[11.5px] leading-relaxed text-ink-faint">
+                On create: an investigation row is written to the database with this configuration (region polygon, period,
+                sources); the question is persisted as the first investigation query. No imagery is fetched, no analysis
+                runs, and no result exists yet — execution happens later from the workspace against uploaded imagery.
+              </div>
+
+              {startError && <p className="text-[12.5px] text-danger">{startError}</p>}
+
+              <div className="flex justify-between">
+                <Button variant="ghost" onClick={() => setStep(4)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
+                  Back
+                </Button>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  loading={starting}
+                  disabled={!canStart}
+                  onClick={startInvestigation}
+                  icon={<Play className="h-4 w-4" />}
+                >
+                  Create investigation
+                </Button>
+              </div>
+
+              {!canStart && (
+                <p className="text-right text-[12px] text-ink-faint">
+                  {question.trim().length < 3
+                    ? 'A question is required.'
+                    : !region
+                      ? 'A region of interest is required.'
+                      : start >= end
+                        ? 'Start date must precede end date.'
+                        : ''}
+                </p>
+              )}
+            </div>
+          </Panel>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+/** Visual bar showing the selected span against a 2015→now window. */
+function TimeSpanBar({ start, end }: { start: string; end: string }) {
+  const windowStart = Date.parse('2015-01-01');
+  const windowEnd = Math.max(Date.parse(end) + 86_400_000, windowStart + 86_400_000);
+  const s = Math.max(0, Math.min(1, (Date.parse(start) - windowStart) / (windowEnd - windowStart)));
+  const e = Math.max(0, Math.min(1, (Date.parse(end) - windowStart) / (windowEnd - windowStart)));
+  const days = Math.max(0, Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000));
+
+  return (
+    <div className="mt-5">
+      <div className="relative h-9 rounded-lg border border-line bg-card">
+        <div
+          className="absolute inset-y-1 rounded-md bg-gradient-to-r from-primary-dim/70 to-primary/70"
+          style={{ left: `${s * 100}%`, width: `${Math.max(1, (e - s) * 100)}%` }}
+        />
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 font-mono text-[9.5px] text-ink-faint">2015</span>
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-[9.5px] text-ink-faint">NOW</span>
+      </div>
+      <div className="mt-1.5 flex justify-between font-mono text-[11px] text-ink-dim">
+        <span>{start}</span>
+        <span className="text-primary">{days.toLocaleString()} days selected</span>
+        <span>{end}</span>
+      </div>
+    </div>
+  );
+}

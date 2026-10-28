@@ -80,3 +80,10 @@ class ToolRegistryApiTests(unittest.TestCase):
         tools = response.json()["tools"]
         self.assertEqual(len(tools), 6)
         self.assertTrue(all("parameter_schema" in tool for tool in tools))
+        temporal = next(tool for tool in tools if tool["task_type"] == "change_detection")
+        self.assertEqual(temporal["name"], "bi-temporal-evidence-preflight")
+        status_ref = temporal["output_schema"]["properties"]["status"]["$ref"].split("/")[-1]
+        self.assertIn(
+            "INSUFFICIENT_EVIDENCE",
+            temporal["output_schema"]["$defs"][status_ref]["enum"],
+        )

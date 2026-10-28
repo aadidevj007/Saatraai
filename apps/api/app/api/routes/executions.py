@@ -8,7 +8,11 @@ from app.api.dependencies import get_current_user
 from app.api.errors import ERROR_RESPONSES
 from app.db.session import get_db
 from app.models.identity import User
-from app.schemas.orchestration import ExecutionTraceResponse, OrchestrationRequest
+from app.schemas.orchestration import (
+    ExecutionTraceListResponse,
+    ExecutionTraceResponse,
+    OrchestrationRequest,
+)
 from app.services.orchestration import OrchestrationController
 from app.services.storage import ObjectStorage, get_object_storage
 
@@ -54,3 +58,20 @@ def get_execution_trace(
     current_user: User = Depends(get_current_user),
 ) -> ExecutionTraceResponse:
     return controller.get_trace(db, current_user, investigation_id, task_id)
+
+
+@router.get(
+    "/investigations/{investigation_id}/executions",
+    response_model=ExecutionTraceListResponse,
+    summary="List execution traces for an owned investigation",
+    description="Returns observable traces for every recorded task, oldest first.",
+    responses=ERROR_RESPONSES,
+)
+def list_execution_traces(
+    investigation_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ExecutionTraceListResponse:
+    return ExecutionTraceListResponse(
+        items=controller.list_traces(db, current_user, investigation_id)
+    )

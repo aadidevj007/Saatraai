@@ -11,6 +11,7 @@ def geotiff_fixture(
     acquisition_at: datetime,
     sensor: str = "Sentinel-2",
     transform=None,
+    described_bands: bool = False,
 ) -> bytes:
     with MemoryFile() as memory_file:
         with memory_file.open(
@@ -28,4 +29,7 @@ def geotiff_fixture(
                 ACQUISITION_DATETIME=acquisition_at.isoformat(),
                 SENSOR=sensor,
             )
+            if described_bands:
+                for index in range(1, bands + 1):
+                    dataset.set_band_description(index, f"band-{index}")
         return memory_file.read()
