@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,11 +8,12 @@ from app.api.dependencies import get_current_user
 from app.api.errors import ERROR_RESPONSES
 from app.db.session import get_db
 from app.models.identity import User
-from app.models.reasoning import Evidence, Hypothesis
+from app.models.reasoning import AssessmentState, Evidence, Hypothesis
 from app.models.results import Conclusion
 from app.schemas.reasoning import (
     ConclusionListResponse,
     ConclusionResponse,
+    CreateHypothesisRequest,
     EvidenceListResponse,
     EvidenceResponse,
     HypothesisListResponse,
@@ -104,6 +105,52 @@ def list_hypotheses(
             )
             for hypothesis in hypotheses
         ]
+    )
+
+
+@router.post(
+    "/investigations/{investigation_id}/hypotheses",
+    response_model=HypothesisResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Record a candidate hypothesis for an owned investigation",
+    responses=ERROR_RESPONSES,
+)
+def create_hypothesis(
+    investigation_id: UUID,
+    payload: CreateHypothesisRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> HypothesisResponse:
+    investigation = get_owned_investigation(db, investigation_id, current_user)
+    raw_statement = payload.statement.strip()
+    if not raw_statement:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Statement cannot be blank",
+        )
+
+    try:
+        assessment_state = AssessmentState(payload.assessment_state.lower())
+    except (ValueError, AttributeError):
+        assessment_state = AssessmentState.UNTESTED
+
+    hypothesis = Hypothesis(
+        investigation_id=investigation.id,
+        statement=raw_statement,
+        assessment_state=assessment_state,
+        confidence=payload.confidence,
+    )
+    db.add(hypothesis)
+    db.commit()
+    db.refresh(hypothesis)
+    return HypothesisResponse(
+        id=hypothesis.id,
+        investigation_id=hypothesis.investigation_id,
+        statement=hypothesis.statement,
+        assessment_state=hypothesis.assessment_state.value,
+        confidence=hypothesis.confidence,
+        created_at=hypothesis.created_at,
+        evidence=[],
     )
 
 

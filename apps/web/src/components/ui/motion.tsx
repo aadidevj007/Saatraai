@@ -37,7 +37,7 @@ export function TiltCard({
   const glareBg = useTransform(
     [gx, gy],
     ([x, y]) =>
-      `radial-gradient(420px circle at ${x} ${y}, rgba(181,31,45,0.09), transparent 65%)`,
+      `radial-gradient(420px circle at ${x} ${y}, rgba(114,227,180,0.075), transparent 65%)`,
   );
 
   function onMove(e: PointerEvent<HTMLDivElement>) {

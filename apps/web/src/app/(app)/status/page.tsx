@@ -109,8 +109,10 @@ export default function StatusPage() {
           actions={
             statusQuery.isPending ? (
               <span className="font-mono text-[10px] uppercase text-ink-faint">probing…</span>
-            ) : (
+            ) : statusQuery.data ? (
               <Badge tone="primary">LIVE PROBE</Badge>
+            ) : (
+              <Badge tone="neutral">STATUS UNAVAILABLE</Badge>
             )
           }
           bodyClassName="p-0"

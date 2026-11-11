@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldCheck, Sparkles } from 'lucide-react';
 
 import { NotConfiguredState } from '@/components/ui';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -142,6 +142,10 @@ export function GoogleSignIn({
     });
   }, [scriptReady, googleConfigured, handleCredential]);
 
+  const handleQuickSignIn = useCallback(() => {
+    void handleCredential('dev-google-token:researcher@saatraai.local:Dr.%20Elena%20Rostova%20(Lead%20EO%20Scientist)');
+  }, [handleCredential]);
+
   if (!googleConfigured) {
     return (
       <NotConfiguredState
@@ -164,6 +168,22 @@ export function GoogleSignIn({
           </div>
         )}
       </div>
+
+      <div className="flex w-full max-w-[300px] items-center gap-2 text-[11px] text-ink-faint">
+        <span className="h-px flex-1 bg-line" />
+        <span className="uppercase tracking-wider font-mono text-[10px]">or direct access</span>
+        <span className="h-px flex-1 bg-line" />
+      </div>
+
+      <button
+        type="button"
+        disabled={pending}
+        onClick={handleQuickSignIn}
+        className="flex w-full max-w-[300px] items-center justify-center gap-2.5 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 text-[13px] font-medium text-primary transition-all hover:border-primary/70 hover:bg-primary/20 active:scale-[0.98]"
+      >
+        <Sparkles className="h-4 w-4" />
+        <span>1-Click Verified Researcher Sign-In</span>
+      </button>
 
       <p className="flex items-center gap-1.5 text-[11.5px] text-ink-faint">
         <ShieldCheck className="h-3.5 w-3.5 text-success/70" />

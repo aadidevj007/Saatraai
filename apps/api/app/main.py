@@ -46,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(api_router)
 
     application.add_api_route("/health", health_check, methods=["GET"])
+    application.add_api_route("/api/v1/health", health_check, methods=["GET"])
     application.add_api_route("/", root, methods=["GET"])
 
     return application

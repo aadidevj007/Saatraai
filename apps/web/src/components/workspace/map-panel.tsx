@@ -71,8 +71,8 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
   };
   const [layers, setLayers] = useState<LayerDef[]>([
     { id: 'roi', label: 'Region of interest', color: DESIGN_COLORS.primary, visible: true, opacity: 0.12 },
-    { id: 'footprints', label: 'Scene footprints', color: '#ff5b48', visible: true, opacity: 0.2 },
-    { id: 'markers', label: 'Evidence markers', color: '#f2eff0', visible: true, opacity: 0.9 },
+    { id: 'footprints', label: 'Scene footprints', color: DESIGN_COLORS.accent, visible: true, opacity: 0.2 },
+    { id: 'markers', label: 'Evidence markers', color: DESIGN_COLORS.primary, visible: true, opacity: 0.9 },
   ]);
   const [compareAOverride, setCompareAOverride] = useState<string | null>(null);
   const [compareBOverride, setCompareBOverride] = useState<string | null>(null);
@@ -160,14 +160,14 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
           'circle-color': [
             'match',
             ['get', 'polarity'],
-            'supporting', '#34d399',
-            'contradicting', '#f43f5e',
-            'insufficient', '#f59e0b',
-            '#aaa6ad',
+            'supporting', DESIGN_COLORS.success,
+            'contradicting', DESIGN_COLORS.danger,
+            'insufficient', DESIGN_COLORS.warning,
+            DESIGN_COLORS.neutral,
           ],
           'circle-radius': 6,
           'circle-stroke-width': 1.5,
-          'circle-stroke-color': '#101116',
+          'circle-stroke-color': DESIGN_COLORS.surface,
         },
       });
     }
@@ -189,8 +189,8 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
     const bFeatures: GeoJSON.Feature[] = [];
     if (b) bFeatures.push(polygonFeature(boundsPolygon(b.bounds as [number, number, number, number])));
     upsertGeoJsonLayer(map, 'ws-compare-b', { type: 'FeatureCollection', features: bFeatures }, {
-      fill: '#f59e0b',
-      line: '#f59e0b',
+      fill: '#b87518',
+      line: '#b87518',
       fillOpacity: compareOpacity,
       lineWidth: 2.5,
     });

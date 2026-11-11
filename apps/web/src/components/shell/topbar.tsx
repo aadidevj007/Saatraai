@@ -115,7 +115,7 @@ export function TopBar({ apiOnline, mobileNavOpen, mobileNavTrigger, onOpenPalet
           {bellOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} aria-hidden />
-              <div className="absolute right-0 z-50 mt-1.5 w-80 overflow-hidden rounded-lg border border-line-strong bg-elevated shadow-[0_16px_48px_rgba(0,0,0,0.5)]">
+              <div className="absolute right-0 z-50 mt-1.5 w-80 overflow-hidden rounded-xl border border-line-strong bg-elevated/95 shadow-[0_20px_56px_rgba(0,0,0,0.42)] backdrop-blur-xl">
                 <div className="flex items-center justify-between border-b border-line px-3 py-2.5">
                   <span className="text-[12px] font-medium text-ink">Notifications</span>
                   <button

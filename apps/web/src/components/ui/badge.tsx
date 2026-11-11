@@ -11,7 +11,7 @@ const TONES: Record<BadgeTone, string> = {
   warning: 'bg-warning/10 text-warning border-warning/30',
   danger: 'bg-danger/10 text-danger border-danger/30',
   accent: 'bg-accent/10 text-accent border-accent/30',
-  demo: 'bg-secondary/10 text-[#806024] border-secondary/35',
+  demo: 'bg-secondary/10 text-[#80513f] border-secondary/35',
 };
 
 export function Badge({

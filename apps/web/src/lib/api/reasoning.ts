@@ -37,6 +37,13 @@ export const reasoningApi = {
       { nullOn404: true },
     ),
 
-  systemStatus: () =>
-    apiRequest<SystemStatusReport | null>('/status', { nullOn404: true }),
+  systemStatus: async () => {
+    try {
+      const res = await apiRequest<SystemStatusReport | null>('/status', { nullOn404: true });
+      if (res && res.services) return res;
+    } catch {
+      // The system-status page reports the failed request separately; don't invent probe results here.
+    }
+    return null;
+  },
 };

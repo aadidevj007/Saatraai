@@ -1,6 +1,6 @@
 'use client';
 
-/** Landing content sections. */
+/** Landing content sections — pop-in viewport animations on every card/section. */
 
 import { motion } from 'framer-motion';
 import {
@@ -18,6 +18,23 @@ import {
 
 import { Badge, ButtonLink, TiltCard } from '@/components/ui';
 
+/* ── Shared animation variants ── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const popIn = {
+  hidden: { opacity: 0, scale: 0.93, y: 20 },
+  visible: { opacity: 1, scale: 1, y: 0 },
+};
+
+const slideInLeft = {
+  hidden: { opacity: 0, x: -32 },
+  visible: { opacity: 1, x: 0 },
+};
+
+/* ── Section wrapper ── */
 function Section({
   id,
   eyebrow,
@@ -35,16 +52,21 @@ function Section({
 }) {
   return (
     <section id={id} className={`section-band border-b border-line ${alt ? 'bg-surface/70' : ''}`}>
-      <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
+      <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
         <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.5 }}
         >
           <p className="font-mono text-[10.5px] uppercase tracking-[0.24em] text-primary">{eyebrow}</p>
-          <h2 className="display-font mt-3 max-w-2xl text-[25px] font-semibold leading-[1.12] text-ink sm:text-[31px]">{title}</h2>
-          {description && <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-ink-dim">{description}</p>}
+          <h2 className="display-font mt-3 max-w-2xl text-[25px] font-semibold leading-[1.12] text-ink sm:text-[31px]">
+            {title}
+          </h2>
+          {description && (
+            <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-ink-dim">{description}</p>
+          )}
         </motion.div>
         <div className="mt-9">{children}</div>
       </div>
@@ -55,7 +77,7 @@ function Section({
 /* ── 1. How it works ── */
 
 const STEPS = [
-  { n: '01', t: 'Ask in natural language', d: '“Why has flooding increased in this region between 2022 and 2026?”' },
+  { n: '01', t: 'Ask in natural language', d: '"Why has flooding increased in this region between 2022 and 2026?"' },
   { n: '02', t: 'Define region + time', d: 'Draw a polygon, pick a preset, or upload GeoJSON; choose the temporal window.' },
   { n: '03', t: 'Plan hypotheses', d: 'Candidate explanations are registered with explicit assessment states.' },
   { n: '04', t: 'Collect evidence', d: 'Registered tools execute against your imagery and emit provenance-carrying evidence.' },
@@ -73,10 +95,11 @@ export function HowItWorks() {
         {STEPS.map((step, i) => (
           <motion.li
             key={step.n}
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: i * 0.06 }}
+            variants={popIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
           >
             <TiltCard maxTilt={6} className="h-full rounded-xl">
               <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
@@ -124,10 +147,11 @@ export function PipelineSection() {
         {PIPELINE.map((stage, i) => (
           <motion.div
             key={stage}
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
+            variants={popIn}
+            initial="hidden"
+            whileInView="visible"
             viewport={{ once: true }}
-            transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.5) }}
+            transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.5), ease: [0.22, 1, 0.36, 1] }}
             className="flex items-center gap-2"
           >
             <span className="rounded-lg border border-line bg-card px-3 py-2 text-[12px] text-ink-dim">
@@ -140,11 +164,18 @@ export function PipelineSection() {
           </motion.div>
         ))}
       </div>
-      <div className="mt-6 rounded-xl border border-warning/25 bg-warning/5 p-4 text-[12.5px] leading-relaxed text-ink-dim">
+      <motion.div
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="mt-6 rounded-xl border border-warning/25 bg-warning/5 p-4 text-[12.5px] leading-relaxed text-ink-dim"
+      >
         <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-warning">Integrity rule · </span>
         When a provider or model is not configured, the corresponding stage reports NOT CONFIGURED and evidence
         records are marked INSUFFICIENT instead of inventing a result.
-      </div>
+      </motion.div>
     </Section>
   );
 }
@@ -169,21 +200,30 @@ export function ModalitiesSection() {
       description="SAATRAAI separates what it can measure today from what a deployment has not connected. Nothing below is simulated."
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {MODALITIES.map((m) => (
-          <TiltCard key={m.t} maxTilt={7} className="rounded-xl">
-            <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
-                  <m.icon className="h-4 w-4 text-primary" />
-                </span>
-                <span className="text-[13.5px] font-medium text-ink">{m.t}</span>
+        {MODALITIES.map((m, i) => (
+          <motion.div
+            key={m.t}
+            variants={popIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.45, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <TiltCard maxTilt={7} className="rounded-xl h-full">
+              <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
+                    <m.icon className="h-4 w-4 text-primary" />
+                  </span>
+                  <span className="text-[13.5px] font-medium text-ink">{m.t}</span>
+                </div>
+                <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink-dim">{m.d}</p>
+                <div className="mt-3">
+                  <Badge tone="warning">{m.note}</Badge>
+                </div>
               </div>
-              <p className="mt-2.5 text-[12.5px] leading-relaxed text-ink-dim">{m.d}</p>
-              <div className="mt-3">
-                <Badge tone="warning">{m.note}</Badge>
-              </div>
-            </div>
-          </TiltCard>
+            </TiltCard>
+          </motion.div>
         ))}
       </div>
     </Section>
@@ -209,20 +249,35 @@ export function ReasoningSection() {
       description="SAATRAAI is built around assessment, not generation: claims are only as strong as the evidence records behind them."
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        {REASONING.map((r) => (
-          <div key={r.t} className="rounded-xl border border-line bg-card p-4">
+        {REASONING.map((r, i) => (
+          <motion.div
+            key={r.t}
+            variants={slideInLeft}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="rounded-xl border border-line bg-card p-4"
+          >
             <div className="flex items-center gap-2">
               <BrainCircuit className="h-4 w-4 text-secondary" />
               <span className="text-[13.5px] font-medium text-ink">{r.t}</span>
             </div>
             <p className="mt-2 text-[12.5px] leading-relaxed text-ink-dim">{r.d}</p>
-          </div>
+          </motion.div>
         ))}
       </div>
-      <p className="mt-6 max-w-3xl border-l-2 border-primary/50 pl-4 text-[13px] italic leading-relaxed text-ink-dim">
-        “The available evidence supports…” — never “the satellite proves…”. Correlation in imagery is reported as
+      <motion.p
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="mt-6 max-w-3xl border-l-2 border-primary/50 pl-4 text-[13px] italic leading-relaxed text-ink-dim"
+      >
+        &ldquo;The available evidence supports&hellip;&rdquo; &mdash; never &ldquo;the satellite proves&hellip;&rdquo;. Correlation in imagery is reported as
         correlation; conclusions state which hypothesis is strengthened, weakened, or still untestable.
-      </p>
+      </motion.p>
     </Section>
   );
 }
@@ -240,26 +295,51 @@ export function GraphSection() {
       description="The graph is assembled from persisted records — questions, executions, evidence, hypotheses and conclusions — so provenance is navigable, not asserted."
     >
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-line bg-card p-5">
+        <motion.div
+          variants={popIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="rounded-xl border border-line bg-card p-5"
+        >
           <div className="flex flex-wrap gap-2">
-            {GRAPH_NODES.map((n) => (
-              <span
+            {GRAPH_NODES.map((n, i) => (
+              <motion.span
                 key={n}
+                initial={{ opacity: 0, scale: 0.85 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: i * 0.06 }}
                 className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-primary"
               >
                 {n}
-              </span>
+              </motion.span>
             ))}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            {GRAPH_EDGES.map((e) => (
-              <span key={e} className="rounded border border-line bg-elevated px-2 py-1 font-mono text-[10.5px] text-ink-dim">
+            {GRAPH_EDGES.map((e, i) => (
+              <motion.span
+                key={e}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: 0.3 + i * 0.05 }}
+                className="rounded border border-line bg-elevated px-2 py-1 font-mono text-[10.5px] text-ink-dim"
+              >
                 {e}
-              </span>
+              </motion.span>
             ))}
           </div>
-        </div>
-        <div className="rounded-xl border border-line bg-card p-5">
+        </motion.div>
+        <motion.div
+          variants={slideInLeft}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          className="rounded-xl border border-line bg-card p-5"
+        >
           <div className="space-y-3 text-[12.5px] leading-relaxed text-ink-dim">
             <p>
               <span className="text-ink">Question → analysis → evidence → hypothesis.</span> Each hop names the tool,
@@ -277,7 +357,7 @@ export function GraphSection() {
           <ButtonLink href="/sign-in" className="mt-4" variant="secondary" size="sm" icon={<ArrowRight className="h-3.5 w-3.5" />}>
             Open the graph
           </ButtonLink>
-        </div>
+        </motion.div>
       </div>
     </Section>
   );
@@ -293,7 +373,14 @@ export function TemporalSection() {
       title="Set the time window. Compare only what the evidence supports."
       description="Investigations span explicit date ranges; uploaded imagery, executions, and evidence appear on a timeline that drives the map. A visual comparison alone does not produce a change estimate."
     >
-      <div className="rounded-xl border border-line bg-card p-5">
+      <motion.div
+        variants={popIn}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="rounded-xl border border-line bg-card p-5"
+      >
         <div className="flex items-center gap-3">
           <CalendarRange className="h-4 w-4 text-primary" />
           <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-dim">
@@ -307,19 +394,30 @@ export function TemporalSection() {
             { y: '2024', w: 84 },
             { y: '2025', w: 61 },
             { y: '2026', w: 73 },
-          ].map(({ y, w }) => (
-            <div key={y} className="flex-1">
+          ].map(({ y, w }, i) => (
+            <motion.div
+              key={y}
+              className="flex-1"
+              initial={{ opacity: 0, scaleY: 0 }}
+              whileInView={{ opacity: 1, scaleY: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              style={{ transformOrigin: 'bottom' }}
+            >
               <div className="h-1.5 rounded-full bg-line">
-                <div className="h-full rounded-full bg-gradient-to-r from-primary-dim to-primary" style={{ width: `${w}%` }} />
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary-dim to-primary"
+                  style={{ width: `${w}%` }}
+                />
               </div>
               <div className="mt-1.5 text-center font-mono text-[10px] text-ink-faint">{y}</div>
-            </div>
+            </motion.div>
           ))}
         </div>
         <p className="mt-4 text-[12.5px] text-ink-dim">
           Comparison modes: split view, opacity slider, and swipe — driven by the selected dates and uploaded scenes.
         </p>
-      </div>
+      </motion.div>
     </Section>
   );
 }
@@ -338,11 +436,19 @@ export function ContradictionSection() {
           { tone: 'text-success', label: 'SUPPORTING', d: 'Observations consistent with the hypothesis.' },
           { tone: 'text-danger', label: 'CONTRADICTING', d: 'Observations that weaken or falsify it.' },
           { tone: 'text-warning', label: 'INSUFFICIENT', d: 'Tool unavailable or run failed — no claim made.' },
-        ].map((item) => (
-          <div key={item.label} className="rounded-xl border border-line bg-card p-4">
+        ].map((item, i) => (
+          <motion.div
+            key={item.label}
+            variants={popIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.45, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="rounded-xl border border-line bg-card p-4"
+          >
             <div className={`font-mono text-[11px] tracking-[0.16em] ${item.tone}`}>{item.label}</div>
             <p className="mt-2 text-[12.5px] leading-relaxed text-ink-dim">{item.d}</p>
-          </div>
+          </motion.div>
         ))}
       </div>
     </Section>
@@ -359,7 +465,14 @@ export function UncertaintySection() {
       title="Confidence with an explanation, and a list of what is still missing"
       description="Every confidence figure ships with its method and the counts behind it. Evidence still required is named — with NOT AVAILABLE where the deployment cannot provide it."
     >
-      <div className="rounded-xl border border-line bg-card p-5">
+      <motion.div
+        variants={popIn}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="rounded-xl border border-line bg-card p-5"
+      >
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
           <div className="space-y-2 text-[12.5px] leading-relaxed text-ink-dim">
@@ -377,7 +490,7 @@ export function UncertaintySection() {
             </p>
           </div>
         </div>
-      </div>
+      </motion.div>
     </Section>
   );
 }
@@ -402,13 +515,22 @@ export function UseCasesSection() {
       description="Each use case is a question with competing explanations — exactly what the workspace is designed to hold."
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {USE_CASES.map((u) => (
-          <TiltCard key={u.t} maxTilt={7} className="rounded-xl">
-            <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
-              <div className="text-[13.5px] font-medium text-ink">{u.t}</div>
-              <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-dim">{u.d}</p>
-            </div>
-          </TiltCard>
+        {USE_CASES.map((u, i) => (
+          <motion.div
+            key={u.t}
+            variants={popIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.45, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <TiltCard maxTilt={7} className="rounded-xl h-full">
+              <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
+                <div className="text-[13.5px] font-medium text-ink">{u.t}</div>
+                <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-dim">{u.d}</p>
+              </div>
+            </TiltCard>
+          </motion.div>
         ))}
       </div>
     </Section>
@@ -436,14 +558,30 @@ export function TechnologySection() {
       description="The web client talks to a FastAPI backend over typed endpoints: auth, projects, investigations, queries, image ingestion, executions, evidence and system status."
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {TECH.map((t) => (
-          <div key={t.k} className="flex items-baseline justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3">
+        {TECH.map((t, i) => (
+          <motion.div
+            key={t.k}
+            variants={popIn}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.4, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+            className="flex items-baseline justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3"
+          >
             <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-faint">{t.k}</span>
             <span className="text-right text-[12.5px] text-ink-dim">{t.v}</span>
-          </div>
+          </motion.div>
         ))}
       </div>
-      <div className="glow-edge mt-8 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center">
+
+      <motion.div
+        variants={popIn}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+        className="glow-edge mt-8 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center"
+      >
         <p className="text-[15px] font-medium text-ink">Ready to run your first investigation?</p>
         <p className="mx-auto mt-1.5 max-w-md text-[12.5px] text-ink-dim">
           Sign in with Google, ask a question, draw a region — the workspace assembles the evidence chain live.
@@ -451,7 +589,7 @@ export function TechnologySection() {
         <ButtonLink href="/sign-in" className="mt-4" variant="primary" size="lg" icon={<ArrowRight className="h-4 w-4" />}>
           Start investigation
         </ButtonLink>
-      </div>
+      </motion.div>
     </Section>
   );
 }

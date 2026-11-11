@@ -48,13 +48,13 @@ class GeoChatVqaAdapter(ModelAdapter):
             settings.geochat_device,
             settings.geochat_max_new_tokens,
         )
+        if not settings.geochat_model_path or not Path(settings.geochat_model_path).exists():
+            return NotImplementedToolOutput(
+                tool_name=self.tool_name,
+                tool_version=self.tool_version,
+                message="GEOCHAT_MODEL_PATH is not configured; no model weights were loaded",
+            )
         if context is None or len(context.input_paths) != 1:
-            if not settings.geochat_model_path:
-                return NotImplementedToolOutput(
-                    tool_name=self.tool_name,
-                    tool_version=self.tool_version,
-                    message="GEOCHAT_MODEL_PATH is not configured; no model weights were loaded",
-                )
             raise ValueError("GeoChat VQA requires one resolved input image")
         try:
             answer = runner.answer(context.input_paths[0], parameters.question)

@@ -54,40 +54,59 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'BAD_REQUEST', detail: 'Missing Google credential.' }, { status: 400 });
   }
 
-  /* 1. Verify the ID token with Google (server-side, TLS). */
+  /* 1. Verify the ID token with Google (server-side, TLS) or local dev-bridge token. */
   let info: TokenInfo;
-  try {
-    const verifyUrl = `${GOOGLE_TOKENINFO}?id_token=${encodeURIComponent(credential)}`;
-    const response = await fetch(verifyUrl, { cache: 'no-store' });
-    if (!response.ok) {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    (credential.startsWith('dev-google-token:') || credential.startsWith('saatraai-demo-token:'))
+  ) {
+    const parts = credential.split(':');
+    const customEmail = parts[1] || 'researcher@saatraai.local';
+    const customName = parts[2] ? decodeURIComponent(parts[2]) : 'Lead Researcher';
+    info = {
+      sub: 'google-dev-' + Buffer.from(customEmail).toString('hex').slice(0, 16),
+      aud: clientId,
+      iss: 'https://accounts.google.com',
+      email: customEmail,
+      email_verified: true,
+      name: customName,
+      picture: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&h=128&fit=crop&crop=faces',
+      exp: String(Math.floor((Date.now() + 3600_000) / 1000)),
+    };
+  } else {
+    try {
+      const verifyUrl = `${GOOGLE_TOKENINFO}?id_token=${encodeURIComponent(credential)}`;
+      const response = await fetch(verifyUrl, { cache: 'no-store' });
+      if (!response.ok) {
+        return NextResponse.json(
+          { error: 'GOOGLE_TOKEN_REJECTED', detail: 'Google rejected the presented ID token.' },
+          { status: 401 },
+        );
+      }
+      info = (await response.json()) as TokenInfo;
+    } catch {
       return NextResponse.json(
-        { error: 'GOOGLE_TOKEN_REJECTED', detail: 'Google rejected the presented ID token.' },
+        { error: 'GOOGLE_UNREACHABLE', detail: 'Could not reach Google for token verification.' },
+        { status: 502 },
+      );
+    }
+
+    const expectedIssuers = ['https://accounts.google.com', 'accounts.google.com'];
+    const expMs = Number(info.exp) * 1000;
+    const valid =
+      info.aud === clientId &&
+      expectedIssuers.includes(info.iss) &&
+      Number.isFinite(expMs) &&
+      expMs > Date.now() &&
+      (info.email_verified === true || info.email_verified === 'true') &&
+      typeof info.email === 'string';
+
+    if (!valid) {
+      return NextResponse.json(
+        { error: 'GOOGLE_TOKEN_INVALID', detail: 'ID token claims failed validation (audience, issuer, expiry or email).' },
         { status: 401 },
       );
     }
-    info = (await response.json()) as TokenInfo;
-  } catch {
-    return NextResponse.json(
-      { error: 'GOOGLE_UNREACHABLE', detail: 'Could not reach Google for token verification.' },
-      { status: 502 },
-    );
-  }
-
-  const expectedIssuers = ['https://accounts.google.com', 'accounts.google.com'];
-  const expMs = Number(info.exp) * 1000;
-  const valid =
-    info.aud === clientId &&
-    expectedIssuers.includes(info.iss) &&
-    Number.isFinite(expMs) &&
-    expMs > Date.now() &&
-    (info.email_verified === true || info.email_verified === 'true') &&
-    typeof info.email === 'string';
-
-  if (!valid) {
-    return NextResponse.json(
-      { error: 'GOOGLE_TOKEN_INVALID', detail: 'ID token claims failed validation (audience, issuer, expiry or email).' },
-      { status: 401 },
-    );
   }
 
   const email = (info.email as string).toLowerCase();
@@ -104,31 +123,29 @@ export async function POST(request: Request): Promise<NextResponse> {
     });
 
   let tokens: { access_token: string; refresh_token: string } | null = null;
-  const registerResponse = await backend('/auth/register', {
+  // Attempt registration for new accounts
+  await backend('/auth/register', {
     email,
     password: derivedPassword,
     display_name: info.name ?? email.split('@')[0],
   }).catch(() => null);
 
-  if (registerResponse?.ok) {
-    tokens = (await registerResponse.json()) as { access_token: string; refresh_token: string };
+  // Authenticate and issue token pair
+  const loginResponse = await backend('/auth/login', { email, password: derivedPassword }).catch(() => null);
+  if (loginResponse?.ok) {
+    tokens = (await loginResponse.json()) as { access_token: string; refresh_token: string };
+  } else if (loginResponse) {
+    const detail = await loginResponse.json().catch(() => null);
+    const message =
+      loginResponse.status === 401
+        ? 'This Google email already has a backend account created with different credentials and cannot be linked automatically.'
+        : (detail as { detail?: string } | null)?.detail ?? `Backend login failed (${loginResponse.status}).`;
+    return NextResponse.json({ error: 'BACKEND_LINK_FAILED', detail: message }, { status: 502 });
   } else {
-    const loginResponse = await backend('/auth/login', { email, password: derivedPassword }).catch(() => null);
-    if (loginResponse?.ok) {
-      tokens = (await loginResponse.json()) as { access_token: string; refresh_token: string };
-    } else if (loginResponse) {
-      const detail = await loginResponse.json().catch(() => null);
-      const message =
-        loginResponse.status === 401
-          ? 'This Google email already has a backend account created with different credentials and cannot be linked automatically.'
-          : (detail as { detail?: string } | null)?.detail ?? `Backend login failed (${loginResponse.status}).`;
-      return NextResponse.json({ error: 'BACKEND_LINK_FAILED', detail: message }, { status: 502 });
-    } else {
-      return NextResponse.json(
-        { error: 'BACKEND_UNREACHABLE', detail: `SAATRAAI API at ${backendBase} is unreachable.` },
-        { status: 502 },
-      );
-    }
+    return NextResponse.json(
+      { error: 'BACKEND_UNREACHABLE', detail: `SAATRAAI API at ${backendBase} is unreachable.` },
+      { status: 502 },
+    );
   }
 
   /* 3. Load the canonical backend user record. */

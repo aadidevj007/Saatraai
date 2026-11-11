@@ -19,9 +19,10 @@ class PreparedImage:
     height: int
 
 
-def prepare_rgb_image(source: Path, workspace: TemporaryDirectory[str]) -> PreparedImage:
+def prepare_rgb_image(source: Path, workspace: TemporaryDirectory[str] | str | Path) -> PreparedImage:
     """Create a deterministic RGB PNG for VLMs from supported EO inputs."""
-    output = Path(workspace.name) / "input.png"
+    workspace_path = Path(workspace.name if hasattr(workspace, "name") else workspace)
+    output = workspace_path / "input.png"
     try:
         from PIL import Image
     except ImportError as error:

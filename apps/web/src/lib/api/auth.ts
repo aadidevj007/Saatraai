@@ -25,6 +25,7 @@ interface FirebaseSessionResponse extends TokenPair {
 }
 
 const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 async function exchangeGoogleCredentialForFirebase(credential: string): Promise<GoogleBridgeResponse> {
   if (!FIREBASE_API_KEY) throw new Error('Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_API_KEY.');
@@ -90,9 +91,15 @@ async function exchangeGoogleCredential(credential: string): Promise<GoogleBridg
 }
 
 export const authApi = {
-  /** Google ID token → Firebase ID token → verified backend session. */
+  /**
+   * Google ID token → verified backend session.
+   * Uses the Next.js bridge route (/api/auth/google) which is self-contained
+   * and works without Firebase Admin SDK on the backend. Falls back to the
+   * Firebase Identity Toolkit path only when GOOGLE_CLIENT_ID is explicitly
+   * absent (legacy behaviour).
+   */
   signInWithGoogle: (credential: string) =>
-    FIREBASE_API_KEY ? exchangeGoogleCredentialForFirebase(credential) : exchangeGoogleCredential(credential),
+    GOOGLE_CLIENT_ID ? exchangeGoogleCredential(credential) : exchangeGoogleCredentialForFirebase(credential),
 
   async me(): Promise<User | null> {
     return apiRequest<User | null>('/users/me', { nullOn404: true });

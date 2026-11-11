@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, CalendarRange, Check, Flag, Layers, Play, Sparkles, Wand2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CalendarRange, Check, Flag, Layers, MapPin, Play, Sparkles, Wand2 } from 'lucide-react';
 
 import { RegionPicker } from '@/components/map/region-picker';
 import { usePageTitle } from '@/components/shell/shell-context';
@@ -34,6 +34,7 @@ import {
 import { useToast } from '@/lib/state/toast';
 import { readSettings } from '@/lib/settings';
 import { buildEvidencePlan } from '@/lib/analysis/planner';
+import { analyzePromptNlp, type NlpExtractionResult } from '@/lib/analysis/nlp-extractor';
 
 const STEPS = [
   { id: 'question', label: 'Question', icon: Sparkles },
@@ -45,11 +46,11 @@ const STEPS = [
 ] as const;
 
 const SUGGESTIONS = [
-  'Why has flooding increased in this region between 2022 and 2026?',
-  'How has urban expansion changed since 2019?',
-  'Where has vegetation declined over the last five years?',
-  'What changed after the cyclone make landfall?',
-  'How has coastline morphology changed between 2015 and 2025?',
+  'Why has flooding increased in Kerala between 2022 and 2026?',
+  'How has urban expansion changed in Chennai since 2019?',
+  'Where has vegetation declined in Horn of Africa over the last five years?',
+  'What changed across Sundarbans after the cyclone made landfall?',
+  'Investigate flood inundation across Valencia from October 2024 to November 2024',
 ];
 
 interface SourceDef {
@@ -63,10 +64,10 @@ const SOURCES: SourceDef[] = [
   { id: 'optical', label: 'Optical', description: 'Sentinel-2 multispectral imagery', statusKey: 'satellite_optical' },
   { id: 'sar', label: 'SAR', description: 'Sentinel-1 C-band backscatter', statusKey: 'satellite_sar' },
   { id: 'rainfall', label: 'Rainfall', description: 'Meteorological precipitation records', statusKey: 'rainfall' },
-  { id: 'dem', label: 'DEM', description: 'Elevation and slope derivatives', statusKey: null },
-  { id: 'landcover', label: 'Land cover', description: 'Classification and transitions', statusKey: null },
-  { id: 'vegetation', label: 'Vegetation', description: 'NDVI / biomass indices', statusKey: null },
-  { id: 'infrastructure', label: 'Infrastructure', description: 'Drainage and built assets', statusKey: null },
+  { id: 'dem', label: 'DEM', description: 'Elevation and slope derivatives', statusKey: 'dem' },
+  { id: 'landcover', label: 'Land cover', description: 'Classification and transitions', statusKey: 'landcover' },
+  { id: 'vegetation', label: 'Vegetation', description: 'NDVI / biomass indices', statusKey: 'vegetation' },
+  { id: 'infrastructure', label: 'Infrastructure', description: 'Drainage and built assets', statusKey: 'infrastructure' },
 ];
 
 function isoMonthsAgo(months: number): string {
@@ -105,6 +106,56 @@ export default function NewInvestigationPage() {
   }, []);
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
+
+  const [nlpResult, setNlpResult] = useState<NlpExtractionResult | null>(null);
+  const [nlpProcessing, setNlpProcessing] = useState(false);
+  const [nlpApplied, setNlpApplied] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const timer = setTimeout(async () => {
+      if (question.trim().length < 5) {
+        if (active) {
+          setNlpResult(null);
+          setNlpApplied(false);
+          setNlpProcessing(false);
+        }
+        return;
+      }
+      setNlpProcessing(true);
+      try {
+        const result = await analyzePromptNlp(question);
+        if (!active) return;
+        setNlpResult(result);
+        if (result.hasMatches) {
+          if (result.timeRange && result.timeRange.confidence >= 0.8) {
+            setStart(result.timeRange.start);
+            setEnd(result.timeRange.end);
+          }
+          if (result.region && result.region.confidence >= 0.8) {
+            setRegion({
+              name: result.region.name,
+              source: result.region.source,
+              polygon: result.region.polygon,
+            });
+          }
+          if (result.suggestedSources.length > 0) {
+            setSources(result.suggestedSources);
+          }
+          setNlpApplied(true);
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (active) setNlpProcessing(false);
+      }
+    }, 350);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [question]);
 
   const statusQuery = useQuery({
     queryKey: ['system-status'],
@@ -240,6 +291,61 @@ export default function NewInvestigationPage() {
                 autoFocus
               />
             </Field>
+
+            {nlpResult && nlpResult.hasMatches && (
+              <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 transition-all">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span className="text-[13px] font-semibold text-ink">NLP Automated Entity Extraction</span>
+                  </div>
+                  <Badge tone="success">
+                    {nlpProcessing ? 'ANALYZING...' : nlpApplied ? 'AUTO-CONFIGURED' : 'DETECTED'}
+                  </Badge>
+                </div>
+
+                <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                  {nlpResult.region && (
+                    <div className="flex items-start gap-2.5 rounded-lg border border-line bg-card/60 p-2.5">
+                      <MapPin className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[11px] font-mono text-ink-dim uppercase tracking-wider">Identified Region</div>
+                        <div className="text-[13px] font-medium text-ink truncate">{nlpResult.region.name}</div>
+                        <div className="text-[11px] text-ink-faint">
+                          {Math.round(nlpResult.region.confidence * 100)}% confidence match · {nlpResult.region.source}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {nlpResult.timeRange && (
+                    <div className="flex items-start gap-2.5 rounded-lg border border-line bg-card/60 p-2.5">
+                      <CalendarRange className="mt-0.5 h-4 w-4 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[11px] font-mono text-ink-dim uppercase tracking-wider">Temporal Span</div>
+                        <div className="text-[13px] font-medium text-ink truncate">
+                          {nlpResult.timeRange.start} → {nlpResult.timeRange.end}
+                        </div>
+                        <div className="text-[11px] text-ink-faint">{nlpResult.timeRange.label}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {nlpResult.suggestedSources.length > 0 && (
+                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[12px] text-ink-dim">
+                    <Layers className="h-3.5 w-3.5 text-ink-dim" />
+                    <span className="text-[11px] font-mono text-ink-faint uppercase">Recommended Sensors:</span>
+                    {nlpResult.suggestedSources.map((s) => (
+                      <span key={s} className="rounded-md bg-card px-2 py-0.5 text-[11px] font-medium text-primary border border-line">
+                        {s.toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="mt-4">
               <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Example prompts</div>
               <div className="flex flex-wrap gap-2">

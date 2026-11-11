@@ -20,20 +20,20 @@ const COLUMN_ORDER: GraphNode['type'][] = ['question', 'dataset', 'analysis', 'm
 const TYPE_STYLE: Record<GraphNode['type'], { color: string; label: string }> = {
   question: { color: DESIGN_COLORS.primary, label: 'Question' },
   dataset: { color: DESIGN_COLORS.warning, label: 'Dataset' },
-  analysis: { color: '#77624d', label: 'Analysis' },
-  model: { color: '#8d5260', label: 'Model' },
+  analysis: { color: DESIGN_COLORS.accent, label: 'Analysis' },
+  model: { color: '#3d9bb9', label: 'Model' },
   evidence: { color: DESIGN_COLORS.warning, label: 'Evidence' },
   hypothesis: { color: DESIGN_COLORS.primaryDim, label: 'Hypothesis' },
-  conclusion: { color: '#34d399', label: 'Conclusion' },
+  conclusion: { color: DESIGN_COLORS.success, label: 'Conclusion' },
 };
 
 const EDGE_COLOR: Record<string, string> = {
   SUPPORTS: DESIGN_COLORS.success,
   CONTRADICTS: DESIGN_COLORS.danger,
   WEAKENS: DESIGN_COLORS.primaryDim,
-  PRODUCES: '#77624d',
-  ROUTES_TO: '#77624d',
-  EXECUTES: '#8d5260',
+  PRODUCES: DESIGN_COLORS.accent,
+  ROUTES_TO: DESIGN_COLORS.accent,
+  EXECUTES: '#3d9bb9',
   INPUT_TO: DESIGN_COLORS.warning,
   ANSWERS: DESIGN_COLORS.primary,
   CONCLUDES: DESIGN_COLORS.success,
@@ -266,19 +266,19 @@ export default function EvidenceGraphPage() {
                         width={NODE_W}
                         height={NODE_H}
                         rx={9}
-                        fill={active ? '#281317' : '#121319'}
-                        stroke={active ? style.color : '#3b3b46'}
+                        fill={active ? '#1c3342' : '#101929'}
+                        stroke={active ? style.color : '#34445d'}
                         strokeWidth={active ? 2 : 1}
                       />
                       <rect width={4} height={NODE_H} rx={2} fill={style.color} />
                       <text x={14} y={20} fontSize={9} fill={style.color} fontFamily="IBM Plex Mono, monospace" letterSpacing={1.2}>
                         {style.label.toUpperCase()}
                       </text>
-                      <text x={14} y={38} fontSize={11} fill="#f2eff0">
+                      <text x={14} y={38} fontSize={11} fill="#e8eff9">
                         {truncate(node.label, 26)}
                       </text>
                       {node.detail && (
-                        <text x={14} y={51} fontSize={9} fill="#aaa6ad" fontFamily="IBM Plex Mono, monospace">
+                        <text x={14} y={51} fontSize={9} fill="#91a1b8" fontFamily="DM Mono, monospace">
                           {truncate(node.detail, 30)}
                         </text>
                       )}

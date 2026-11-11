@@ -155,7 +155,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {mobileOpen && (
           <button
             type="button"
-            className="fixed inset-0 z-40 bg-black/65 backdrop-blur-[2px] md:hidden"
+            className="fixed inset-0 z-40 bg-[#02050b]/65 backdrop-blur-[3px] md:hidden"
             aria-label="Close navigation"
             onClick={() => setMobileOpen(false)}
           />

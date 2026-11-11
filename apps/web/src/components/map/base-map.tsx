@@ -20,7 +20,9 @@ import { Maximize2, Minimize2 } from 'lucide-react';
 import { BASEMAP_LIST, BASEMAPS, type BasemapId } from '@/lib/map/styles';
 import { cn, formatCoord } from '@/lib/utils';
 
-setWorkerUrl(new URL('maplibre-gl/dist/maplibre-gl-worker.mjs', import.meta.url).toString());
+if (typeof window !== 'undefined') {
+  setWorkerUrl('/maplibre-gl-worker.mjs');
+}
 
 export interface BaseMapProps {
   center?: [number, number];

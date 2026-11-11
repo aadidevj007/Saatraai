@@ -73,7 +73,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 24, scale: 0.97 }}
               transition={{ duration: 0.18 }}
-              className={`flex items-start gap-3 rounded-lg border border-line border-l-2 ${BORDER[item.variant]} bg-elevated px-3.5 py-3 shadow-[0_12px_32px_rgba(0,0,0,0.45)]`}
+              className={`flex items-start gap-3 rounded-xl border border-line border-l-2 ${BORDER[item.variant]} bg-elevated/95 px-3.5 py-3 shadow-[0_16px_44px_rgba(0,0,0,0.42)] backdrop-blur-xl`}
             >
               <span className="mt-0.5 shrink-0">{ICONS[item.variant]}</span>
               <div className="min-w-0 flex-1">

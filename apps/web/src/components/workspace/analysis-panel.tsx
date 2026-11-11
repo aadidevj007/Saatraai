@@ -138,7 +138,7 @@ export function AnalysisPanel({
       {/* charts */}
       <section>
         <h4 className="mb-2.5 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">
-          Evidence distribution {demo && <span className="text-[#c4b5fd]">· DEMO DATA</span>}
+          Evidence distribution {demo && <span className="text-primary">· DEMO DATA</span>}
         </h4>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-line bg-card p-3">
@@ -152,8 +152,8 @@ export function AnalysisPanel({
                     ))}
                   </Pie>
                   <ReTooltip
-                    contentStyle={{ background: '#101116', border: '1px solid #3b3b46', borderRadius: 12, fontSize: 12, boxShadow: '0 12px 32px rgba(0,0,0,0.48)' }}
-                    itemStyle={{ color: '#f2eff0' }}
+                    contentStyle={{ background: '#101929', border: '1px solid #34445d', borderRadius: 12, fontSize: 12, boxShadow: '0 16px 40px rgba(0,0,0,0.42)' }}
+                    itemStyle={{ color: '#e8eff9' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -175,12 +175,12 @@ export function AnalysisPanel({
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hypothesisBars} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                    <CartesianGrid stroke="#292a32" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: '#77737d', fontSize: 10 }} axisLine={{ stroke: '#3b3b46' }} tickLine={false} />
-                    <YAxis domain={[0, 100]} tick={{ fill: '#77737d', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <CartesianGrid stroke="#263349" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#91a1b8', fontSize: 10 }} axisLine={{ stroke: '#34445d' }} tickLine={false} />
+                    <YAxis domain={[0, 100]} tick={{ fill: '#91a1b8', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <ReTooltip
-                      contentStyle={{ background: '#101116', border: '1px solid #3b3b46', borderRadius: 12, fontSize: 12, boxShadow: '0 12px 32px rgba(0,0,0,0.48)' }}
-                      itemStyle={{ color: '#f2eff0' }}
+                      contentStyle={{ background: '#101929', border: '1px solid #34445d', borderRadius: 12, fontSize: 12, boxShadow: '0 16px 40px rgba(0,0,0,0.42)' }}
+                      itemStyle={{ color: '#e8eff9' }}
                     />
                     <Bar dataKey="value" fill={DESIGN_COLORS.primary} radius={[6, 6, 0, 0]} />
                   </BarChart>

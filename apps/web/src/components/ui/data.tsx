@@ -163,7 +163,7 @@ export function Dropdown({
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.13 }}
             className={cn(
-              'absolute z-50 mt-1.5 min-w-48 overflow-hidden rounded-xl border border-line-strong bg-surface py-1 shadow-[0_16px_48px_rgba(42,28,20,0.16)]',
+              'absolute z-50 mt-1.5 min-w-48 overflow-hidden rounded-xl border border-line-strong bg-surface/95 py-1 shadow-[0_20px_56px_rgba(0,0,0,0.42)] backdrop-blur-xl',
               align === 'end' ? 'right-0' : 'left-0',
             )}
           >
@@ -252,7 +252,7 @@ export function ConfidenceRing({
     <div className="flex flex-col items-center gap-1.5">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" role="img" aria-label={`${label}: ${(clamped * 100).toFixed(0)}%`}>
-          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#292a32" strokeWidth={stroke} />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={DESIGN_COLORS.line} strokeWidth={stroke} />
           <circle
             cx={size / 2}
             cy={size / 2}

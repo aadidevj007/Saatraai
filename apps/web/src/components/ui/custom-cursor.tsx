@@ -25,6 +25,8 @@ export function CustomCursor() {
     if (!enabled) return;
     const root = document.documentElement;
     root.classList.add('has-custom-cursor');
+    let hoverScale = 1;
+    let pressed = false;
 
     const onMove = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse') return;
@@ -33,12 +35,19 @@ export function CustomCursor() {
       const interactive = (event.target as Element | null)?.closest(
         'a,button,[role="button"],[role="switch"],input,textarea,select,[data-cursor="interactive"]',
       );
-      scaleTarget.set(interactive ? 1.35 : 1);
+      hoverScale = interactive ? 1.08 : 1;
+      if (!pressed) scaleTarget.set(hoverScale);
     };
     const onDown = (event: PointerEvent) => {
-      if (event.pointerType === 'mouse') scaleTarget.set(0.78);
+      if (event.pointerType === 'mouse') {
+        pressed = true;
+        scaleTarget.set(0.94);
+      }
     };
-    const onUp = () => scaleTarget.set(1);
+    const onUp = () => {
+      pressed = false;
+      scaleTarget.set(hoverScale);
+    };
 
     window.addEventListener('pointermove', onMove, { passive: true });
     window.addEventListener('pointerdown', onDown, { passive: true });
@@ -56,10 +65,22 @@ export function CustomCursor() {
   return (
     <motion.div
       aria-hidden="true"
-      className="custom-cursor pointer-events-none fixed left-0 top-0 z-[100] grid h-8 w-8 place-items-center rounded-full border border-primary/75 bg-primary/[0.04]"
-      style={{ x, y, scale, marginLeft: -16, marginTop: -16 }}
+      className="custom-cursor pointer-events-none fixed left-0 top-0 z-[100]"
+      style={{ x, y, scale, marginLeft: -2, marginTop: -2 }}
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(241,43,69,0.8)]" />
+      <svg width="22" height="28" viewBox="0 0 22 28" aria-hidden="true">
+        <path
+          d="M2.2 1.5 2.15 21.2l5.1-4.45 4.7 9.15 4.1-2.1-4.75-9.05 7.05-.55L2.2 1.5Z"
+          fill="#f4f8ff"
+          stroke="#07101c"
+          strokeWidth="2.2"
+          strokeLinejoin="round"
+        />
+        <path
+          d="m4.1 5.1 10.1 8.3-4.7.35 4.35 8.25-1.3.65-4.3-8.35-3.55 3.05L4.1 5.1Z"
+          fill="#f4f8ff"
+        />
+      </svg>
     </motion.div>
   );
 }

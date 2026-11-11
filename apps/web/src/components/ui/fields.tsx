@@ -79,7 +79,7 @@ export function Segmented<T extends string>({
             className={cn(
               'rounded-md px-3 font-medium transition-colors disabled:opacity-40',
               size === 'sm' ? 'h-6 text-[11px]' : 'h-7 text-[12.5px]',
-              active ? 'bg-elevated text-primary shadow-[inset_0_0_0_1px_rgba(181,31,45,0.24)]' : 'text-ink-dim hover:text-ink',
+              active ? 'bg-elevated text-primary shadow-[inset_0_0_0_1px_rgba(114,227,180,0.2)]' : 'text-ink-dim hover:text-ink',
             )}
           >
             {option.label}

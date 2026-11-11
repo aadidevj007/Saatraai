@@ -21,6 +21,12 @@ class EvidenceResponse(BaseModel):
     created_at: datetime
 
 
+class CreateHypothesisRequest(BaseModel):
+    statement: str
+    assessment_state: str = "untested"
+    confidence: float | None = None
+
+
 class HypothesisResponse(BaseModel):
     id: UUID
     investigation_id: UUID

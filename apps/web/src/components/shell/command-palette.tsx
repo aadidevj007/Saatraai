@@ -115,7 +115,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-[#02050b]/65 backdrop-blur-[3px]"
             onClick={onClose}
           />
           <motion.div
@@ -123,7 +123,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ duration: 0.16 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-line-strong bg-surface shadow-[0_28px_80px_rgba(42,28,20,0.18)]"
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-line-strong bg-surface/95 shadow-[0_32px_90px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
           >
             <div className="flex items-center gap-2.5 border-b border-line px-4 py-3">
               <Search className="h-4 w-4 shrink-0 text-ink-faint" />

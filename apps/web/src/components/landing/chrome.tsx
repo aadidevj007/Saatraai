@@ -54,7 +54,7 @@ export function LandingHeader() {
   return (
     <header className={cn(
       'sticky top-0 z-40 border-b transition-colors duration-300',
-      scrolled ? 'border-line bg-surface/95 shadow-[0_8px_30px_rgba(0,0,0,0.25)] backdrop-blur-xl' : 'border-white/[0.06] bg-void/45 backdrop-blur-md',
+      scrolled ? 'border-line bg-surface/90 shadow-[0_12px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl' : 'border-line/70 bg-void/45 backdrop-blur-xl',
     )}>
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-7">
         <Link href="/" className="rounded-sm" aria-label="SAATRAAI home">
