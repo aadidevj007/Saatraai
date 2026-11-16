@@ -25,7 +25,7 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: saatraai-redis
           property: connectionString
       - key: JWT_SECRET
@@ -35,8 +35,8 @@ services:
       - key: LOCAL_STORAGE_PATH
         value: "./data/uploads"
 
-  # ── REDIS CACHE & BACKGROUND QUEUES ──
-  - type: redis
+  # ── KEY-VALUE (REDIS) CACHE & QUEUES ──
+  - type: keyvalue
     name: saatraai-redis
     region: oregon
     plan: free
