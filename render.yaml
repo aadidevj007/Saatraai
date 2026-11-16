@@ -41,6 +41,7 @@ services:
     region: oregon
     plan: free
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
 databases:
   # ── MANAGED POSTGRESQL + POSTGIS ──
@@ -50,3 +51,5 @@ databases:
     databaseName: saatraai
     user: saatraai
     postgresMajorVersion: "16"
+    ipAllowList: []
+
