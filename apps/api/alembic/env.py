@@ -65,6 +65,12 @@ def run_migrations_online() -> None:
 
     """
     with engine.connect() as connection:
+        import sqlalchemy as sa
+        try:
+            connection.execute(sa.text("CREATE EXTENSION IF NOT EXISTS postgis;"))
+            connection.commit()
+        except Exception:
+            pass
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
