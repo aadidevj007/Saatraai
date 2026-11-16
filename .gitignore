@@ -21,3 +21,9 @@ node_modules/
 .next/
 dist/
 build/
+*.log
+debug.log
+test_screenshot.png
+.vercel/
+audit_screenshots/
+browser_audit_report.json
