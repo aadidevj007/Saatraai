@@ -31,7 +31,7 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: CORS_ALLOWED_ORIGINS
-        value: "http://localhost:3000,https://saatraai.vercel.app"
+        value: "https://saatraai.vercel.app"
       - key: LOCAL_STORAGE_PATH
         value: "./data/uploads"
 
