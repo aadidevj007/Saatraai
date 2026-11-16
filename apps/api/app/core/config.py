@@ -3,7 +3,7 @@ from ipaddress import ip_address
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import ValidationError, field_validator, model_validator
+from pydantic import AliasChoices, Field, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,10 +19,16 @@ class Settings(BaseSettings):
         "postgresql+psycopg://"
         "saatraai:saatraai_dev@localhost:5432/saatraai"
     )
-    cors_allowed_origins: str | None = None
+    cors_allowed_origins: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("cors_allowed_origins", "cors_origins"),
+    )
 
     redis_url: str = "redis://localhost:6379/0"
-    jwt_secret_key: str = DEVELOPMENT_JWT_SECRET
+    jwt_secret_key: str = Field(
+        default=DEVELOPMENT_JWT_SECRET,
+        validation_alias=AliasChoices("jwt_secret_key", "jwt_secret"),
+    )
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
@@ -48,6 +54,10 @@ class Settings(BaseSettings):
         normalized = value.strip()
         if not normalized:
             raise ValueError("DATABASE_URL must not be empty")
+        if normalized.startswith("postgres://"):
+            normalized = normalized.replace("postgres://", "postgresql+psycopg://", 1)
+        elif normalized.startswith("postgresql://") and not normalized.startswith("postgresql+"):
+            normalized = normalized.replace("postgresql://", "postgresql+psycopg://", 1)
         return normalized
 
     @field_validator("jwt_secret_key")
