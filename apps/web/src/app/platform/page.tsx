@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, ShieldCheck, Cpu, Terminal, Compass, Network } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Terminal, Compass, Network } from 'lucide-react';
 import { LandingHeader, LandingFooter } from '@/components/landing/chrome';
 import { HowItWorks, PipelineSection } from '@/components/landing/sections';
 import { ButtonLink } from '@/components/ui';
@@ -120,3 +120,4 @@ export default function PlatformPage() {
     </div>
   );
 }
+

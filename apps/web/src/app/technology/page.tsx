@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Cpu, Database, Network, ShieldCheck, Terminal } from 'lucide-react';
+import { ArrowRight, Cpu, Database, ShieldCheck } from 'lucide-react';
 import { LandingHeader, LandingFooter } from '@/components/landing/chrome';
 import { TechnologySection } from '@/components/landing/sections';
 import { ButtonLink } from '@/components/ui';
@@ -113,3 +113,4 @@ export default function TechnologyPage() {
     </div>
   );
 }
+

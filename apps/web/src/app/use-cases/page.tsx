@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Compass, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Compass } from 'lucide-react';
 import { LandingHeader, LandingFooter } from '@/components/landing/chrome';
 import { UseCasesSection } from '@/components/landing/sections';
 import { ButtonLink } from '@/components/ui';
@@ -74,3 +74,4 @@ export default function UseCasesPage() {
     </div>
   );
 }
+

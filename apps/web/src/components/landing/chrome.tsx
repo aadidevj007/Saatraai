@@ -12,11 +12,11 @@ import { healthApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 const NAV = [
-  { href: '#pipeline', label: 'Platform' },
-  { href: '#modalities', label: 'Capabilities' },
-  { href: '#reasoning', label: 'Research' },
-  { href: '#use-cases', label: 'Use cases' },
-  { href: '#technology', label: 'About' },
+  { href: '/platform', label: 'Platform' },
+  { href: '/capabilities', label: 'Capabilities' },
+  { href: '/use-cases', label: 'Use Cases' },
+  { href: '/technology', label: 'Technology' },
+  { href: '/dashboard', label: 'Dashboard' },
 ];
 
 export function LandingHeader() {
@@ -76,13 +76,13 @@ export function LandingHeader() {
 
         <nav className="hidden items-center gap-7 md:flex" aria-label="Sections">
           {NAV.map((item) => (
-            <a
+            <Link
               key={item.href}
               href={item.href}
               className="text-[12.5px] text-ink-dim transition-colors hover:text-ink"
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -116,9 +116,9 @@ export function LandingHeader() {
       <nav id="landing-mobile-navigation" className={cn('border-t border-line px-5 py-3 md:hidden', mobileOpen ? 'block' : 'hidden')} aria-label="Mobile sections">
         <div className="mx-auto grid max-w-7xl gap-1">
           {NAV.map((item) => (
-            <a key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-[13px] text-ink-dim transition-colors hover:bg-elevated hover:text-ink">
+            <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-[13px] text-ink-dim transition-colors hover:bg-elevated hover:text-ink">
               {item.label}
-            </a>
+            </Link>
           ))}
           <ButtonLink href="/sign-in" variant="primary" size="md" className="mt-2 sm:hidden" icon={<ArrowRight className="h-3.5 w-3.5" />}>
             Get started
@@ -150,10 +150,10 @@ export function LandingFooter() {
         <div>
           <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint">Platform</div>
           <ul className="mt-3 space-y-2 text-[12.5px] text-ink-dim">
-            <li><a className="hover:text-ink" href="#pipeline">Investigation pipeline</a></li>
-            <li><a className="hover:text-ink" href="#modalities">Earth observation modalities</a></li>
-            <li><a className="hover:text-ink" href="#reasoning">Hypothesis reasoning</a></li>
-            <li><a className="hover:text-ink" href="#technology">Technology</a></li>
+            <li><Link className="hover:text-ink" href="/platform">Investigation pipeline</Link></li>
+            <li><Link className="hover:text-ink" href="/capabilities">Earth observation modalities</Link></li>
+            <li><Link className="hover:text-ink" href="/use-cases">Mission solutions</Link></li>
+            <li><Link className="hover:text-ink" href="/technology">Technology & architecture</Link></li>
           </ul>
         </div>
 

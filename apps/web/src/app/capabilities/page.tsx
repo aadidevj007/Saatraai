@@ -6,7 +6,7 @@
  */
 
 import { motion } from 'framer-motion';
-import { ArrowRight, Layers, Sparkles } from 'lucide-react';
+import { ArrowRight, Layers } from 'lucide-react';
 import { LandingHeader, LandingFooter } from '@/components/landing/chrome';
 import {
   ModalitiesSection,
@@ -86,3 +86,4 @@ export default function CapabilitiesPage() {
     </div>
   );
 }
+

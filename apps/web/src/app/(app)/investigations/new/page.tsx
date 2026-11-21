@@ -168,6 +168,10 @@ export default function NewInvestigationPage() {
     retry: false,
   });
 
+  const projectsList = projectsQuery.data?.items ?? [];
+  const effectiveProjectChoice = projectChoice || (projectsList.length > 0 ? projectsList[0].id : '__new__');
+  const effectiveNewProjectName = newProjectName.trim() || 'Primary Intelligence Workspace';
+
   const availability = useMemo(() => {
     const map = new Map<string, { state: string; detail?: string }>();
     for (const service of statusQuery.data?.services ?? []) {
@@ -178,7 +182,7 @@ export default function NewInvestigationPage() {
 
   const canStart = question.trim().length >= 3 && region !== null && start < end &&
     !projectsQuery.isPending && !projectsQuery.isError &&
-    (projectChoice !== '__new__' ? projectChoice.length > 0 : newProjectName.trim().length > 0);
+    (effectiveProjectChoice !== '__new__' ? effectiveProjectChoice.length > 0 : effectiveNewProjectName.length > 0);
   const evidencePlan = useMemo(
     () => buildEvidencePlan(question || 'Research question', sources, { start, end }),
     [question, sources, start, end],
@@ -190,9 +194,9 @@ export default function NewInvestigationPage() {
     setStartError(null);
     try {
       /* 1. use the analyst's explicit project selection or create the named project */
-      const projectId = projectChoice === '__new__'
-        ? (await projectApi.create(newProjectName.trim())).id
-        : projectChoice;
+      const projectId = effectiveProjectChoice === '__new__'
+        ? (await projectApi.create(effectiveNewProjectName)).id
+        : effectiveProjectChoice;
       if (!projectId) throw new Error('Choose a project before creating the investigation.');
 
       /* 2. create the investigation — region, period and sources persist server-side */
@@ -581,20 +585,20 @@ export default function NewInvestigationPage() {
                     <>
                       <select
                         id="investigation-project"
-                        value={projectChoice}
+                        value={effectiveProjectChoice}
                         onChange={(event) => setProjectChoice(event.target.value)}
                         className="mt-1.5 h-10 w-full rounded-lg border border-line-strong bg-inputbg px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                       >
                         <option value="">Select a project…</option>
-                        {(projectsQuery.data?.items ?? []).map((project) => (
+                        {projectsList.map((project) => (
                           <option key={project.id} value={project.id}>{project.name}</option>
                         ))}
                         <option value="__new__">Create a new project…</option>
                       </select>
-                      {projectChoice === '__new__' && (
+                      {effectiveProjectChoice === '__new__' && (
                         <div className="mt-3">
                           <Field label="New project name" htmlFor="new-project-name">
-                            <Input id="new-project-name" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="e.g. Coastal change study" />
+                            <Input id="new-project-name" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="e.g. Primary Intelligence Workspace" />
                           </Field>
                         </div>
                       )}

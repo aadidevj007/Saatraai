@@ -9,32 +9,22 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Activity,
-  AlertTriangle,
   ArrowRight,
   CheckCircle2,
-  ChevronRight,
-  Clock,
-  Compass,
-  Cpu,
-  Download,
   FileCheck2,
   Flame,
-  Layers,
   MapPin,
   Play,
   Radar,
   RefreshCw,
   RotateCcw,
   ShieldAlert,
-  Sparkles,
   Waves,
   Wind,
 } from 'lucide-react';
 import { LandingHeader, LandingFooter } from '@/components/landing/chrome';
-import { Badge, Button, ButtonLink } from '@/components/ui';
+import { Button, ButtonLink } from '@/components/ui';
 
 interface ScenarioDef {
   id: string;
@@ -590,3 +580,4 @@ export default function SimulationsPage() {
     </div>
   );
 }
+
