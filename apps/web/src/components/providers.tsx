@@ -7,7 +7,6 @@ import { MotionConfig } from 'framer-motion';
 import { AuthProvider } from '@/lib/auth/auth-context';
 import { NotificationsProvider } from '@/lib/state/notifications';
 import { ToastProvider } from '@/lib/state/toast';
-import { CustomCursor } from '@/components/ui/custom-cursor';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(
@@ -34,7 +33,6 @@ export function Providers({ children }: { children: ReactNode }) {
           <NotificationsProvider>
             <AuthProvider>
               {children}
-              <CustomCursor />
             </AuthProvider>
           </NotificationsProvider>
         </ToastProvider>

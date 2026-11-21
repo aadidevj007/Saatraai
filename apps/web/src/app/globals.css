@@ -471,14 +471,6 @@ button, a, [role="button"], input, textarea, select {
 .maplibregl-popup-tip { border-top-color: var(--color-line-strong) !important; }
 .maplibregl-popup-close-button { color: var(--color-ink-dim) !important; font-size: 16px !important; }
 
-.custom-cursor { will-change: transform; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .62)); }
-.custom-cursor svg { display: block; overflow: visible; }
-.has-custom-cursor, .has-custom-cursor * { cursor: none !important; }
-@media (prefers-reduced-motion: reduce) {
-  .custom-cursor { display: none !important; }
-  .has-custom-cursor, .has-custom-cursor * { cursor: auto !important; }
-}
-
 /* ─────────────────────────────────────────────
    PRINT (report export via browser PDF)
 ───────────────────────────────────────────── */
