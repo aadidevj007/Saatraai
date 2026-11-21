@@ -1,0 +1,14 @@
+node_modules
+.next
+.vercel
+.git
+.gitignore
+README.md
+tests
+test-results
+coverage
+playwright-report
+*.log
+debug.log
+.env
+.env.local
