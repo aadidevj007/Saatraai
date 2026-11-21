@@ -3,9 +3,33 @@
  * No scattered fetch() anywhere else in the app.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/+$/, '') ?? '';
-export const API_PREFIX = API_BASE_URL ? `${API_BASE_URL}/api/v1` : '';
-export const API_BASE_CONFIGURED = Boolean(API_BASE_URL);
+const DEFAULT_REMOTE_API = 'https://saatraai-api.onrender.com';
+
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1';
+    if (!isLocal) {
+      return DEFAULT_REMOTE_API;
+    }
+  }
+  const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
+  if (envUrl && (!envUrl.includes('localhost') || typeof window === 'undefined' || window.location.hostname === 'localhost')) {
+    return envUrl;
+  }
+  return process.env.NODE_ENV === 'production' ? DEFAULT_REMOTE_API : 'http://localhost:8000';
+}
+
+export function apiBase(): string {
+  return getApiBaseUrl();
+}
+
+export function getApiPrefix(): string {
+  return `${getApiBaseUrl()}/api/v1`;
+}
+
+export const API_PREFIX = `${DEFAULT_REMOTE_API}/api/v1`;
+export const API_BASE_CONFIGURED = true;
 
 const SESSION_KEY = 'saatraai.session';
 export const SESSION_EXPIRED_EVENT = 'saatraai:session-expired';
@@ -122,8 +146,9 @@ async function rawRequest<T>(path: string, options: RequestOptions, token?: stri
   }
 
   let response: Response;
+  const prefix = getApiPrefix();
   try {
-    response = await fetch(`${API_PREFIX}${path}`, {
+    response = await fetch(`${prefix}${path}`, {
       method: options.method ?? 'GET',
       headers,
       body:
@@ -209,21 +234,18 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
 /** Probe reachability without auth — used for system status. */
 export async function probeApi(timeoutMs = 4000): Promise<boolean> {
-  if (!API_BASE_CONFIGURED) return false;
+  const base = apiBase();
+  if (!base) return false;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(`${API_BASE_URL}/health`, { signal: controller.signal, cache: 'no-store' });
+    const response = await fetch(`${base}/health`, { signal: controller.signal, cache: 'no-store' });
     return response.ok;
   } catch {
     return false;
   } finally {
     clearTimeout(timer);
   }
-}
-
-export function apiBase(): string {
-  return API_BASE_URL;
 }
 
 export function errorMessage(error: unknown): string {

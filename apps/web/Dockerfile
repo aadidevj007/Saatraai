@@ -2,12 +2,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-ENV NEXT_TELEMETRY_DISABLED=1 \
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000
 
-# Install all dependencies (explicitly include devDependencies for Next.js build)
+# Install all dependencies (Next.js build requires devDependencies like Tailwind & TypeScript)
 COPY package.json package-lock.json ./
-RUN npm ci --include=dev
+RUN npm ci
 
 # Copy application code and build
 COPY . .
@@ -15,8 +16,6 @@ RUN npm run build
 
 # Prune devDependencies to reduce final container size
 RUN npm prune --omit=dev
-
-ENV NODE_ENV=production
 
 EXPOSE 3000
 
