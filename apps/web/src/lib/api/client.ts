@@ -10,7 +10,9 @@ export function getApiBaseUrl(): string {
     const host = window.location.hostname;
     const isLocal = host === 'localhost' || host === '127.0.0.1';
     if (!isLocal) {
-      return DEFAULT_REMOTE_API;
+      // Use same-origin Next.js rewrite proxy in deployed environments to avoid
+      // cross-origin tracker blockers (ERR_BLOCKED_BY_CLIENT) and CORS mismatches.
+      return '/api/backend';
     }
   }
   const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
@@ -233,7 +235,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 }
 
 /** Probe reachability without auth — used for system status. */
-export async function probeApi(timeoutMs = 4000): Promise<boolean> {
+export async function probeApi(timeoutMs = 12000): Promise<boolean> {
   const base = apiBase();
   if (!base) return false;
   const controller = new AbortController();

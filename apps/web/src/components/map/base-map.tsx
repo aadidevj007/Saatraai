@@ -202,8 +202,8 @@ export function BaseMap({
                 key={b.id}
                 onClick={() => onBasemapChange?.(b.id)}
                 className={cn(
-                  'px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.1em] transition-colors',
-                  b.id === basemap ? 'bg-primary/15 text-primary' : 'text-ink-faint hover:text-ink',
+                  'px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.1em] transition-all',
+                  b.id === basemap ? 'glass-option-active text-primary' : 'text-ink-faint hover:bg-white/[0.04] hover:text-ink',
                 )}
                 aria-pressed={b.id === basemap}
               >

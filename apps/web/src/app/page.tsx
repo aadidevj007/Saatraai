@@ -1,27 +1,44 @@
 'use client';
 
 /**
- * SAATRAAI main landing page with interactive 3D globe,
- * live atmospheric weather telemetry, scroll-driven unfolding,
- * and pop-in feature sections.
+ * SAATRAAI minimal home page — 3D animated Earth, live country weather,
+ * and quick links to explore the platform.
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { ArrowRight, Compass, Cpu, Layers, ShieldCheck } from 'lucide-react';
 import { LandingFooter, LandingHeader } from '@/components/landing/chrome';
 import { LandingEarthBackdrop, LandingHero } from '@/components/landing/hero';
 import { CountryAtlasSection, type WeatherState } from '@/components/landing/country-atlas';
-import {
-  ContradictionSection,
-  GraphSection,
-  HowItWorks,
-  ModalitiesSection,
-  PipelineSection,
-  ReasoningSection,
-  TechnologySection,
-  TemporalSection,
-  UncertaintySection,
-  UseCasesSection,
-} from '@/components/landing/sections';
+import { PageTransition, Reveal, TiltCard } from '@/components/ui';
+
+const QUICK_LINKS = [
+  {
+    href: '/platform',
+    icon: ShieldCheck,
+    title: 'Platform',
+    description: 'See how questions turn into verified evidence.',
+  },
+  {
+    href: '/capabilities',
+    icon: Layers,
+    title: 'Capabilities',
+    description: 'Satellite sensors, timelines, and contradiction checks.',
+  },
+  {
+    href: '/use-cases',
+    icon: Compass,
+    title: 'Use cases',
+    description: 'Floods, urban growth, vegetation, and disaster response.',
+  },
+  {
+    href: '/technology',
+    icon: Cpu,
+    title: 'Technology',
+    description: 'PostGIS, FastAPI, and model adapters under the hood.',
+  },
+];
 
 export default function LandingPage() {
   const [selectedCountry, setSelectedCountry] = useState({
@@ -81,39 +98,59 @@ export default function LandingPage() {
 
   return (
     <div className="saatraai-landing relative isolate min-h-screen bg-void">
-      {/* 3D Earth Globe Canvas fixed in background */}
       <LandingEarthBackdrop
+        selectedCountry={selectedCountry}
         onCountrySelect={handleSelectCountry}
       />
 
-      {/* Main interactive interface and feature layers */}
       <div className="relative z-10">
         <LandingHeader />
 
-        {/* Hero with real-time conditions & Blue Marble orbit */}
-        <LandingHero
-          selectedCountryName={selectedCountry.name}
-          weatherState={weatherState}
-        />
+        <PageTransition>
+          <LandingHero
+            selectedCountryName={selectedCountry.name}
+            weatherState={weatherState}
+          />
 
-        {/* Country Atlas: interactive exploration matching demo */}
-        <CountryAtlasSection
-          selectedCountryName={selectedCountry.name}
-          weatherState={weatherState}
-          onSelectCountry={handleSelectCountry}
-        />
+          <CountryAtlasSection
+            selectedCountryName={selectedCountry.name}
+            weatherState={weatherState}
+            onSelectCountry={handleSelectCountry}
+          />
 
-        {/* Pop-in features of the SAATRAAI platform */}
-        <HowItWorks />
-        <PipelineSection />
-        <ModalitiesSection />
-        <ReasoningSection />
-        <GraphSection />
-        <TemporalSection />
-        <ContradictionSection />
-        <UncertaintySection />
-        <UseCasesSection />
-        <TechnologySection />
+          <section className="section-band border-b border-line px-6 py-12 sm:px-12">
+            <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {QUICK_LINKS.map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <Reveal key={item.href} delay={i * 0.06}>
+                    <TiltCard maxTilt={8} className="h-full rounded-xl">
+                      <Link
+                        href={item.href}
+                        className="glass-option group flex h-full flex-col justify-between rounded-xl p-5"
+                      >
+                        <div>
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <h3 className="mt-3.5 text-[14.5px] font-medium text-ink group-hover:text-primary transition-colors">
+                            {item.title}
+                          </h3>
+                          <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-dim">
+                            {item.description}
+                          </p>
+                        </div>
+                        <span className="mt-4 inline-flex items-center gap-1 text-[12px] text-primary">
+                          Explore <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                      </Link>
+                    </TiltCard>
+                  </Reveal>
+                );
+              })}
+            </div>
+          </section>
+        </PageTransition>
 
         <LandingFooter />
       </div>

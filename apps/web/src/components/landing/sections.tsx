@@ -1,6 +1,6 @@
 'use client';
 
-/** Landing content sections — pop-in viewport animations on every card/section. */
+/** Landing content sections — human, minimal copy with pop-in animations. */
 
 import { motion } from 'framer-motion';
 import {
@@ -18,23 +18,21 @@ import {
 
 import { Badge, ButtonLink, TiltCard } from '@/components/ui';
 
-/* ── Shared animation variants ── */
 const fadeUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
 };
 
 const popIn = {
-  hidden: { opacity: 0, scale: 0.93, y: 20 },
+  hidden: { opacity: 0, scale: 0.94, y: 18 },
   visible: { opacity: 1, scale: 1, y: 0 },
 };
 
 const slideInLeft = {
-  hidden: { opacity: 0, x: -32 },
+  hidden: { opacity: 0, x: -24 },
   visible: { opacity: 1, x: 0 },
 };
 
-/* ── Section wrapper ── */
 function Section({
   id,
   eyebrow,
@@ -52,23 +50,23 @@ function Section({
 }) {
   return (
     <section id={id} className={`section-band border-b border-line ${alt ? 'bg-surface/70' : ''}`}>
-      <div className="mx-auto max-w-6xl px-6 py-12 sm:py-16">
+      <div className="mx-auto max-w-6xl px-6 py-12 sm:py-14">
         <motion.div
           variants={fadeUp}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.45 }}
         >
-          <p className="font-mono text-[10.5px] uppercase tracking-[0.24em] text-primary">{eyebrow}</p>
-          <h2 className="display-font mt-3 max-w-2xl text-[25px] font-semibold leading-[1.12] text-ink sm:text-[31px]">
+          <p className="font-mono text-[10.5px] uppercase tracking-[0.22em] text-primary">{eyebrow}</p>
+          <h2 className="display-font mt-2.5 max-w-2xl text-[24px] font-semibold leading-[1.14] text-ink sm:text-[30px]">
             {title}
           </h2>
           {description && (
-            <p className="mt-3 max-w-2xl text-[13.5px] leading-relaxed text-ink-dim">{description}</p>
+            <p className="mt-2.5 max-w-2xl text-[13.5px] leading-relaxed text-ink-dim">{description}</p>
           )}
         </motion.div>
-        <div className="mt-9">{children}</div>
+        <div className="mt-8">{children}</div>
       </div>
     </section>
   );
@@ -77,19 +75,19 @@ function Section({
 /* ── 1. How it works ── */
 
 const STEPS = [
-  { n: '01', t: 'Ask in natural language', d: '"Why has flooding increased in this region between 2022 and 2026?"' },
-  { n: '02', t: 'Define region + time', d: 'Draw a polygon, pick a preset, or upload GeoJSON; choose the temporal window.' },
-  { n: '03', t: 'Plan hypotheses', d: 'Candidate explanations are registered with explicit assessment states.' },
-  { n: '04', t: 'Collect evidence', d: 'Registered tools execute against your imagery and emit provenance-carrying evidence.' },
-  { n: '05', t: 'Challenge & explain', d: 'Contradictions, missing evidence and confidence are reported — never hidden.' },
+  { n: '01', t: 'Ask a question', d: 'Start in plain language, like asking why flooding grew over recent years.' },
+  { n: '02', t: 'Pick region & dates', d: 'Draw an area on the map or upload GeoJSON, then choose a time range.' },
+  { n: '03', t: 'List explanations', d: 'Track possible causes side by side with clear status labels.' },
+  { n: '04', t: 'Gather evidence', d: 'Run tools on your imagery and save every step with its source.' },
+  { n: '05', t: 'Check conflicts', d: 'See what agrees, what disagrees, and what data is still missing.' },
 ];
 
 export function HowItWorks() {
   return (
     <Section
-      eyebrow="How SAATRAAI works"
-      title="A question becomes an auditable evidence chain"
-      description="Every stage of an investigation is real application state — persisted queries, execution traces, evidence records and conclusions, each with provenance."
+      eyebrow="How it works"
+      title="From question to clear evidence"
+      description="Every step saves real records — your questions, runs, evidence, and takeaways."
     >
       <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {STEPS.map((step, i) => (
@@ -99,10 +97,10 @@ export function HowItWorks() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.45, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ type: 'spring', stiffness: 280, damping: 22, delay: i * 0.06 }}
           >
             <TiltCard maxTilt={6} className="h-full rounded-xl">
-              <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
+              <div className="glass-option h-full rounded-xl p-4">
                 <div className="font-mono text-[11px] tracking-[0.2em] text-primary">{step.n}</div>
                 <div className="mt-2 text-[13.5px] font-medium text-ink">{step.t}</div>
                 <p className="mt-1.5 text-[12px] leading-relaxed text-ink-dim">{step.d}</p>
@@ -118,20 +116,20 @@ export function HowItWorks() {
 /* ── 2. Pipeline ── */
 
 const PIPELINE = [
-  'Query understanding',
-  'Region identification',
-  'Temporal scope',
-  'Hypothesis generation',
-  'Evidence planning',
-  'Data acquisition',
-  'Remote sensing analysis',
-  'Temporal analysis',
-  'Contradiction search',
-  'Missing evidence',
+  'Question',
+  'Region',
+  'Time range',
+  'Hypotheses',
+  'Plan',
+  'Data upload',
+  'Imagery check',
+  'Timeline',
+  'Contradictions',
+  'Gaps',
   'Confidence',
-  'Evidence graph',
-  'Conclusion',
-  'Report export',
+  'Graph',
+  'Summary',
+  'Export',
 ];
 
 export function PipelineSection() {
@@ -139,9 +137,9 @@ export function PipelineSection() {
     <Section
       id="pipeline"
       alt
-      eyebrow="Investigation pipeline"
-      title="Fourteen stages, one traceable path from question to report"
-      description="Statuses are driven by backend records wherever they exist — steps that this deployment cannot execute are labelled, not simulated."
+      eyebrow="Pipeline"
+      title="Fourteen clear steps from start to report"
+      description="Each stage shows live status from the server — anything not available is marked plainly, never faked."
     >
       <div className="flex flex-wrap items-center gap-2">
         {PIPELINE.map((stage, i) => (
@@ -151,11 +149,11 @@ export function PipelineSection() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true }}
-            transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.5), ease: [0.22, 1, 0.36, 1] }}
+            transition={{ type: 'spring', stiffness: 300, damping: 24, delay: Math.min(i * 0.03, 0.4) }}
             className="flex items-center gap-2"
           >
-            <span className="rounded-lg border border-line bg-card px-3 py-2 text-[12px] text-ink-dim">
-              <span className="mr-2 font-mono text-[10px] text-primary/70">
+            <span className="glass-option rounded-lg px-3 py-2 text-[12px] text-ink-dim">
+              <span className="mr-2 font-mono text-[10px] text-primary/80">
                 {String(i + 1).padStart(2, '0')}
               </span>
               {stage}
@@ -169,12 +167,11 @@ export function PipelineSection() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.4 }}
+        transition={{ duration: 0.45, delay: 0.2 }}
         className="mt-6 rounded-xl border border-warning/25 bg-warning/5 p-4 text-[12.5px] leading-relaxed text-ink-dim"
       >
-        <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-warning">Integrity rule · </span>
-        When a provider or model is not configured, the corresponding stage reports NOT CONFIGURED and evidence
-        records are marked INSUFFICIENT instead of inventing a result.
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-warning">Honesty check · </span>
+        When a model or data source isn’t connected, that step is marked NOT CONFIGURED and INSUFFICIENT rather than guessing.
       </motion.div>
     </Section>
   );
@@ -183,21 +180,21 @@ export function PipelineSection() {
 /* ── 3. Modalities ── */
 
 const MODALITIES = [
-  { icon: Radar, t: 'SAR', d: 'Sentinel-1 dual-polarisation backscatter for flood extent and structure change under cloud.', note: 'Provider not configured — upload scenes' },
-  { icon: Layers, t: 'Optical', d: 'Sentinel-2 multispectral stacks for vegetation, built-up and water mapping.', note: 'Provider not configured — upload scenes' },
-  { icon: Database, t: 'Rainfall', d: 'Meteorological forcing to separate pluvial drivers from land-cover drivers.', note: 'Not configured' },
-  { icon: Waypoints, t: 'DEM / terrain', d: 'Slope and flow accumulation to test runoff-concentration hypotheses.', note: 'Not configured' },
-  { icon: GitBranch, t: 'Land cover', d: 'Class transitions as evidence for urban expansion or vegetation loss claims.', note: 'Not configured' },
-  { icon: SearchCheck, t: 'Infrastructure', d: 'Drainage and built assets to evaluate anthropogenic explanations.', note: 'Not configured' },
+  { icon: Radar, t: 'SAR radar', d: 'See floods and surface changes even through heavy cloud cover.', note: 'Upload scenes' },
+  { icon: Layers, t: 'Optical', d: 'Multispectral views for water, vegetation, and city growth.', note: 'Upload scenes' },
+  { icon: Database, t: 'Rainfall', d: 'Compare rain patterns with surface changes on the ground.', note: 'Provider status' },
+  { icon: Waypoints, t: 'Terrain / DEM', d: 'Check slope and elevation to see where water naturally flows.', note: 'Provider status' },
+  { icon: GitBranch, t: 'Land cover', d: 'Spot shifts between forest, farmland, water, and built areas.', note: 'Provider status' },
+  { icon: SearchCheck, t: 'Infrastructure', d: 'Factor in roads, drains, and built structures.', note: 'Provider status' },
 ];
 
 export function ModalitiesSection() {
   return (
     <Section
       id="modalities"
-      eyebrow="Multimodal Earth observation"
-      title="Earth-observation evidence, availability stated honestly"
-      description="SAATRAAI separates what it can measure today from what a deployment has not connected. Nothing below is simulated."
+      eyebrow="Data layers"
+      title="Different ways of seeing the Earth"
+      description="We show what you can run today versus what still needs a provider connection."
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {MODALITIES.map((m, i) => (
@@ -207,10 +204,10 @@ export function ModalitiesSection() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.45, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ type: 'spring', stiffness: 280, damping: 22, delay: i * 0.06 }}
           >
-            <TiltCard maxTilt={7} className="rounded-xl h-full">
-              <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
+            <TiltCard maxTilt={7} className="h-full rounded-xl">
+              <div className="glass-option h-full rounded-xl p-4">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/30 bg-primary/10">
                     <m.icon className="h-4 w-4 text-primary" />
@@ -233,10 +230,10 @@ export function ModalitiesSection() {
 /* ── 4. Reasoning ── */
 
 const REASONING = [
-  { t: 'Hypothesis-based', d: 'Candidate explanations carry assessment states: proposed, under review, supported, rejected, inconclusive.' },
-  { t: 'Evidence polarity', d: 'Every evidence record is supporting, contradicting, neutral or insufficient — with the tool and version that produced it.' },
-  { t: 'Explicit falsification', d: 'A hypothesis can be weakened by evidence; the interface surfaces that evidence instead of burying it.' },
-  { t: 'Missing evidence', d: 'Evidence still required is listed with NOT AVAILABLE when the deployment cannot supply it.' },
+  { t: 'Track ideas clearly', d: 'Every idea starts untested and moves to supported, weakened, or contradicted.' },
+  { t: 'Show every side', d: 'Each record states whether it supports, challenges, or lacks enough data.' },
+  { t: 'Try to disprove', d: 'Conflicting findings stay front and center so weak ideas aren’t hidden.' },
+  { t: 'Spot missing pieces', d: 'If key data isn’t available yet, it stays listed as NOT AVAILABLE.' },
 ];
 
 export function ReasoningSection() {
@@ -244,9 +241,9 @@ export function ReasoningSection() {
     <Section
       id="reasoning"
       alt
-      eyebrow="Hypothesis-based reasoning"
-      title="An investigator that tries to disprove itself"
-      description="SAATRAAI is built around assessment, not generation: claims are only as strong as the evidence records behind them."
+      eyebrow="Reasoning"
+      title="Built to test ideas, not jump to conclusions"
+      description="Claims only hold as much weight as the records backing them up."
     >
       <div className="grid gap-4 sm:grid-cols-2">
         {REASONING.map((r, i) => (
@@ -256,8 +253,8 @@ export function ReasoningSection() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.5, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-xl border border-line bg-card p-4"
+            transition={{ type: 'spring', stiffness: 260, damping: 24, delay: i * 0.08 }}
+            className="glass-option rounded-xl p-4"
           >
             <div className="flex items-center gap-2">
               <BrainCircuit className="h-4 w-4 text-secondary" />
@@ -272,11 +269,10 @@ export function ReasoningSection() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="mt-6 max-w-3xl border-l-2 border-primary/50 pl-4 text-[13px] italic leading-relaxed text-ink-dim"
+        transition={{ duration: 0.45, delay: 0.2 }}
+        className="mt-6 max-w-2xl border-l-2 border-primary/50 pl-4 text-[13px] italic leading-relaxed text-ink-dim"
       >
-        &ldquo;The available evidence supports&hellip;&rdquo; &mdash; never &ldquo;the satellite proves&hellip;&rdquo;. Correlation in imagery is reported as
-        correlation; conclusions state which hypothesis is strengthened, weakened, or still untestable.
+        &ldquo;Available evidence points toward…&rdquo; — never &ldquo;proven.&rdquo; Patterns in imagery are shown alongside what still needs checking.
       </motion.p>
     </Section>
   );
@@ -291,8 +287,8 @@ export function GraphSection() {
   return (
     <Section
       eyebrow="Evidence graph"
-      title="Every claim is a node with edges you can walk"
-      description="The graph is assembled from persisted records — questions, executions, evidence, hypotheses and conclusions — so provenance is navigable, not asserted."
+      title="Follow every link back to its source"
+      description="Questions, scenes, tool runs, and conclusions connect in one navigable map."
     >
       <div className="grid gap-6 lg:grid-cols-2">
         <motion.div
@@ -300,8 +296,8 @@ export function GraphSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-xl border border-line bg-card p-5"
+          transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+          className="glass-option rounded-xl p-5"
         >
           <div className="flex flex-wrap gap-2">
             {GRAPH_NODES.map((n, i) => (
@@ -310,8 +306,8 @@ export function GraphSection() {
                 initial={{ opacity: 0, scale: 0.85 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: i * 0.06 }}
-                className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-primary"
+                transition={{ duration: 0.25, delay: i * 0.05 }}
+                className="glass-option-active rounded-lg px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-primary"
               >
                 {n}
               </motion.span>
@@ -324,7 +320,7 @@ export function GraphSection() {
                 initial={{ opacity: 0 }}
                 whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: 0.3 + i * 0.05 }}
+                transition={{ duration: 0.25, delay: 0.2 + i * 0.04 }}
                 className="rounded border border-line bg-elevated px-2 py-1 font-mono text-[10.5px] text-ink-dim"
               >
                 {e}
@@ -337,25 +333,19 @@ export function GraphSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="rounded-xl border border-line bg-card p-5"
+          transition={{ type: 'spring', stiffness: 260, damping: 24, delay: 0.1 }}
+          className="glass-option rounded-xl p-5"
         >
           <div className="space-y-3 text-[12.5px] leading-relaxed text-ink-dim">
             <p>
-              <span className="text-ink">Question → analysis → evidence → hypothesis.</span> Each hop names the tool,
-              model version, parameters and timestamps involved.
+              <span className="text-ink">Question → run → evidence → takeaway.</span> Each link keeps the tool name, version, and time it ran.
             </p>
             <p>
-              Evidence produced by failed or unimplemented tool runs is still recorded — as INSUFFICIENT — so the
-              absence of capability stays visible in the graph.
-            </p>
-            <p>
-              Edges carry polarity: <span className="text-success">SUPPORTS</span>,{' '}
-              <span className="text-danger">CONTRADICTS</span> or <span className="text-ink-dim">ASSOCIATED_WITH</span>.
+              Runs that fail or lack a model stay recorded as INSUFFICIENT so gaps are always easy to spot.
             </p>
           </div>
           <ButtonLink href="/sign-in" className="mt-4" variant="secondary" size="sm" icon={<ArrowRight className="h-3.5 w-3.5" />}>
-            Open the graph
+            Open graph
           </ButtonLink>
         </motion.div>
       </div>
@@ -369,22 +359,22 @@ export function TemporalSection() {
   return (
     <Section
       alt
-      eyebrow="Temporal analysis"
-      title="Set the time window. Compare only what the evidence supports."
-      description="Investigations span explicit date ranges; uploaded imagery, executions, and evidence appear on a timeline that drives the map. A visual comparison alone does not produce a change estimate."
+      eyebrow="Time window"
+      title="Compare scenes across the dates you choose"
+      description="Every scene, run, and finding sits on a shared timeline connected to the map."
     >
       <motion.div
         variants={popIn}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="rounded-xl border border-line bg-card p-5"
+        transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+        className="glass-option rounded-xl p-5"
       >
         <div className="flex items-center gap-3">
           <CalendarRange className="h-4 w-4 text-primary" />
           <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-dim">
-            Date range · preset or custom
+            Timeline · preset or custom dates
           </span>
         </div>
         <div className="mt-5 flex items-center gap-1.5">
@@ -401,7 +391,7 @@ export function TemporalSection() {
               initial={{ opacity: 0, scaleY: 0 }}
               whileInView={{ opacity: 1, scaleY: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
+              transition={{ duration: 0.35, delay: i * 0.06 }}
               style={{ transformOrigin: 'bottom' }}
             >
               <div className="h-1.5 rounded-full bg-line">
@@ -414,9 +404,6 @@ export function TemporalSection() {
             </motion.div>
           ))}
         </div>
-        <p className="mt-4 text-[12.5px] text-ink-dim">
-          Comparison modes: split view, opacity slider, and swipe — driven by the selected dates and uploaded scenes.
-        </p>
       </motion.div>
     </Section>
   );
@@ -427,15 +414,15 @@ export function TemporalSection() {
 export function ContradictionSection() {
   return (
     <Section
-      eyebrow="Contradiction search"
-      title="The evidence that disagrees is the most important evidence"
-      description="Contradicting observations are listed with source, date, location and strength — a hypothesis is never presented without its challengers."
+      eyebrow="Contradictions"
+      title="Evidence that disagrees matters most"
+      description="Every idea is shown alongside the observations that challenge it."
     >
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { tone: 'text-success', label: 'SUPPORTING', d: 'Observations consistent with the hypothesis.' },
-          { tone: 'text-danger', label: 'CONTRADICTING', d: 'Observations that weaken or falsify it.' },
-          { tone: 'text-warning', label: 'INSUFFICIENT', d: 'Tool unavailable or run failed — no claim made.' },
+          { tone: 'text-success', label: 'SUPPORTING', d: 'Matches the working explanation.' },
+          { tone: 'text-danger', label: 'CONTRADICTING', d: 'Pushes back or weakens the claim.' },
+          { tone: 'text-warning', label: 'INSUFFICIENT', d: 'Not enough data or tool unavailable.' },
         ].map((item, i) => (
           <motion.div
             key={item.label}
@@ -443,8 +430,8 @@ export function ContradictionSection() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.45, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-xl border border-line bg-card p-4"
+            transition={{ type: 'spring', stiffness: 280, damping: 22, delay: i * 0.08 }}
+            className="glass-option rounded-xl p-4"
           >
             <div className={`font-mono text-[11px] tracking-[0.16em] ${item.tone}`}>{item.label}</div>
             <p className="mt-2 text-[12.5px] leading-relaxed text-ink-dim">{item.d}</p>
@@ -461,32 +448,29 @@ export function UncertaintySection() {
   return (
     <Section
       alt
-      eyebrow="Uncertainty & missing evidence"
-      title="Confidence with an explanation, and a list of what is still missing"
-      description="Every confidence figure ships with its method and the counts behind it. Evidence still required is named — with NOT AVAILABLE where the deployment cannot provide it."
+      eyebrow="Confidence & gaps"
+      title="Clear confidence, plus what’s still missing"
+      description="Scores show how they were calculated and list any missing data alongside them."
     >
       <motion.div
         variants={popIn}
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="rounded-xl border border-line bg-card p-5"
+        transition={{ type: 'spring', stiffness: 280, damping: 24 }}
+        className="glass-option rounded-xl p-5"
       >
         <div className="flex items-start gap-3">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
           <div className="space-y-2 text-[12.5px] leading-relaxed text-ink-dim">
             <p>
-              <span className="text-ink">Evidence completeness</span> — share of records that produced an actual
-              observation instead of an unavailable-tool marker.
+              <span className="text-ink">Coverage</span> — how many runs returned a real observation.
             </p>
             <p>
-              <span className="text-ink">Contradiction level</span> — decisive evidence that pushes back, shown
-              alongside its sources.
+              <span className="text-ink">Pushback</span> — records that disagree with the leading idea.
             </p>
             <p>
-              <span className="text-ink">Missing evidence</span> — historical drainage maps, rainfall observations,
-              high-resolution imagery: listed, never fabricated.
+              <span className="text-ink">Missing data</span> — listed clearly as NOT AVAILABLE, never guessed.
             </p>
           </div>
         </div>
@@ -498,12 +482,12 @@ export function UncertaintySection() {
 /* ── 9. Use cases ── */
 
 const USE_CASES = [
-  { t: 'Flood attribution', d: 'Separate rainfall-driven, land-cover-driven and drainage-driven explanations for changing flood extent.' },
-  { t: 'Urban expansion audit', d: 'Test whether built-up growth explains observed surface temperature or runoff changes.' },
-  { t: 'Vegetation decline', d: 'Distinguish drought stress from land management with multi-temporal evidence.' },
-  { t: 'Disaster response', d: 'Rapid before/after comparison with explicit confidence and known data gaps.' },
-  { t: 'Coastal morphology', d: 'Track shoreline change and challenge single-cause explanations.' },
-  { t: 'Research review', d: 'Auditable evidence chains suitable for peer scrutiny and reproducibility.' },
+  { t: 'Flooding', d: 'Separate rainfall spikes, land changes, and drainage issues.' },
+  { t: 'City growth', d: 'Check if new construction lines up with heat or runoff shifts.' },
+  { t: 'Vegetation loss', d: 'Tell drought stress apart from clearing or land use change.' },
+  { t: 'Disaster response', d: 'Compare before and after scenes while flagging data gaps.' },
+  { t: 'Coastlines', d: 'Track shoreline erosion without assuming a single cause.' },
+  { t: 'Research review', d: 'Keep clean evidence trails ready for peer review.' },
 ];
 
 export function UseCasesSection() {
@@ -511,8 +495,8 @@ export function UseCasesSection() {
     <Section
       id="use-cases"
       eyebrow="Use cases"
-      title="Built for investigations, not dashboards"
-      description="Each use case is a question with competing explanations — exactly what the workspace is designed to hold."
+      title="Made for real questions, not static charts"
+      description="Explore competing explanations in one focused workspace."
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {USE_CASES.map((u, i) => (
@@ -522,10 +506,10 @@ export function UseCasesSection() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.45, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ type: 'spring', stiffness: 280, damping: 22, delay: i * 0.06 }}
           >
-            <TiltCard maxTilt={7} className="rounded-xl h-full">
-              <div className="h-full rounded-xl border border-line bg-card p-4 transition-colors hover:border-primary/30">
+            <TiltCard maxTilt={7} className="h-full rounded-xl">
+              <div className="glass-option h-full rounded-xl p-4">
                 <div className="text-[13.5px] font-medium text-ink">{u.t}</div>
                 <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink-dim">{u.d}</p>
               </div>
@@ -540,12 +524,12 @@ export function UseCasesSection() {
 /* ── 10. Technology ── */
 
 const TECH = [
-  { k: 'Frontend', v: 'Next.js · React · TypeScript · Tailwind' },
-  { k: 'Map', v: 'MapLibre GL · GeoJSON · ROI drawing' },
-  { k: 'API', v: 'FastAPI · JWT auth · idempotent execution' },
-  { k: 'Storage', v: 'PostgreSQL / PostGIS · local object store' },
-  { k: 'Orchestration', v: 'Deterministic routing · tool registry · execution traces' },
-  { k: 'Models', v: 'GeoChat VQA + grounding · extensible adapters' },
+  { k: 'Web', v: 'Next.js · React · TypeScript' },
+  { k: 'Maps', v: 'MapLibre GL · GeoJSON' },
+  { k: 'Backend', v: 'FastAPI · JWT auth' },
+  { k: 'Database', v: 'PostgreSQL / PostGIS' },
+  { k: 'Routing', v: 'Tool registry · Execution traces' },
+  { k: 'Models', v: 'GeoChat VQA · Grounding' },
 ];
 
 export function TechnologySection() {
@@ -553,9 +537,9 @@ export function TechnologySection() {
     <Section
       id="technology"
       alt
-      eyebrow="Technology"
-      title="A real stack, wired end to end"
-      description="The web client talks to a FastAPI backend over typed endpoints: auth, projects, investigations, queries, image ingestion, executions, evidence and system status."
+      eyebrow="Stack"
+      title="Simple, solid, connected end to end"
+      description="A Next.js workspace backed by FastAPI and PostGIS for real geospatial records."
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {TECH.map((t, i) => (
@@ -565,8 +549,8 @@ export function TechnologySection() {
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: '-40px' }}
-            transition={{ duration: 0.4, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-            className="flex items-baseline justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3"
+            transition={{ type: 'spring', stiffness: 280, damping: 22, delay: i * 0.05 }}
+            className="glass-option flex items-baseline justify-between gap-3 rounded-lg px-4 py-3"
           >
             <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-ink-faint">{t.k}</span>
             <span className="text-right text-[12.5px] text-ink-dim">{t.v}</span>
@@ -579,15 +563,15 @@ export function TechnologySection() {
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true }}
-        transition={{ duration: 0.5, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="glow-edge mt-8 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center"
+        transition={{ type: 'spring', stiffness: 260, damping: 22, delay: 0.2 }}
+        className="glow-edge mt-8 rounded-xl border border-primary/30 bg-primary/5 p-6 text-center backdrop-blur-md"
       >
-        <p className="text-[15px] font-medium text-ink">Ready to run your first investigation?</p>
+        <p className="text-[15px] font-medium text-ink">Ready to try it?</p>
         <p className="mx-auto mt-1.5 max-w-md text-[12.5px] text-ink-dim">
-          Sign in with Google, ask a question, draw a region — the workspace assembles the evidence chain live.
+          Sign in with Google, pick an area, and start testing your question.
         </p>
         <ButtonLink href="/sign-in" className="mt-4" variant="primary" size="lg" icon={<ArrowRight className="h-4 w-4" />}>
-          Start investigation
+          Start investigating
         </ButtonLink>
       </motion.div>
     </Section>

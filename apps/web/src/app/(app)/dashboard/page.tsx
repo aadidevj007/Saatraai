@@ -78,10 +78,10 @@ export default function OverviewPage() {
             <Activity className="h-3 w-3 text-success" />
             {greeting()} · {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date())}
           </p>
-          <h1 className="mt-2 text-[26px] font-semibold leading-tight text-ink">Ready to investigate Earth?</h1>
+          <h1 className="mt-2 text-[26px] font-semibold leading-tight text-ink">What would you like to check today?</h1>
           <p className="mt-1 text-[13px] text-ink-dim">
             Signed in as {name}
-            {preferences?.research_interest ? ` · investigating ${preferences.research_interest}` : ''}
+            {preferences?.research_interest ? ` · Focus: ${preferences.research_interest}` : ''}
           </p>
         </div>
         <div className="flex gap-2">
@@ -184,7 +184,7 @@ export default function OverviewPage() {
       <div className="mt-9">
         <SectionHeader
           title="Recent investigations"
-          description="Question, region, time period and evidence-backed status for your latest work."
+          description="Your latest questions, regions, and evidence status."
           action={
             <ButtonLink href="/investigations" variant="ghost" size="sm" icon={<ArrowRight className="h-3.5 w-3.5" />}>
               View all
@@ -230,13 +230,13 @@ export default function OverviewPage() {
       {/* system strip */}
       <div className="mt-9 flex flex-wrap items-center gap-4 rounded-xl border border-line bg-surface px-4 py-3 text-[12px] text-ink-dim">
         <span className="flex items-center gap-2">
-          <StatusDot state="online" /> Core services respond via /health
+          <StatusDot state="online" /> API connected
         </span>
         <span className="flex items-center gap-2">
-          <StatusDot state="not_configured" /> Satellite providers not configured — imagery is uploaded
+          <StatusDot state="not_configured" /> Upload satellite scenes directly in your workspace
         </span>
         <Link href="/status" className="ml-auto text-primary hover:underline">
-          Full system status →
+          System status →
         </Link>
       </div>
     </div>

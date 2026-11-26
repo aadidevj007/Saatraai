@@ -108,11 +108,11 @@ export function Sidebar({
                 onClick={onNavigate}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'group relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-[13px] transition-colors',
+                  'group relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-[13px] transition-all',
                   'focus-visible:outline-2 focus-visible:outline-primary',
                   active
-                    ? 'bg-primary/10 text-primary shadow-[inset_0_0_18px_rgba(114,227,180,0.055)]'
-                    : 'text-ink-dim hover:bg-elevated hover:text-ink',
+                    ? 'glass-option-active text-primary'
+                    : 'border border-transparent text-ink-dim hover:border-white/10 hover:bg-white/[0.05] hover:text-ink hover:backdrop-blur-md',
                 )}
               >
                 {active && (
@@ -140,10 +140,10 @@ export function Sidebar({
             href="/status"
             onClick={onNavigate}
             className={cn(
-              'flex items-center gap-3 rounded-lg px-2.5 py-2 text-[13px] transition-colors',
+              'flex items-center gap-3 rounded-lg px-2.5 py-2 text-[13px] transition-all',
               pathname.startsWith('/status')
-                ? 'bg-primary/10 text-primary'
-                : 'text-ink-dim hover:bg-elevated hover:text-ink',
+                ? 'glass-option-active text-primary'
+                : 'border border-transparent text-ink-dim hover:border-white/10 hover:bg-white/[0.05] hover:text-ink hover:backdrop-blur-md',
             )}
           >
             <ServerCog className="h-4 w-4 shrink-0" />

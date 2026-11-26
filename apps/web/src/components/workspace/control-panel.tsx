@@ -341,8 +341,8 @@ export function ControlPanel({
                   <button
                     onClick={() => toggleImage(img.id)}
                     className={cn(
-                      'flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left transition-colors',
-                      selectedImages.includes(img.id) ? 'border-primary/50 bg-primary/5' : 'border-line bg-card hover:border-line-strong',
+                      'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition-all',
+                      selectedImages.includes(img.id) ? 'glass-option-active' : 'glass-option',
                     )}
                   >
                     <span className="min-w-0">

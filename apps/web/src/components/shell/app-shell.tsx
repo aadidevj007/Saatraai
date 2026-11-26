@@ -3,15 +3,14 @@
 /** Application shell: auth guard + sidebar + topbar + palette + shortcuts. */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 import { CommandPalette } from '@/components/shell/command-palette';
 import { ShortcutsHelp } from '@/components/shell/shortcuts-help';
 import { ShellProvider } from '@/components/shell/shell-context';
 import { Sidebar } from '@/components/shell/sidebar';
 import { TopBar } from '@/components/shell/topbar';
-import { LoadingState } from '@/components/ui';
+import { LoadingState, PageTransition } from '@/components/ui';
 import { useAuth } from '@/lib/auth/auth-context';
 import { probeApi } from '@/lib/api';
 
@@ -19,7 +18,6 @@ const SIDEBAR_KEY = 'saatraai.sidebar-collapsed';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
   const { status, needsProfile } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -164,14 +162,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar apiOnline={apiOnline} mobileNavOpen={mobileOpen} mobileNavTrigger={mobileNavTrigger} onOpenPalette={() => setPaletteOpen(true)} onToggleSidebar={() => setMobileOpen((open) => !open)} />
           <main className="min-h-0 flex-1 overflow-y-auto">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.24, ease: 'easeOut' }}
-            >
+            <PageTransition>
               {children}
-            </motion.div>
+            </PageTransition>
           </main>
         </div>
       </div>

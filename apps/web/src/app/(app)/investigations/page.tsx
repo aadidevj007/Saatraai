@@ -92,7 +92,7 @@ export default function InvestigationsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[22px] font-semibold text-ink">Investigations</h1>
-          <p className="mt-1 text-[13px] text-ink-dim">Every investigation you own, newest first.</p>
+          <p className="mt-1 text-[13px] text-ink-dim">Your saved investigations, newest first.</p>
         </div>
         <ButtonLink href="/investigations/new" variant="primary" icon={<Plus className="h-4 w-4" />}>New Investigation</ButtonLink>
       </div>
@@ -158,7 +158,7 @@ export default function InvestigationsPage() {
         ) : (
           <SectionHeader
             title={`${sorted.length} investigation${sorted.length === 1 ? '' : 's'}`}
-            description="Owned by your account · server-side authorized"
+            description="Private to your account"
           />
         )}
 

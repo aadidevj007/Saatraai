@@ -28,7 +28,7 @@ export default function ModelsPage() {
             <Radar className="h-5 w-5 text-primary" /> Model registry
           </h1>
           <p className="mt-1 text-[13px] text-ink-dim">
-            Every model and task exposed by the backend tool registry — availability read from live system status.
+            Registered analysis tools and their live availability.
           </p>
         </div>
         <span className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-wider text-ink-faint">

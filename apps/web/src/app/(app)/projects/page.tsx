@@ -57,7 +57,7 @@ export default function ProjectsPage() {
             <Boxes className="h-5 w-5 text-primary" /> Projects
           </h1>
           <p className="mt-1 text-[13px] text-ink-dim">
-            Investigations live inside projects — each owned by your account and enforced server-side.
+            Group your investigations by region, mission, or topic.
           </p>
         </div>
         <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setCreateOpen(true)}>

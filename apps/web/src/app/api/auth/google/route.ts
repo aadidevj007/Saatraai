@@ -30,7 +30,9 @@ const GOOGLE_TOKENINFO = 'https://oauth2.googleapis.com/tokeninfo';
 export async function POST(request: Request): Promise<NextResponse> {
   const clientId = process.env.GOOGLE_CLIENT_ID ?? process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const bridgeSecret = process.env.GOOGLE_BRIDGE_SECRET;
-  const backendBase = process.env.NEXT_PUBLIC_API_URL?.trim().replace(/\/+$/, '');
+  const backendBase = (
+    process.env.NEXT_PUBLIC_API_URL?.trim() || 'https://saatraai-api.onrender.com'
+  ).replace(/\/+$/, '');
 
   if (!clientId || !bridgeSecret || !backendBase) {
     return NextResponse.json(
