@@ -249,7 +249,7 @@ export default function NewInvestigationPage() {
       {/* header + stepper */}
       <SectionHeader
         title="New investigation"
-        description="Six steps — every value becomes real application state persisted through the API."
+        description="Set your question, region, and dates to begin."
         action={
           <Badge tone={mode === 'demo' ? 'demo' : 'primary'}>{mode === 'demo' ? 'DEMO MODE' : 'REAL MODE'}</Badge>
         }
@@ -264,12 +264,12 @@ export default function NewInvestigationPage() {
               <button
                 onClick={() => i <= step && setStep(i)}
                 disabled={i > step}
-                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-[12.5px] transition-colors ${
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] transition-all active:scale-[0.98] ${
                   state === 'active'
-                    ? 'border-primary/50 bg-primary/10 text-primary'
+                    ? 'glass-option-active text-primary'
                     : state === 'done'
-                      ? 'border-line bg-card text-ink-dim hover:border-line-strong'
-                      : 'border-line bg-transparent text-ink-faint'
+                      ? 'glass-option text-ink-dim hover:text-ink'
+                      : 'border border-line bg-transparent text-ink-faint'
                 }`}
               >
                 <span className="font-mono text-[10px]">{state === 'done' ? <Check className="h-3 w-3" /> : String(i + 1).padStart(2, '0')}</span>
@@ -281,11 +281,11 @@ export default function NewInvestigationPage() {
         })}
       </ol>
 
-      <motion.div key={step} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="mt-5">
+      <motion.div key={step} initial={{ opacity: 0, y: 12, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 320, damping: 24 }} className="mt-5">
         {/* ── STEP 1 · QUESTION ── */}
         {step === 0 && (
-          <Panel title="What would you like to investigate?" subtitle="Natural language — the planner routes it into tasks">
-            <Field label="Research question" htmlFor="question" hint="Minimum 3 characters. The exact text is persisted as your first investigation query.">
+          <Panel title="What would you like to investigate?" subtitle="Write your question in plain language">
+            <Field label="Research question" htmlFor="question" hint="At least 3 characters. This will be saved as your starting question.">
               <Textarea
                 id="question"
                 value={question}
@@ -357,7 +357,7 @@ export default function NewInvestigationPage() {
                   <button
                     key={s}
                     onClick={() => setQuestion(s)}
-                    className="rounded-lg border border-line bg-card px-3 py-1.5 text-left text-[12px] text-ink-dim transition-colors hover:border-primary/40 hover:text-ink"
+                    className="glass-option rounded-lg px-3 py-1.5 text-left text-[12px] text-ink-dim hover:text-ink"
                   >
                     {s}
                   </button>
@@ -458,8 +458,8 @@ export default function NewInvestigationPage() {
                       setSources((prev) => (prev.includes(source.id) ? prev.filter((s) => s !== source.id) : [...prev, source.id]))
                     }
                     aria-pressed={selected}
-                    className={`rounded-xl border p-4 text-left transition-colors ${
-                      selected ? 'border-primary/50 bg-primary/5' : 'border-line bg-card hover:border-line-strong'
+                    className={`rounded-xl p-4 text-left active:scale-[0.98] ${
+                      selected ? 'glass-option-active' : 'glass-option'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -476,8 +476,7 @@ export default function NewInvestigationPage() {
             </div>
 
             <div className="mt-4 rounded-lg border border-warning/25 bg-warning/5 px-3 py-2.5 text-[12px] leading-relaxed text-ink-dim">
-              Unconfigured providers do not block an investigation: imagery is uploaded manually to the workspace, and
-              executions route through the registered tool registry.
+              Any offline data providers won’t block you — you can upload scenes directly inside your workspace.
             </div>
 
             <div className="mt-5 flex justify-between">
@@ -563,7 +562,7 @@ export default function NewInvestigationPage() {
         {step === 5 && (
           <Panel
             title="Review before creating"
-            subtitle="Everything below is sent to the backend and persisted verbatim"
+            subtitle="Check your settings before saving"
             actions={<Badge tone={mode === 'demo' ? 'demo' : 'primary'}>{mode === 'demo' ? 'DEMO' : 'REAL'}</Badge>}
           >
             <div className="space-y-4">
@@ -636,9 +635,7 @@ export default function NewInvestigationPage() {
               </div>
 
               <div className="rounded-lg border border-line bg-card px-3.5 py-2.5 text-[11.5px] leading-relaxed text-ink-faint">
-                On create: an investigation row is written to the database with this configuration (region polygon, period,
-                sources); the question is persisted as the first investigation query. No imagery is fetched, no analysis
-                runs, and no result exists yet — execution happens later from the workspace against uploaded imagery.
+                Creating this saves your region, dates, and question. You can upload scenes and run checks next inside the workspace.
               </div>
 
               {startError && <p className="text-[12.5px] text-danger">{startError}</p>}

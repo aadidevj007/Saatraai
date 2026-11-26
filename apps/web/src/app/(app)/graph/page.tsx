@@ -129,7 +129,7 @@ export default function EvidenceGraphPage() {
             <Waypoints className="h-5 w-5 text-primary" /> Evidence Graph
           </h1>
           <p className="mt-1 text-[13px] text-ink-dim">
-            Nodes are persisted records; edges carry meaning. Click a node to inspect its connections.
+            See how your questions, scenes, runs, and findings connect. Click any node for details.
           </p>
         </div>
 

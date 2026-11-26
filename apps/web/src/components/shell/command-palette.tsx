@@ -153,8 +153,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                     onMouseEnter={() => setIndex(i)}
                     onClick={() => execute(command)}
                     className={cn(
-                      'flex w-full items-center gap-3 px-4 py-2.5 text-left text-[13px] transition-colors',
-                      active ? 'bg-primary/10 text-primary' : 'text-ink-dim',
+                      'mx-1.5 flex w-[calc(100%-0.75rem)] items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] transition-all',
+                      active ? 'glass-option-active text-primary' : 'border border-transparent text-ink-dim',
                     )}
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0" />

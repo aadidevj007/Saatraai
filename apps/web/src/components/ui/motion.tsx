@@ -1,11 +1,34 @@
 'use client';
 
-/** Motion primitives: 3D tilt cards, spotlight hover, scroll reveal. */
+/** Motion primitives: 3D tilt cards, spotlight hover, scroll reveal, page bounce transitions. */
 
 import { useRef, useState, type ReactNode, type CSSProperties, type PointerEvent } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 import { cn } from '@/lib/utils';
+
+/** Smooth spring-bounce transition between routes. */
+export function PageTransition({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const pathname = usePathname();
+  return (
+    <motion.div
+      key={pathname}
+      initial={{ opacity: 0, y: 18, scale: 0.988 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 320, damping: 22, mass: 0.85 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 /**
  * 3D tilt card — pointer-tracked rotateX/rotateY with spring physics,

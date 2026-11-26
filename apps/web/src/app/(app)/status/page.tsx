@@ -56,8 +56,7 @@ export default function StatusPage() {
             <ServerCog className="h-5 w-5 text-primary" /> System status
           </h1>
           <p className="mt-1 text-[13px] text-ink-dim">
-            Live connectivity probes — integrations that are not deployed are reported as NOT CONFIGURED, never as
-            healthy.
+            Live checks across the API, database, and data integrations.
           </p>
         </div>
         <div className="flex items-center gap-2">

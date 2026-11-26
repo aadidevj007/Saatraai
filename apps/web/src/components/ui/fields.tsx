@@ -65,7 +65,7 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className="inline-flex rounded-lg border border-line bg-inputbg p-0.5"
+      className="inline-flex gap-0.5 rounded-lg border border-line bg-inputbg/70 p-0.5 backdrop-blur-md"
     >
       {options.map((option) => {
         const active = option.value === value;
@@ -77,9 +77,11 @@ export function Segmented<T extends string>({
             disabled={option.disabled}
             onClick={() => onChange(option.value)}
             className={cn(
-              'rounded-md px-3 font-medium transition-colors disabled:opacity-40',
+              'rounded-md px-3 font-medium transition-all disabled:opacity-40 active:scale-[0.97]',
               size === 'sm' ? 'h-6 text-[11px]' : 'h-7 text-[12.5px]',
-              active ? 'bg-elevated text-primary shadow-[inset_0_0_0_1px_rgba(114,227,180,0.2)]' : 'text-ink-dim hover:text-ink',
+              active
+                ? 'glass-option-active text-primary'
+                : 'border border-transparent text-ink-dim hover:bg-white/[0.04] hover:text-ink',
             )}
           >
             {option.label}

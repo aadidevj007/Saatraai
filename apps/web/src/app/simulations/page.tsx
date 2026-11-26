@@ -24,7 +24,7 @@ import {
   Wind,
 } from 'lucide-react';
 import { LandingHeader, LandingFooter } from '@/components/landing/chrome';
-import { Button, ButtonLink } from '@/components/ui';
+import { Button, ButtonLink, PageTransition } from '@/components/ui';
 
 interface ScenarioDef {
   id: string;
@@ -240,17 +240,18 @@ export default function SimulationsPage() {
     <div className="relative min-h-screen bg-void text-ink">
       <LandingHeader />
 
+      <PageTransition>
       {/* Prominent Scientific Integrity Banner */}
       <aside aria-label="Simulation compliance notice" className="border-b border-warning/40 bg-warning/10 px-5 py-2.5 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2 text-warning">
             <ShieldAlert className="h-4 w-4 shrink-0" />
             <span className="font-mono uppercase tracking-wider font-semibold">
-              SIMULATION LAB // SYNTHETIC PROVENANCE ENVIRONMENT
+              Simulation Lab · Synthetic Data
             </span>
           </div>
           <span className="hidden md:inline text-ink-dim font-mono text-[11px]">
-            Strict adherence to SAATRAAI scientific integrity rules: No simulated data enters production investigation records.
+            Simulated scenarios stay separate from your real investigation records.
           </span>
         </div>
       </aside>
@@ -262,16 +263,15 @@ export default function SimulationsPage() {
         <div className="relative z-10 mx-auto max-w-7xl">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.2em] text-primary">
+              <div className="glass-option inline-flex items-center gap-2 rounded-full px-3 py-1 font-mono text-[10.5px] uppercase tracking-[0.2em] text-primary">
                 <Radar className="h-3.5 w-3.5 animate-spin-slow" />
-                Live Scenario Simulation Console
+                Simulation Lab
               </div>
               <h1 className="display-font mt-4 text-3xl font-bold tracking-tight text-ink sm:text-5xl">
-                Real-Time <span className="text-primary">Evidence Simulation</span>
+                Try an <span className="text-primary">example run</span>
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-dim sm:text-base">
-                Experience how SAATRAAI synthesizes multi-spectral orbital imagery, extracts bi-temporal deltas,
-                flags scientific contradictions, and calculates mathematical hypothesis confidence scores.
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-dim sm:text-base">
+                Walk through a sample flood, wildfire, or ice-shelf scenario to see how evidence and contradictions are checked.
               </p>
             </div>
 
@@ -323,10 +323,10 @@ export default function SimulationsPage() {
                   key={sc.id}
                   type="button"
                   onClick={() => handleSelectScenario(sc)}
-                  className={`text-left rounded-xl p-4 transition-all duration-200 border relative ${
+                  className={`relative rounded-xl p-4 text-left active:scale-[0.98] ${
                     isSelected
-                      ? 'border-primary bg-primary/10 shadow-[0_0_20px_rgba(114,227,180,0.15)] ring-1 ring-primary'
-                      : 'border-line bg-surface/60 hover:bg-surface hover:border-line-strong'
+                      ? 'glass-option-active'
+                      : 'glass-option'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -575,6 +575,7 @@ export default function SimulationsPage() {
           </div>
         </div>
       </section>
+      </PageTransition>
 
       <LandingFooter />
     </div>

@@ -67,7 +67,7 @@ export default function ReportsPage() {
             <FileText className="h-5 w-5 text-primary" /> Reports
           </h1>
           <p className="mt-1 text-[13px] text-ink-dim">
-            Reports are assembled from persisted records with full provenance — then exported as PDF, JSON, CSV or GeoJSON.
+            Built from your saved records and ready to export as PDF, JSON, CSV, or GeoJSON.
           </p>
         </div>
 

@@ -28,7 +28,7 @@ export function Tabs({
   className?: string;
 }) {
   return (
-    <div role="tablist" className={cn('flex items-center gap-1 border-b border-line', className)}>
+    <div role="tablist" className={cn('flex items-center gap-1 border-b border-line pb-1', className)}>
       {tabs.map((tab) => {
         const active = tab.id === value;
         return (
@@ -38,15 +38,16 @@ export function Tabs({
             aria-selected={active}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'relative -mb-px px-3 py-2 text-[12.5px] font-medium transition-colors',
-              active ? 'text-primary' : 'text-ink-dim hover:text-ink',
+              'relative rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-all active:scale-[0.98]',
+              active
+                ? 'glass-option-active text-primary'
+                : 'border border-transparent text-ink-dim hover:bg-white/[0.04] hover:text-ink',
             )}
           >
             {tab.label}
             {typeof tab.count === 'number' && (
               <span className="ml-1.5 font-mono text-[10px] text-ink-faint">{tab.count}</span>
             )}
-            {active && <span className="absolute inset-x-2 -bottom-px h-px bg-primary" />}
           </button>
         );
       })}
@@ -177,8 +178,10 @@ export function Dropdown({
                   item.onSelect();
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2.5 px-3 py-2 text-left text-[12.5px] transition-colors disabled:opacity-40',
-                  item.danger ? 'text-danger hover:bg-danger/10' : 'text-ink-dim hover:bg-card hover:text-ink',
+                  'mx-1 flex w-[calc(100%-0.5rem)] items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] transition-all disabled:opacity-40',
+                  item.danger
+                    ? 'text-danger hover:bg-danger/15 hover:backdrop-blur-md'
+                    : 'text-ink-dim hover:bg-white/[0.07] hover:text-ink hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:backdrop-blur-md',
                 )}
               >
                 {item.icon}

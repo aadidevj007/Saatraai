@@ -68,7 +68,7 @@ export default function DatasetsPage() {
             <Database className="h-5 w-5 text-primary" /> Datasets
           </h1>
           <p className="mt-1 text-[13px] text-ink-dim">
-            Scenes ingested into your investigations. Imagery is uploaded manually — no catalog provider is connected.
+            Satellite scenes uploaded across your investigations.
           </p>
         </div>
         <span className="font-mono text-[10.5px] uppercase tracking-wider text-ink-faint">{rows.length} scenes</span>

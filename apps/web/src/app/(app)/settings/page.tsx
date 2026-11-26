@@ -44,7 +44,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-[22px] font-semibold text-ink">Settings</h1>
         <p className="mt-1 text-[13px] text-ink-dim">
-          Profile comes from Google; preferences and defaults are stored on this device.
+          Your Google profile and local workspace preferences.
         </p>
       </div>
 
