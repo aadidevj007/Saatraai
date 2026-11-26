@@ -265,20 +265,20 @@ export default function EvidenceGraphPage() {
                       <rect
                         width={NODE_W}
                         height={NODE_H}
-                        rx={9}
-                        fill={active ? '#1c3342' : '#101929'}
-                        stroke={active ? style.color : '#34445d'}
+                        rx={12}
+                        fill={active ? '#0b0c10' : '#ffffff'}
+                        stroke={active ? '#0b0c10' : '#d4d4d8'}
                         strokeWidth={active ? 2 : 1}
                       />
                       <rect width={4} height={NODE_H} rx={2} fill={style.color} />
-                      <text x={14} y={20} fontSize={9} fill={style.color} fontFamily="IBM Plex Mono, monospace" letterSpacing={1.2}>
+                      <text x={14} y={20} fontSize={9} fill={active ? '#d4d4d8' : style.color} fontFamily="IBM Plex Mono, monospace" letterSpacing={1.2}>
                         {style.label.toUpperCase()}
                       </text>
-                      <text x={14} y={38} fontSize={11} fill="#e8eff9">
+                      <text x={14} y={38} fontSize={11} fontWeight={500} fill={active ? '#ffffff' : '#0b0c10'}>
                         {truncate(node.label, 26)}
                       </text>
                       {node.detail && (
-                        <text x={14} y={51} fontSize={9} fill="#91a1b8" fontFamily="DM Mono, monospace">
+                        <text x={14} y={51} fontSize={9} fill={active ? '#a1a1aa' : '#52525b'} fontFamily="DM Mono, monospace">
                           {truncate(node.detail, 30)}
                         </text>
                       )}
@@ -289,7 +289,7 @@ export default function EvidenceGraphPage() {
             </svg>
 
             {/* legend */}
-            <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-x-3 gap-y-1 rounded-lg border border-line bg-surface/95 px-3 py-2">
+            <div className="pointer-events-none absolute bottom-3 left-3 flex flex-wrap gap-x-3 gap-y-1 rounded-xl border border-line bg-white/90 px-3 py-2 shadow-sm backdrop-blur-md">
               {Object.entries(TYPE_STYLE).map(([type, style]) => (
                 <span key={type} className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-wider text-ink-dim">
                   <span className="h-2 w-2 rounded-sm" style={{ background: style.color }} />

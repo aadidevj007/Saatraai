@@ -151,12 +151,12 @@ export function CountryAtlasSection({
                     onClick={() => handleSelectChange(name)}
                     className={`flex items-center justify-between gap-1.5 rounded-xl px-3 py-2.5 text-[12.5px] font-medium active:scale-[0.97] ${
                       isSelected
-                        ? 'glass-option-active text-primary font-semibold'
+                        ? 'glass-option-active text-white font-semibold'
                         : 'glass-option text-ink-dim hover:text-ink'
                     }`}
                   >
                     <span className="flex items-center gap-1.5">
-                      <Compass className={`h-3.5 w-3.5 ${isSelected ? 'text-primary' : 'text-ink-faint'}`} />
+                      <Compass className={`h-3.5 w-3.5 ${isSelected ? 'text-white' : 'text-ink-faint'}`} />
                       {name}
                     </span>
                     <ArrowUpRight className="h-3.5 w-3.5 opacity-60" />

@@ -28,7 +28,7 @@ export function Tabs({
   className?: string;
 }) {
   return (
-    <div role="tablist" className={cn('flex items-center gap-1 border-b border-line pb-1', className)}>
+    <div role="tablist" className={cn('flex items-center gap-1.5 border-b border-line pb-2', className)}>
       {tabs.map((tab) => {
         const active = tab.id === value;
         return (
@@ -40,13 +40,15 @@ export function Tabs({
             className={cn(
               'relative rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-all active:scale-[0.98]',
               active
-                ? 'glass-option-active text-primary'
-                : 'border border-transparent text-ink-dim hover:bg-white/[0.04] hover:text-ink',
+                ? 'glass-option-active text-white'
+                : 'border border-transparent text-ink-dim hover:bg-black/[0.04] hover:text-ink',
             )}
           >
             {tab.label}
             {typeof tab.count === 'number' && (
-              <span className="ml-1.5 font-mono text-[10px] text-ink-faint">{tab.count}</span>
+              <span className={cn('ml-1.5 font-mono text-[10px]', active ? 'text-white/75' : 'text-ink-faint')}>
+                {tab.count}
+              </span>
             )}
           </button>
         );
@@ -180,8 +182,8 @@ export function Dropdown({
                 className={cn(
                   'mx-1 flex w-[calc(100%-0.5rem)] items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[12.5px] transition-all disabled:opacity-40',
                   item.danger
-                    ? 'text-danger hover:bg-danger/15 hover:backdrop-blur-md'
-                    : 'text-ink-dim hover:bg-white/[0.07] hover:text-ink hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] hover:backdrop-blur-md',
+                    ? 'text-danger hover:bg-danger/10'
+                    : 'text-ink-dim hover:bg-black/[0.05] hover:text-ink',
                 )}
               >
                 {item.icon}

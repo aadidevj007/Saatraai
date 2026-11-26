@@ -64,11 +64,11 @@ export default function DatasetsPage() {
     <div className="mx-auto max-w-6xl px-6 py-6">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-[22px] font-semibold text-ink">
+          <h1 className="display-font flex items-center gap-2 text-[24px] font-semibold tracking-tight text-ink">
             <Database className="h-5 w-5 text-primary" /> Datasets
           </h1>
           <p className="mt-1 text-[13px] text-ink-dim">
-            Satellite scenes uploaded across your investigations.
+            Satellite images uploaded across your investigations.
           </p>
         </div>
         <span className="font-mono text-[10.5px] uppercase tracking-wider text-ink-faint">{rows.length} scenes</span>

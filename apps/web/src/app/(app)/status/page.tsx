@@ -161,8 +161,7 @@ export default function StatusPage() {
       </div>
 
       <p className="mt-4 text-[11.5px] leading-relaxed text-ink-faint">
-        States are produced by server-side probes (TCP checks, SQL ping, path checks) and static deployment facts.
-        The page never marks an undeployed integration as online.
+        States come from live server checks. Unconnected services are marked NOT CONFIGURED.
       </p>
     </div>
   );

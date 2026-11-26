@@ -189,16 +189,16 @@ export function EarthGlobe({
     renderer.domElement.style.display = 'block';
     container.appendChild(renderer.domElement);
 
-    // Lighting
-    const ambient = new THREE.AmbientLight(0xffffff, 0.54);
-    const keyLight = new THREE.DirectionalLight('#fff7ee', 2.25);
-    keyLight.position.set(-3, 2, 4);
-    const rimLight = new THREE.PointLight('#508cff', 0.4);
+    // Lighting (studio light macro calibration)
+    const ambient = new THREE.AmbientLight(0xffffff, 0.72);
+    const keyLight = new THREE.DirectionalLight('#fffaf2', 2.3);
+    keyLight.position.set(-3, 2.2, 4);
+    const rimLight = new THREE.PointLight('#6c8ebf', 0.45);
     rimLight.position.set(3, -1, -3);
     scene.add(ambient, keyLight, rimLight);
 
-    // Subtle 3D starfield
-    const starCount = 260;
+    // Subtle spatial depth particles
+    const starCount = 220;
     const starPositions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
       const radius = 5.5 + ((i * 37) % 100) * 0.04;
@@ -211,10 +211,10 @@ export function EarthGlobe({
     const starGeometry = new THREE.BufferGeometry();
     starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
     const starMaterial = new THREE.PointsMaterial({
-      color: '#9ec5ff',
-      size: 0.022,
+      color: '#18181b',
+      size: 0.018,
       transparent: true,
-      opacity: 0.55,
+      opacity: 0.22,
       depthWrite: false,
     });
     const stars = new THREE.Points(starGeometry, starMaterial);
@@ -234,19 +234,19 @@ export function EarthGlobe({
     const earthGeo = new THREE.SphereGeometry(R, 96, 72);
     const earthMat = new THREE.MeshStandardMaterial({
       map: texture,
-      roughness: 0.9,
+      roughness: 0.88,
       metalness: 0.04,
     });
     const earthMesh = new THREE.Mesh(earthGeo, earthMat);
     group.add(earthMesh);
 
     // Fresnel Atmosphere
-    const atmosphereGeo = new THREE.SphereGeometry(1.078, 96, 72);
+    const atmosphereGeo = new THREE.SphereGeometry(1.072, 96, 72);
     const atmosphereMat = new THREE.ShaderMaterial({
       transparent: true,
       side: THREE.BackSide,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
+      blending: THREE.NormalBlending,
       vertexShader: `
         varying vec3 vNormal;
         varying vec3 vViewPosition;
@@ -262,8 +262,8 @@ export function EarthGlobe({
         varying vec3 vViewPosition;
         void main() {
           float rim = 1.0 - max(dot(normalize(vNormal), normalize(vViewPosition)), 0.0);
-          float glow = pow(rim, 3.0) * 0.78;
-          gl_FragColor = vec4(vec3(0.24, 0.62, 1.0) * glow, glow);
+          float glow = pow(rim, 3.2) * 0.45;
+          gl_FragColor = vec4(vec3(0.18, 0.36, 0.72), glow);
         }
       `,
     });
@@ -271,26 +271,26 @@ export function EarthGlobe({
     atmosphereMesh.renderOrder = 2;
     group.add(atmosphereMesh);
 
-    // Dual 3D Orbital Satellite Rings + Moving Beacons
+    // Dual 3D Orbital Satellite Rings + Moving Beacons (Macro Black & Ink)
     const orbitGroupA = new THREE.Group();
     orbitGroupA.rotation.set(0.42, 0.2, 0.32);
-    const orbitGeoA = new THREE.TorusGeometry(1.24, 0.0024, 8, 128);
+    const orbitGeoA = new THREE.TorusGeometry(1.24, 0.0022, 8, 128);
     const orbitMatA = new THREE.MeshBasicMaterial({
-      color: '#72e3b4',
+      color: '#0b0c10',
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.18,
       depthWrite: false,
     });
     orbitGroupA.add(new THREE.Mesh(orbitGeoA, orbitMatA));
 
     const satGeo = new THREE.SphereGeometry(0.018, 12, 12);
-    const satMatA = new THREE.MeshBasicMaterial({ color: '#72e3b4' });
+    const satMatA = new THREE.MeshBasicMaterial({ color: '#0b0c10' });
     const satA = new THREE.Mesh(satGeo, satMatA);
-    const satHaloGeo = new THREE.SphereGeometry(0.048, 12, 12);
+    const satHaloGeo = new THREE.SphereGeometry(0.045, 12, 12);
     const satHaloMatA = new THREE.MeshBasicMaterial({
-      color: '#72e3b4',
+      color: '#0b0c10',
       transparent: true,
-      opacity: 0.24,
+      opacity: 0.16,
       depthWrite: false,
     });
     satA.add(new THREE.Mesh(satHaloGeo, satHaloMatA));
@@ -299,21 +299,21 @@ export function EarthGlobe({
 
     const orbitGroupB = new THREE.Group();
     orbitGroupB.rotation.set(-0.55, -0.3, -0.45);
-    const orbitGeoB = new THREE.TorusGeometry(1.34, 0.002, 8, 128);
+    const orbitGeoB = new THREE.TorusGeometry(1.34, 0.0018, 8, 128);
     const orbitMatB = new THREE.MeshBasicMaterial({
-      color: '#86baff',
+      color: '#4c4f5e',
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.16,
       depthWrite: false,
     });
     orbitGroupB.add(new THREE.Mesh(orbitGeoB, orbitMatB));
 
-    const satMatB = new THREE.MeshBasicMaterial({ color: '#86baff' });
+    const satMatB = new THREE.MeshBasicMaterial({ color: '#0d7a4a' });
     const satB = new THREE.Mesh(satGeo, satMatB);
     const satHaloMatB = new THREE.MeshBasicMaterial({
-      color: '#86baff',
+      color: '#0d7a4a',
       transparent: true,
-      opacity: 0.24,
+      opacity: 0.22,
       depthWrite: false,
     });
     satB.add(new THREE.Mesh(satHaloGeo, satHaloMatB));
@@ -342,12 +342,12 @@ export function EarthGlobe({
     const markerGroup = new THREE.Group();
     group.add(markerGroup);
     const markerCoreGeo = new THREE.SphereGeometry(0.028, 14, 14);
-    const markerCoreMat = new THREE.MeshBasicMaterial({ color: '#72e3b4' });
-    const markerPulseGeo = new THREE.SphereGeometry(0.075, 14, 14);
+    const markerCoreMat = new THREE.MeshBasicMaterial({ color: '#0b0c10' });
+    const markerPulseGeo = new THREE.SphereGeometry(0.072, 14, 14);
     const markerPulseMat = new THREE.MeshBasicMaterial({
-      color: '#86baff',
+      color: '#0d7a4a',
       transparent: true,
-      opacity: 0.34,
+      opacity: 0.28,
       depthWrite: false,
     });
     let lastMarkerKey = '';

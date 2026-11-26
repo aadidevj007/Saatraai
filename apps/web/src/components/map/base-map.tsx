@@ -196,14 +196,14 @@ export function BaseMap({
       {showControls && (
         <>
           {/* basemap switcher */}
-          <div className="absolute left-3 top-3 z-10 flex overflow-hidden rounded-lg border border-line bg-surface/95 backdrop-blur">
+          <div className="absolute left-3 top-3 z-10 flex overflow-hidden rounded-xl border border-line bg-white/90 shadow-sm backdrop-blur-md">
             {BASEMAP_LIST.map((b) => (
               <button
                 key={b.id}
                 onClick={() => onBasemapChange?.(b.id)}
                 className={cn(
                   'px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.1em] transition-all',
-                  b.id === basemap ? 'glass-option-active text-primary' : 'text-ink-faint hover:bg-white/[0.04] hover:text-ink',
+                  b.id === basemap ? 'glass-option-active text-white' : 'text-ink-faint hover:bg-black/[0.04] hover:text-ink',
                 )}
                 aria-pressed={b.id === basemap}
               >

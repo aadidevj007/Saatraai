@@ -152,8 +152,8 @@ export function AnalysisPanel({
                     ))}
                   </Pie>
                   <ReTooltip
-                    contentStyle={{ background: '#101929', border: '1px solid #34445d', borderRadius: 12, fontSize: 12, boxShadow: '0 16px 40px rgba(0,0,0,0.42)' }}
-                    itemStyle={{ color: '#e8eff9' }}
+                    contentStyle={{ background: '#ffffff', border: '1px solid rgba(11,12,16,0.14)', borderRadius: 12, fontSize: 12, boxShadow: '0 14px 32px rgba(11,12,16,0.12)' }}
+                    itemStyle={{ color: '#0b0c10' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -175,12 +175,12 @@ export function AnalysisPanel({
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={hypothesisBars} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                    <CartesianGrid stroke="#263349" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fill: '#91a1b8', fontSize: 10 }} axisLine={{ stroke: '#34445d' }} tickLine={false} />
-                    <YAxis domain={[0, 100]} tick={{ fill: '#91a1b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <CartesianGrid stroke="rgba(11,12,16,0.08)" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fill: '#4c4f5e', fontSize: 10 }} axisLine={{ stroke: 'rgba(11,12,16,0.16)' }} tickLine={false} />
+                    <YAxis domain={[0, 100]} tick={{ fill: '#4c4f5e', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <ReTooltip
-                      contentStyle={{ background: '#101929', border: '1px solid #34445d', borderRadius: 12, fontSize: 12, boxShadow: '0 16px 40px rgba(0,0,0,0.42)' }}
-                      itemStyle={{ color: '#e8eff9' }}
+                      contentStyle={{ background: '#ffffff', border: '1px solid rgba(11,12,16,0.14)', borderRadius: 12, fontSize: 12, boxShadow: '0 14px 32px rgba(11,12,16,0.12)' }}
+                      itemStyle={{ color: '#0b0c10' }}
                     />
                     <Bar dataKey="value" fill={DESIGN_COLORS.primary} radius={[6, 6, 0, 0]} />
                   </BarChart>
@@ -309,7 +309,7 @@ export function ConclusionPanel({
               {confidence && ` · overall ${Math.round(confidence.overall * 100)}%`}
             </div>
             {conclusion.rationale && (
-              <pre className="mt-2 overflow-x-auto rounded border border-line bg-void p-2 font-mono text-[10.5px] text-ink-dim">
+              <pre className="mt-2 overflow-x-auto rounded border border-line bg-elevated p-2 font-mono text-[10.5px] text-ink-dim">
                 {JSON.stringify(conclusion.rationale, null, 2)}
               </pre>
             )}

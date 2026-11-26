@@ -307,7 +307,7 @@ export function GraphSection() {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.25, delay: i * 0.05 }}
-                className="glass-option-active rounded-lg px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-primary"
+                className="glass-option-active rounded-lg px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-white"
               >
                 {n}
               </motion.span>

@@ -1,12 +1,11 @@
 'use client';
 
-/** Guided New Investigation wizard: question → region → time → sources → configure → start. */
+/** Interactive New Investigation Studio — live question, map region, dates, and launch in one view. */
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, CalendarRange, Check, Flag, Layers, MapPin, Play, Sparkles, Wand2 } from 'lucide-react';
+import { CalendarRange, ChevronDown, Layers, MapPin, Play, Sparkles } from 'lucide-react';
 
 import { RegionPicker } from '@/components/map/region-picker';
 import { usePageTitle } from '@/components/shell/shell-context';
@@ -16,13 +15,10 @@ import {
   Field,
   Input,
   Panel,
-  SectionHeader,
   Segmented,
-  Skeleton,
   Textarea,
 } from '@/components/ui';
 import { errorMessage, providerApi, projectApi, investigationApi } from '@/lib/api';
-import { useAuth } from '@/lib/auth/auth-context';
 import {
   saveInvestigationConfig,
   type AnalysisDepth,
@@ -36,38 +32,21 @@ import { readSettings } from '@/lib/settings';
 import { buildEvidencePlan } from '@/lib/analysis/planner';
 import { analyzePromptNlp, type NlpExtractionResult } from '@/lib/analysis/nlp-extractor';
 
-const STEPS = [
-  { id: 'question', label: 'Question', icon: Sparkles },
-  { id: 'region', label: 'Region', icon: Flag },
-  { id: 'time', label: 'Time range', icon: CalendarRange },
-  { id: 'sources', label: 'Data sources', icon: Layers },
-  { id: 'configure', label: 'Configure', icon: Wand2 },
-  { id: 'review', label: 'Review', icon: Check },
-] as const;
-
 const SUGGESTIONS = [
   'Why has flooding increased in Kerala between 2022 and 2026?',
   'How has urban expansion changed in Chennai since 2019?',
   'Where has vegetation declined in Horn of Africa over the last five years?',
   'What changed across Sundarbans after the cyclone made landfall?',
-  'Investigate flood inundation across Valencia from October 2024 to November 2024',
 ];
 
-interface SourceDef {
-  id: EvidenceSourceKind;
-  label: string;
-  description: string;
-  statusKey: string | null;
-}
-
-const SOURCES: SourceDef[] = [
-  { id: 'optical', label: 'Optical', description: 'Sentinel-2 multispectral imagery', statusKey: 'satellite_optical' },
-  { id: 'sar', label: 'SAR', description: 'Sentinel-1 C-band backscatter', statusKey: 'satellite_sar' },
-  { id: 'rainfall', label: 'Rainfall', description: 'Meteorological precipitation records', statusKey: 'rainfall' },
-  { id: 'dem', label: 'DEM', description: 'Elevation and slope derivatives', statusKey: 'dem' },
-  { id: 'landcover', label: 'Land cover', description: 'Classification and transitions', statusKey: 'landcover' },
-  { id: 'vegetation', label: 'Vegetation', description: 'NDVI / biomass indices', statusKey: 'vegetation' },
-  { id: 'infrastructure', label: 'Infrastructure', description: 'Drainage and built assets', statusKey: 'infrastructure' },
+const SOURCES: Array<{ id: EvidenceSourceKind; label: string; statusKey: string }> = [
+  { id: 'optical', label: 'Optical', statusKey: 'satellite_optical' },
+  { id: 'sar', label: 'SAR radar', statusKey: 'satellite_sar' },
+  { id: 'rainfall', label: 'Rainfall', statusKey: 'rainfall' },
+  { id: 'dem', label: 'Terrain', statusKey: 'dem' },
+  { id: 'landcover', label: 'Land cover', statusKey: 'landcover' },
+  { id: 'vegetation', label: 'Vegetation', statusKey: 'vegetation' },
+  { id: 'infrastructure', label: 'Infrastructure', statusKey: 'infrastructure' },
 ];
 
 function isoMonthsAgo(months: number): string {
@@ -80,9 +59,7 @@ export default function NewInvestigationPage() {
   usePageTitle('New Investigation');
   const router = useRouter();
   const { toast } = useToast();
-  const { preferences } = useAuth();
 
-  const [step, setStep] = useState(0);
   const [question, setQuestion] = useState('');
   const [region, setRegion] = useState<RegionSelection | null>(null);
   const [start, setStart] = useState(isoMonthsAgo(36));
@@ -93,36 +70,33 @@ export default function NewInvestigationPage() {
   const [depth, setDepth] = useState<AnalysisDepth>('balanced');
   const [projectChoice, setProjectChoice] = useState('');
   const [newProjectName, setNewProjectName] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-  /* apply saved investigation defaults once on the client */
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+  const [nlpResult, setNlpResult] = useState<NlpExtractionResult | null>(null);
+
+  /* Read optional ?q= from Dashboard + saved defaults */
   useEffect(() => {
     const t = window.setTimeout(() => {
       const s = readSettings();
       setMode(s.defaultMode);
       setStrictness(s.defaultStrictness);
       setDepth(s.defaultDepth);
+      const q = new URLSearchParams(window.location.search).get('q');
+      if (q) setQuestion(q);
     }, 0);
     return () => window.clearTimeout(t);
   }, []);
-  const [starting, setStarting] = useState(false);
-  const [startError, setStartError] = useState<string | null>(null);
 
-  const [nlpResult, setNlpResult] = useState<NlpExtractionResult | null>(null);
-  const [nlpProcessing, setNlpProcessing] = useState(false);
-  const [nlpApplied, setNlpApplied] = useState(false);
-
+  /* Smart auto-fill region & dates as user types */
   useEffect(() => {
     let active = true;
     const timer = setTimeout(async () => {
       if (question.trim().length < 5) {
-        if (active) {
-          setNlpResult(null);
-          setNlpApplied(false);
-          setNlpProcessing(false);
-        }
+        if (active) setNlpResult(null);
         return;
       }
-      setNlpProcessing(true);
       try {
         const result = await analyzePromptNlp(question);
         if (!active) return;
@@ -142,15 +116,11 @@ export default function NewInvestigationPage() {
           if (result.suggestedSources.length > 0) {
             setSources(result.suggestedSources);
           }
-          setNlpApplied(true);
         }
       } catch {
         // ignore
-      } finally {
-        if (active) setNlpProcessing(false);
       }
-    }, 350);
-
+    }, 300);
     return () => {
       active = false;
       clearTimeout(timer);
@@ -170,19 +140,24 @@ export default function NewInvestigationPage() {
 
   const projectsList = projectsQuery.data?.items ?? [];
   const effectiveProjectChoice = projectChoice || (projectsList.length > 0 ? projectsList[0].id : '__new__');
-  const effectiveNewProjectName = newProjectName.trim() || 'Primary Intelligence Workspace';
+  const effectiveNewProjectName = newProjectName.trim() || 'My Research Workspace';
 
   const availability = useMemo(() => {
-    const map = new Map<string, { state: string; detail?: string }>();
+    const map = new Map<string, string>();
     for (const service of statusQuery.data?.services ?? []) {
-      map.set(service.id, { state: service.state, detail: service.detail });
+      map.set(service.id, service.state);
     }
     return map;
   }, [statusQuery.data]);
 
-  const canStart = question.trim().length >= 3 && region !== null && start < end &&
-    !projectsQuery.isPending && !projectsQuery.isError &&
+  const canStart =
+    question.trim().length >= 3 &&
+    region !== null &&
+    start < end &&
+    !projectsQuery.isPending &&
+    !projectsQuery.isError &&
     (effectiveProjectChoice !== '__new__' ? effectiveProjectChoice.length > 0 : effectiveNewProjectName.length > 0);
+
   const evidencePlan = useMemo(
     () => buildEvidencePlan(question || 'Research question', sources, { start, end }),
     [question, sources, start, end],
@@ -193,13 +168,12 @@ export default function NewInvestigationPage() {
     setStarting(true);
     setStartError(null);
     try {
-      /* 1. use the analyst's explicit project selection or create the named project */
-      const projectId = effectiveProjectChoice === '__new__'
-        ? (await projectApi.create(effectiveNewProjectName)).id
-        : effectiveProjectChoice;
-      if (!projectId) throw new Error('Choose a project before creating the investigation.');
+      const projectId =
+        effectiveProjectChoice === '__new__'
+          ? (await projectApi.create(effectiveNewProjectName)).id
+          : effectiveProjectChoice;
+      if (!projectId) throw new Error('Choose a project first.');
 
-      /* 2. create the investigation — region, period and sources persist server-side */
       const title = question.trim().length > 72 ? `${question.trim().slice(0, 69)}…` : question.trim();
       const investigation = await investigationApi.create(projectId, title, {
         region_name: region!.name,
@@ -212,7 +186,6 @@ export default function NewInvestigationPage() {
         question: question.trim(),
       });
 
-      /* 3. persist wizard presentation config locally (mode, strictness, depth) */
       saveInvestigationConfig({
         investigationId: investigation.id,
         question: question.trim(),
@@ -226,173 +199,86 @@ export default function NewInvestigationPage() {
         createdAt: new Date().toISOString(),
       });
 
-      /* 4. persist the question server-side as the first investigation query */
       await investigationApi.addQuery(investigation.id, question.trim());
 
       toast({
         variant: 'success',
-        title: 'Investigation created',
-        description: `${title.slice(0, 48)}${title.length > 48 ? '…' : ''} · ${mode === 'demo' ? 'DEMO' : 'REAL'} mode`,
+        title: 'Investigation ready',
+        description: title,
       });
       router.push(`/investigations/${investigation.id}`);
     } catch (error) {
       const message = errorMessage(error);
       setStartError(message);
-      toast({ variant: 'error', title: 'Could not start investigation', description: message });
+      toast({ variant: 'error', title: 'Couldn’t create investigation', description: message });
     } finally {
       setStarting(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-7">
-      {/* header + stepper */}
-      <SectionHeader
-        title="New investigation"
-        description="Set your question, region, and dates to begin."
-        action={
-          <Badge tone={mode === 'demo' ? 'demo' : 'primary'}>{mode === 'demo' ? 'DEMO MODE' : 'REAL MODE'}</Badge>
-        }
-      />
+    <div className="mx-auto max-w-7xl px-6 py-7">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="display-font text-[26px] font-semibold tracking-tight text-ink">
+            Start a new investigation
+          </h1>
+          <p className="mt-1 text-[13.5px] text-ink-dim">
+            Ask your question, highlight the area on the map, and pick a timeframe.
+          </p>
+        </div>
+        <Badge tone={mode === 'demo' ? 'demo' : 'primary'}>
+          {mode === 'demo' ? 'Sample Demo' : 'Live Workspace'}
+        </Badge>
+      </div>
 
-      <ol className="mt-5 flex flex-wrap gap-2" aria-label="Wizard steps">
-        {STEPS.map((s, i) => {
-          const state = i < step ? 'done' : i === step ? 'active' : 'pending';
-          const Icon = s.icon;
-          return (
-            <li key={s.id}>
-              <button
-                onClick={() => i <= step && setStep(i)}
-                disabled={i > step}
-                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-[12.5px] transition-all active:scale-[0.98] ${
-                  state === 'active'
-                    ? 'glass-option-active text-primary'
-                    : state === 'done'
-                      ? 'glass-option text-ink-dim hover:text-ink'
-                      : 'border border-line bg-transparent text-ink-faint'
-                }`}
-              >
-                <span className="font-mono text-[10px]">{state === 'done' ? <Check className="h-3 w-3" /> : String(i + 1).padStart(2, '0')}</span>
-                {s.label}
-                <Icon className="h-3.5 w-3.5" />
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-
-      <motion.div key={step} initial={{ opacity: 0, y: 12, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 320, damping: 24 }} className="mt-5">
-        {/* ── STEP 1 · QUESTION ── */}
-        {step === 0 && (
-          <Panel title="What would you like to investigate?" subtitle="Write your question in plain language">
-            <Field label="Research question" htmlFor="question" hint="At least 3 characters. This will be saved as your starting question.">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1.15fr] items-start">
+        {/* Left: Question, Dates, Data Layers, Launch */}
+        <div className="space-y-5">
+          <Panel title="1 · Question">
+            <Field label="Research question" htmlFor="question">
               <Textarea
                 id="question"
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Why has flooding increased in this region between 2022 and 2026?"
-                className="min-h-[120px] text-[14px]"
+                placeholder="Why has flooding increased in Kerala between 2022 and 2026?"
+                className="min-h-[96px] text-[14px]"
                 autoFocus
               />
             </Field>
 
             {nlpResult && nlpResult.hasMatches && (
-              <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-4 transition-all">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span className="text-[13px] font-semibold text-ink">NLP Automated Entity Extraction</span>
-                  </div>
-                  <Badge tone="success">
-                    {nlpProcessing ? 'ANALYZING...' : nlpApplied ? 'AUTO-CONFIGURED' : 'DETECTED'}
-                  </Badge>
-                </div>
-
-                <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                  {nlpResult.region && (
-                    <div className="flex items-start gap-2.5 rounded-lg border border-line bg-card/60 p-2.5">
-                      <MapPin className="mt-0.5 h-4 w-4 text-primary shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[11px] font-mono text-ink-dim uppercase tracking-wider">Identified Region</div>
-                        <div className="text-[13px] font-medium text-ink truncate">{nlpResult.region.name}</div>
-                        <div className="text-[11px] text-ink-faint">
-                          {Math.round(nlpResult.region.confidence * 100)}% confidence match · {nlpResult.region.source}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {nlpResult.timeRange && (
-                    <div className="flex items-start gap-2.5 rounded-lg border border-line bg-card/60 p-2.5">
-                      <CalendarRange className="mt-0.5 h-4 w-4 text-primary shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[11px] font-mono text-ink-dim uppercase tracking-wider">Temporal Span</div>
-                        <div className="text-[13px] font-medium text-ink truncate">
-                          {nlpResult.timeRange.start} → {nlpResult.timeRange.end}
-                        </div>
-                        <div className="text-[11px] text-ink-faint">{nlpResult.timeRange.label}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {nlpResult.suggestedSources.length > 0 && (
-                  <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[12px] text-ink-dim">
-                    <Layers className="h-3.5 w-3.5 text-ink-dim" />
-                    <span className="text-[11px] font-mono text-ink-faint uppercase">Recommended Sensors:</span>
-                    {nlpResult.suggestedSources.map((s) => (
-                      <span key={s} className="rounded-md bg-card px-2 py-0.5 text-[11px] font-medium text-primary border border-line">
-                        {s.toUpperCase()}
-                      </span>
-                    ))}
-                  </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-elevated/70 px-3 py-2 text-[12px] text-ink-dim">
+                <Sparkles className="h-3.5 w-3.5 text-ink" />
+                <span>Auto-selected:</span>
+                {nlpResult.region && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 font-medium text-ink shadow-xs">
+                    <MapPin className="h-3 w-3" /> {nlpResult.region.name}
+                  </span>
+                )}
+                {nlpResult.timeRange && (
+                  <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-0.5 font-medium text-ink shadow-xs">
+                    <CalendarRange className="h-3 w-3" /> {nlpResult.timeRange.start} → {nlpResult.timeRange.end}
+                  </span>
                 )}
               </div>
             )}
 
-            <div className="mt-4">
-              <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Example prompts</div>
-              <div className="flex flex-wrap gap-2">
-                {SUGGESTIONS.map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setQuestion(s)}
-                    className="glass-option rounded-lg px-3 py-1.5 text-left text-[12px] text-ink-dim hover:text-ink"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="mt-5 flex justify-between">
-              <Button variant="ghost" onClick={() => router.push('/dashboard')} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
-                Cancel
-              </Button>
-              <Button variant="primary" disabled={question.trim().length < 3} onClick={() => setStep(1)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
-                Select region
-              </Button>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setQuestion(s)}
+                  className="glass-option rounded-full px-3 py-1 text-left text-[11.5px] text-ink-dim hover:text-ink"
+                >
+                  {s}
+                </button>
+              ))}
             </div>
           </Panel>
-        )}
 
-        {/* ── STEP 2 · REGION ── */}
-        {step === 1 && (
-          <Panel title="Define the region of interest" subtitle="Search a preset or coordinates, draw a polygon or rectangle, or upload GeoJSON">
-            <RegionPicker value={region} onChange={setRegion} />
-            <div className="mt-5 flex justify-between">
-              <Button variant="ghost" onClick={() => setStep(0)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
-                Back
-              </Button>
-              <Button variant="primary" disabled={!region} onClick={() => setStep(2)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
-                Set time range
-              </Button>
-            </div>
-          </Panel>
-        )}
-
-        {/* ── STEP 3 · TIME ── */}
-        {step === 2 && (
-          <Panel title="Select the time range" subtitle="Imagery, evidence and the timeline are bounded by these dates">
+          <Panel title="2 · Timeframe & Data">
             <div className="flex flex-wrap gap-2">
               {[
                 { label: 'Last year', months: 12 },
@@ -413,7 +299,7 @@ export default function NewInvestigationPage() {
               ))}
             </div>
 
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <Field label="Start date" htmlFor="start">
                 <Input id="start" type="date" value={start} max={end} onChange={(e) => setStart(e.target.value)} />
               </Field>
@@ -422,281 +308,177 @@ export default function NewInvestigationPage() {
               </Field>
             </div>
 
-            <TimeSpanBar start={start} end={end} />
-
-            <div className="mt-5 flex justify-between">
-              <Button variant="ghost" onClick={() => setStep(1)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
-                Back
-              </Button>
-              <Button variant="primary" disabled={start >= end} onClick={() => setStep(3)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
-                Choose data sources
-              </Button>
+            <div className="mt-4">
+              <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-faint">
+                <Layers className="h-3.5 w-3.5" /> Data layers
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {SOURCES.map((source) => {
+                  const selected = sources.includes(source.id);
+                  const state = availability.get(source.statusKey);
+                  return (
+                    <button
+                      key={source.id}
+                      type="button"
+                      onClick={() =>
+                        setSources((prev) =>
+                          prev.includes(source.id) ? prev.filter((s) => s !== source.id) : [...prev, source.id],
+                        )
+                      }
+                      aria-pressed={selected}
+                      className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-[12.5px] font-medium active:scale-[0.97] ${
+                        selected ? 'glass-option-active text-white' : 'glass-option text-ink-dim hover:text-ink'
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          state === 'online' ? 'bg-success' : selected ? 'bg-white/70' : 'bg-ink-faint'
+                        }`}
+                      />
+                      {source.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </Panel>
-        )}
 
-        {/* ── STEP 4 · SOURCES ── */}
-        {step === 3 && (
-          <Panel
-            title="Select evidence types"
-            subtitle="Availability is read from live system status — nothing is faked"
-            actions={
-              statusQuery.isPending ? <Skeleton className="h-4 w-24" /> : <Badge tone={statusQuery.data ? 'primary' : 'warning'}>{statusQuery.data ? 'LIVE STATUS' : 'STATUS UNAVAILABLE'}</Badge>
-            }
-          >
-            <div className="grid gap-3 sm:grid-cols-2">
-              {SOURCES.map((source) => {
-                const selected = sources.includes(source.id);
-                const info = source.statusKey
-                  ? availability.get(source.statusKey)
-                  : { state: 'not_configured', detail: 'No service entry on this deployment' };
-                const state = info?.state ?? 'not_configured';
-                return (
-                  <button
-                    key={source.id}
-                    onClick={() =>
-                      setSources((prev) => (prev.includes(source.id) ? prev.filter((s) => s !== source.id) : [...prev, source.id]))
-                    }
-                    aria-pressed={selected}
-                    className={`rounded-xl p-4 text-left active:scale-[0.98] ${
-                      selected ? 'glass-option-active' : 'glass-option'
-                    }`}
+          {/* Project + Optional Settings */}
+          <Panel>
+            <Field label="Project" htmlFor="investigation-project">
+              {projectsQuery.isPending ? (
+                <p role="status" className="text-sm text-ink-dim">Loading projects…</p>
+              ) : projectsQuery.isError ? (
+                <div className="space-y-2">
+                  <p role="alert" className="text-sm text-danger">
+                    Couldn’t load projects: {errorMessage(projectsQuery.error)}
+                  </p>
+                  <Button size="sm" variant="secondary" onClick={() => void projectsQuery.refetch()}>
+                    Retry
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <select
+                    id="investigation-project"
+                    value={effectiveProjectChoice}
+                    onChange={(event) => setProjectChoice(event.target.value)}
+                    className="h-9 w-full rounded-lg border border-line-strong bg-white px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-primary"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[13.5px] font-medium text-ink">{source.label}</span>
-                      <Badge tone={state === 'online' ? 'success' : state === 'degraded' ? 'warning' : 'warning'}>
-                        {state === 'online' ? 'AVAILABLE' : state === 'degraded' ? 'DEGRADED' : 'NOT CONFIGURED'}
-                      </Badge>
+                    <option value="">Select a project…</option>
+                    {projectsList.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                    <option value="__new__">+ Create a new project</option>
+                  </select>
+                  {effectiveProjectChoice === '__new__' && (
+                    <div className="mt-3">
+                      <Field label="New project name" htmlFor="new-project-name">
+                        <Input
+                          id="new-project-name"
+                          value={newProjectName}
+                          onChange={(event) => setNewProjectName(event.target.value)}
+                          placeholder="e.g. Coastal Flood Study"
+                        />
+                      </Field>
                     </div>
-                    <p className="mt-1 text-[12px] text-ink-dim">{source.description}</p>
-                    {info?.detail && <p className="mt-1.5 font-mono text-[10.5px] leading-snug text-ink-faint">{info.detail}</p>}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 rounded-lg border border-warning/25 bg-warning/5 px-3 py-2.5 text-[12px] leading-relaxed text-ink-dim">
-              Any offline data providers won’t block you — you can upload scenes directly inside your workspace.
-            </div>
-
-            <div className="mt-5 flex justify-between">
-              <Button variant="ghost" onClick={() => setStep(2)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
-                Back
-              </Button>
-              <Button variant="primary" onClick={() => setStep(4)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
-                Configure
-              </Button>
-            </div>
-          </Panel>
-        )}
-
-        {/* ── STEP 5 · CONFIGURE + START ── */}
-        {step === 4 && (
-          <Panel title="Configure" subtitle="Mode, evidence strictness and analysis depth">
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3">
-                <div>
-                  <div className="text-[13px] font-medium text-ink">Investigation mode</div>
-                  <div className="text-[12px] text-ink-dim">
-                    DEMO runs the marked demonstration workflow · REAL executes against uploaded imagery and the tool registry
-                  </div>
-                </div>
-                <Segmented
-                  value={mode}
-                  onChange={setMode}
-                  options={[
-                    { value: 'real', label: 'REAL' },
-                    { value: 'demo', label: 'DEMO' },
-                  ]}
-                  ariaLabel="Investigation mode"
-                />
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3">
-                <div>
-                  <div className="text-[13px] font-medium text-ink">Evidence strictness</div>
-                  <div className="text-[12px] text-ink-dim">Recorded with the investigation configuration and shown in reports</div>
-                </div>
-                <Segmented
-                  value={strictness}
-                  onChange={setStrictness}
-                  options={[
-                    { value: 'standard', label: 'Standard' },
-                    { value: 'strict', label: 'Strict' },
-                    { value: 'research', label: 'Research' },
-                  ]}
-                  ariaLabel="Evidence strictness"
-                />
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-card px-4 py-3">
-                <div>
-                  <div className="text-[13px] font-medium text-ink">Analysis depth</div>
-                  <div className="text-[12px] text-ink-dim">Fast · Balanced · Deep — recorded in the execution context</div>
-                </div>
-                <Segmented
-                  value={depth}
-                  onChange={setDepth}
-                  options={[
-                    { value: 'fast', label: 'Fast' },
-                    { value: 'balanced', label: 'Balanced' },
-                    { value: 'deep', label: 'Deep' },
-                  ]}
-                  ariaLabel="Analysis depth"
-                />
-              </div>
-
-              <div className="mt-5 flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(3)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
-                  Back
-                </Button>
-                <Button variant="primary" onClick={() => setStep(5)} icon={<ArrowRight className="h-3.5 w-3.5" />}>
-                  Review investigation
-                </Button>
-              </div>
-            </div>
-          </Panel>
-        )}
-
-        {/* ── STEP 6 · REVIEW + CREATE ── */}
-        {step === 5 && (
-          <Panel
-            title="Review before creating"
-            subtitle="Check your settings before saving"
-            actions={<Badge tone={mode === 'demo' ? 'demo' : 'primary'}>{mode === 'demo' ? 'DEMO' : 'REAL'}</Badge>}
-          >
-            <div className="space-y-4">
-              <div className="rounded-xl border border-line bg-elevated p-4">
-                <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Research question</div>
-                <p className="mt-2 text-[13.5px] leading-relaxed text-ink">{question || '—'}</p>
-              </div>
-
-              <div className="rounded-xl border border-line bg-card p-4">
-                <Field label="Project" htmlFor="investigation-project">
-                  {projectsQuery.isPending ? (
-                    <p role="status" className="mt-2 text-sm text-ink-dim">Loading your projects…</p>
-                  ) : projectsQuery.isError ? (
-                    <div className="mt-2 space-y-2">
-                      <p role="alert" className="text-sm text-danger">Could not load your projects: {errorMessage(projectsQuery.error)}</p>
-                      <Button size="sm" variant="secondary" onClick={() => void projectsQuery.refetch()}>Retry</Button>
-                    </div>
-                  ) : (
-                    <>
-                      <select
-                        id="investigation-project"
-                        value={effectiveProjectChoice}
-                        onChange={(event) => setProjectChoice(event.target.value)}
-                        className="mt-1.5 h-10 w-full rounded-lg border border-line-strong bg-inputbg px-3 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                      >
-                        <option value="">Select a project…</option>
-                        {projectsList.map((project) => (
-                          <option key={project.id} value={project.id}>{project.name}</option>
-                        ))}
-                        <option value="__new__">Create a new project…</option>
-                      </select>
-                      {effectiveProjectChoice === '__new__' && (
-                        <div className="mt-3">
-                          <Field label="New project name" htmlFor="new-project-name">
-                            <Input id="new-project-name" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="e.g. Primary Intelligence Workspace" />
-                          </Field>
-                        </div>
-                      )}
-                    </>
                   )}
-                </Field>
-              </div>
-
-              <div className="grid gap-x-6 gap-y-1.5 rounded-xl border border-line bg-elevated p-4 font-mono text-[11px] text-ink-dim sm:grid-cols-2">
-                <div>REGION · {region?.name ?? '—'}</div>
-                <div>REGION SOURCE · {region?.source ?? '—'}</div>
-                <div>VERTICES · {region?.polygon.length ?? 0}</div>
-                <div>PERIOD · {start} → {end}</div>
-                <div>SOURCES · {sources.length ? sources.join(', ').toUpperCase() : 'none selected'}</div>
-                <div>MODE · {mode.toUpperCase()} · {strictness.toUpperCase()} · {depth.toUpperCase()}</div>
-                <div>RESEARCH INTEREST · {preferences?.research_interest ?? 'not set'}</div>
-              </div>
-
-              <div className="rounded-xl border border-secondary/35 bg-secondary/5 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-[13px] font-semibold text-ink">Suggested evidence protocol</h3>
-                  <Badge tone="warning">PLANNING GUIDE</Badge>
-                </div>
-                <p className="mt-1 text-[11.5px] text-ink-dim">
-                  A deterministic checklist from your question and selected sources. It is saved with the investigation; it contains no observations or model results.
-                </p>
-                <ol className="mt-3 space-y-2">
-                  {evidencePlan.map((item, index) => (
-                    <li key={`${index}-${item}`} className="flex gap-2.5 text-[11.5px] leading-relaxed text-ink-dim">
-                      <span className="font-mono text-[10px] text-secondary">{String(index + 1).padStart(2, '0')}</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
-              <div className="rounded-lg border border-line bg-card px-3.5 py-2.5 text-[11.5px] leading-relaxed text-ink-faint">
-                Creating this saves your region, dates, and question. You can upload scenes and run checks next inside the workspace.
-              </div>
-
-              {startError && <p className="text-[12.5px] text-danger">{startError}</p>}
-
-              <div className="flex justify-between">
-                <Button variant="ghost" onClick={() => setStep(4)} icon={<ArrowLeft className="h-3.5 w-3.5" />}>
-                  Back
-                </Button>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  loading={starting}
-                  disabled={!canStart}
-                  onClick={startInvestigation}
-                  icon={<Play className="h-4 w-4" />}
-                >
-                  Create investigation
-                </Button>
-              </div>
-
-              {!canStart && (
-                <p className="text-right text-[12px] text-ink-faint">
-                  {question.trim().length < 3
-                    ? 'A question is required.'
-                    : !region
-                      ? 'A region of interest is required.'
-                      : start >= end
-                        ? 'Start date must precede end date.'
-                        : ''}
-                </p>
+                </>
               )}
+            </Field>
+
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((v) => !v)}
+              className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink-dim hover:text-ink"
+            >
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} />
+              More options
+            </button>
+
+            {showAdvanced && (
+              <div className="mt-3 space-y-3 border-t border-line pt-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[12.5px] text-ink-dim">Mode</span>
+                  <Segmented
+                    size="sm"
+                    value={mode}
+                    onChange={setMode}
+                    options={[
+                      { value: 'real', label: 'Live' },
+                      { value: 'demo', label: 'Sample Demo' },
+                    ]}
+                    ariaLabel="Investigation mode"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[12.5px] text-ink-dim">Strictness</span>
+                  <Segmented
+                    size="sm"
+                    value={strictness}
+                    onChange={setStrictness}
+                    options={[
+                      { value: 'standard', label: 'Standard' },
+                      { value: 'strict', label: 'Strict' },
+                      { value: 'research', label: 'Research' },
+                    ]}
+                    ariaLabel="Evidence strictness"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[12.5px] text-ink-dim">Depth</span>
+                  <Segmented
+                    size="sm"
+                    value={depth}
+                    onChange={setDepth}
+                    options={[
+                      { value: 'fast', label: 'Fast' },
+                      { value: 'balanced', label: 'Balanced' },
+                      { value: 'deep', label: 'Deep' },
+                    ]}
+                    ariaLabel="Analysis depth"
+                  />
+                </div>
+              </div>
+            )}
+
+            {startError && <p className="mt-3 text-[12.5px] text-danger">{startError}</p>}
+
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+              <span className="text-[12px] text-ink-faint">
+                {question.trim().length < 3
+                  ? 'Write a question to continue'
+                  : !region
+                    ? 'Pick or draw a region on the map'
+                    : start >= end
+                      ? 'Start date must be before end date'
+                      : `Ready · ${region.name}`}
+              </span>
+              <Button
+                variant="primary"
+                size="lg"
+                loading={starting}
+                disabled={!canStart}
+                onClick={startInvestigation}
+                icon={<Play className="h-4 w-4" />}
+              >
+                Create investigation
+              </Button>
             </div>
           </Panel>
-        )}
-      </motion.div>
-    </div>
-  );
-}
+        </div>
 
-/** Visual bar showing the selected span against a 2015→now window. */
-function TimeSpanBar({ start, end }: { start: string; end: string }) {
-  const windowStart = Date.parse('2015-01-01');
-  const windowEnd = Math.max(Date.parse(end) + 86_400_000, windowStart + 86_400_000);
-  const s = Math.max(0, Math.min(1, (Date.parse(start) - windowStart) / (windowEnd - windowStart)));
-  const e = Math.max(0, Math.min(1, (Date.parse(end) - windowStart) / (windowEnd - windowStart)));
-  const days = Math.max(0, Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000));
-
-  return (
-    <div className="mt-5">
-      <div className="relative h-9 rounded-lg border border-line bg-card">
-        <div
-          className="absolute inset-y-1 rounded-md bg-gradient-to-r from-primary-dim/70 to-primary/70"
-          style={{ left: `${s * 100}%`, width: `${Math.max(1, (e - s) * 100)}%` }}
-        />
-        <span className="absolute left-2 top-1/2 -translate-y-1/2 font-mono text-[9.5px] text-ink-faint">2015</span>
-        <span className="absolute right-2 top-1/2 -translate-y-1/2 font-mono text-[9.5px] text-ink-faint">NOW</span>
-      </div>
-      <div className="mt-1.5 flex justify-between font-mono text-[11px] text-ink-dim">
-        <span>{start}</span>
-        <span className="text-primary">{days.toLocaleString()} days selected</span>
-        <span>{end}</span>
+        {/* Right: Live Interactive Map */}
+        <div className="lg:sticky lg:top-6">
+          <Panel
+            title="3 · Region on map"
+            subtitle={region ? `${region.name} selected` : 'Search a place, choose a preset, or draw a shape'}
+          >
+            <RegionPicker value={region} onChange={setRegion} height={470} />
+          </Panel>
+        </div>
       </div>
     </div>
   );

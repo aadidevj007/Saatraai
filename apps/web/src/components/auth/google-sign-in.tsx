@@ -140,7 +140,7 @@ export function GoogleSignIn({
     });
     window.google.accounts.id.renderButton(buttonRef.current, {
       type: 'standard',
-      theme: 'filled_black',
+      theme: 'outline',
       size: 'large',
       text: 'continue_with',
       width: 300,
@@ -194,7 +194,7 @@ export function GoogleSignIn({
             type="button"
             disabled={pending}
             onClick={handleQuickSignIn}
-            className="glass-option glass-option-active flex w-full max-w-[300px] items-center justify-center gap-2.5 rounded-lg px-4 py-2.5 text-[13px] font-medium text-primary active:scale-[0.98]"
+            className="glass-option-active flex w-full max-w-[300px] items-center justify-center gap-2.5 rounded-xl px-4 py-2.5 text-[13px] font-medium text-white active:scale-[0.98]"
           >
             <Sparkles className="h-4 w-4" />
             <span>Quick Dev Sign-In</span>
