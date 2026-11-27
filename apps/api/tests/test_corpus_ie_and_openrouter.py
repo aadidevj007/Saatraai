@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -7,7 +8,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -21,7 +22,7 @@ from app.models.investigation import Investigation, Query
 from app.models.reasoning import Evidence, Hypothesis
 from app.models.results import Conclusion
 from app.services.corpus_ie import create_or_extract_autonomous_investigation, extract_corpus_intelligence
-from app.tools.remote_sensing import GeminiVisionVqaAdapter
+from app.tools.remote_sensing import OpenRouterVisionVqaAdapter
 from app.tools.types import ToolExecutionContext, ToolExecutionStatus, VqaParameters
 from tests.raster_fixtures import geotiff_fixture
 
@@ -35,9 +36,8 @@ class _FakeResponse:
         return self._payload
 
 
-class CorpusIeAndGeminiTests(unittest.TestCase):
+class CorpusIeAndOpenRouterTests(unittest.TestCase):
     def setUp(self) -> None:
-        # Build lightweight relational subset in SQLite (excluding PostGIS Geometry table uploaded_images)
         self.engine = create_engine(
             "sqlite+pysqlite:///:memory:",
             connect_args={"check_same_thread": False},
@@ -71,7 +71,7 @@ class CorpusIeAndGeminiTests(unittest.TestCase):
             "overtopped channels, followed by renewed coastal inundation recorded on 2024-11-20. "
             "Meanwhile in UnknownNowhereVille, no station gauge existed."
         )
-        settings = Settings(_env_file=None, gemini_api_key=None)
+        settings = Settings(_env_file=None, openrouter_api_key=None)
         with patch("app.services.corpus_ie.httpx.get", side_effect=OSError("offline")):
             extracted, extractor = extract_corpus_intelligence(corpus, settings=settings)
 
@@ -79,14 +79,17 @@ class CorpusIeAndGeminiTests(unittest.TestCase):
         self.assertGreaterEqual(len(extracted["timestamps"]), 2)
         self.assertEqual(extracted["timestamps"][0]["iso_date"], "2022-08-14")
         self.assertEqual(extracted["timestamps"][1]["iso_date"], "2024-11-20")
-        # Both known Kerala and explicit 13.0827, 80.2707 must geocode cleanly; unresolvable places never get [0, 0]
         geocoded = [loc for loc in extracted["locations"] if loc["geocoded"]]
         self.assertTrue(any(abs((loc["lat"] or 0) - 13.0827) < 0.01 for loc in geocoded))
         for loc in extracted["locations"]:
             self.assertNotEqual((loc["lat"], loc["lng"]), (0.0, 0.0))
 
-    def test_gemini_ie_autonomous_endpoint_persists_locations_timestamps_hypotheses_evidence_conclusion(self) -> None:
-        settings = Settings(_env_file=None, gemini_api_key="test-gemini-secret-key", gemini_model="gemini-2.5-flash")
+    def test_openrouter_ie_autonomous_endpoint_persists_locations_timestamps_hypotheses_evidence_conclusion(self) -> None:
+        settings = Settings(
+            _env_file=None,
+            openrouter_api_key="sk-or-test-secret-key",
+            openrouter_model="qwen/qwen2.5-vl-72b-instruct:free",
+        )
         app = create_app(settings)
 
         def override_db():
@@ -100,7 +103,7 @@ class CorpusIeAndGeminiTests(unittest.TestCase):
         app.dependency_overrides[get_current_user] = lambda: self.user
         client = TestClient(app)
 
-        gemini_structured = {
+        structured = {
             "title": "Brahmaputra Flood & Kochi Coastal Surge",
             "research_question": "What caused flood surges in Brahmaputra Valley and Kochi in 2024?",
             "intent": "Hydrological & Flood Analysis",
@@ -158,23 +161,23 @@ class CorpusIeAndGeminiTests(unittest.TestCase):
             "conclusion_summary": "Corpus indicates flood surge in Brahmaputra and Kochi; satellite SAR confirmation pending.",
         }
 
-        import json
-        gemini_http_payload = {
-            "candidates": [{"content": {"parts": [{"text": json.dumps(gemini_structured)}]}}]
+        openrouter_http_payload = {
+            "choices": [{"message": {"content": f"```json\n{json.dumps(structured)}\n```"}}]
         }
 
         with (
-            patch("app.api.routes.investigations.create_or_extract_autonomous_investigation", wraps=create_or_extract_autonomous_investigation) as _wrap,
+            patch("app.api.routes.investigations.create_or_extract_autonomous_investigation", wraps=create_or_extract_autonomous_investigation),
             patch("app.services.corpus_ie.get_settings", return_value=settings),
-            patch("app.services.gemini.httpx.post", return_value=_FakeResponse(200, gemini_http_payload)),
+            patch("app.services.openrouter.httpx.post", return_value=_FakeResponse(200, openrouter_http_payload)) as mocked_post,
         ):
             resp = client.post(
                 "/api/v1/investigations/auto",
                 json={"corpus": "Between 2024-06-12 and 2024-08-05 flooding hit Brahmaputra Valley and Kochi."},
             )
         self.assertEqual(resp.status_code, 201, resp.text)
+        self.assertEqual(mocked_post.call_args.kwargs["headers"]["Authorization"], "Bearer sk-or-test-secret-key")
         body = resp.json()
-        self.assertEqual(body["extraction"]["extractor"], "gemini-2.5-flash")
+        self.assertEqual(body["extraction"]["extractor"], "qwen/qwen2.5-vl-72b-instruct:free")
         self.assertEqual(body["extraction"]["hypotheses_created"], 1)
         self.assertEqual(body["extraction"]["evidence_created"], 1)
         self.assertTrue(body["extraction"]["conclusion_created"])
@@ -184,16 +187,19 @@ class CorpusIeAndGeminiTests(unittest.TestCase):
         self.assertEqual(inv_cfg["time_end"], "2024-08-05")
         self.assertEqual(len(inv_cfg["extracted_locations"]), 2)
         self.assertEqual(len(inv_cfg["extracted_timestamps"]), 2)
-        self.assertNotIn("test-gemini-secret-key", resp.text)
+        self.assertNotIn("sk-or-test-secret-key", resp.text)
 
-        # Cross-user access on /extract must return 404
         app.dependency_overrides[get_current_user] = lambda: self.other_user
         inv_id = body["investigation"]["id"]
         denied = client.post(f"/api/v1/investigations/{inv_id}/extract", json={"corpus": "Follow-up text report."})
         self.assertEqual(denied.status_code, 404)
 
-    def test_gemini_vision_adapter_and_status_probe(self) -> None:
-        settings = Settings(_env_file=None, gemini_api_key="secret-gemini-token", gemini_model="gemini-2.5-flash")
+    def test_openrouter_vision_adapter_and_status_probe(self) -> None:
+        settings = Settings(
+            _env_file=None,
+            openrouter_api_key="sk-or-secret-token",
+            openrouter_model="google/gemini-2.5-flash",
+        )
         with TemporaryDirectory() as workspace:
             scene = Path(workspace) / "scene.tif"
             scene.write_bytes(geotiff_fixture(bands=3, acquisition_at=datetime(2025, 1, 1, tzinfo=UTC)))
@@ -201,14 +207,14 @@ class CorpusIeAndGeminiTests(unittest.TestCase):
             with (
                 patch("app.tools.remote_sensing.get_settings", return_value=settings),
                 patch(
-                    "app.services.gemini.httpx.post",
+                    "app.services.openrouter.httpx.post",
                     return_value=_FakeResponse(
                         200,
-                        {"candidates": [{"content": {"parts": [{"text": "Flooded river floodplain visible."}]}}]},
+                        {"choices": [{"message": {"content": "Flooded river floodplain visible."}}]},
                     ),
                 ),
             ):
-                out = GeminiVisionVqaAdapter().execute(VqaParameters(question="What is visible?"), ctx)
+                out = OpenRouterVisionVqaAdapter().execute(VqaParameters(question="What is visible?"), ctx)
         self.assertEqual(out.status, ToolExecutionStatus.SUCCEEDED)
         self.assertEqual(out.answer, "Flooded river floodplain visible.")
 
@@ -219,13 +225,13 @@ class CorpusIeAndGeminiTests(unittest.TestCase):
         with (
             patch("app.api.routes.status.get_settings", return_value=settings),
             patch("app.api.routes.status._tcp_reachable", return_value=False),
-            patch("app.services.gemini.httpx.get", return_value=_FakeResponse(200, {"name": "models/gemini-2.5-flash"})),
+            patch("app.services.openrouter.httpx.get", return_value=_FakeResponse(200, {"data": {"label": "ok"}})),
         ):
             status_resp = client.get("/api/v1/status")
         self.assertEqual(status_resp.status_code, 200)
-        gem = next(s for s in status_resp.json()["services"] if s["id"] == "model_gemini")
-        self.assertEqual(gem["state"], "online")
-        self.assertNotIn("secret-gemini-token", status_resp.text)
+        or_status = next(s for s in status_resp.json()["services"] if s["id"] == "model_openrouter")
+        self.assertEqual(or_status["state"], "online")
+        self.assertNotIn("sk-or-secret-token", status_resp.text)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,10 @@
 """Autonomous corpus Information Extraction (IE), geocoding, and investigation synthesis.
 
-When GEMINI_API_KEY is configured, structured extraction uses Gemini JSON mode.
-When no LLM key is present (or if Gemini is transiently unreachable), a deterministic
-multi-entity/date/coordinate extractor runs so corpus ingestion remains functional
-while transparently labelling its provenance as ``deterministic-ie-fallback``.
+When OPENROUTER_API_KEY is configured, structured extraction uses OpenRouter chat
+completions (JSON output). When no key is present (or if OpenRouter is transiently
+unreachable), a deterministic multi-entity/date/coordinate extractor runs so corpus
+ingestion remains functional while transparently labelling its provenance as
+``deterministic-ie-fallback``.
 """
 
 from __future__ import annotations
@@ -24,7 +25,7 @@ from app.models.investigation import Investigation, InvestigationStatus, Query
 from app.models.reasoning import AssessmentState, Evidence, EvidencePolarity, Hypothesis
 from app.models.results import Conclusion, ConclusionState
 from app.services.authorization import get_owned_investigation, get_owned_project
-from app.services.gemini import gemini_generate_json
+from app.services.openrouter import openrouter_generate_json
 from ml.common import ModelUnavailableError
 
 NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search"
@@ -419,7 +420,7 @@ def extract_corpus_intelligence(corpus: str, settings: Settings | None = None) -
     extractor_label = "deterministic-ie-fallback"
     raw_extracted: dict[str, Any] | None = None
 
-    if active_settings.gemini_api_key:
+    if active_settings.openrouter_api_key:
         system_prompt = (
             "You are an expert Geospatial & Earth-Observation Information Extraction engine. "
             "Given a raw user corpus (article, report, field note, or research prompt), extract ALL "
@@ -434,15 +435,15 @@ def extract_corpus_intelligence(corpus: str, settings: Settings | None = None) -
             f"{cleaned[:20000]}"
         )
         try:
-            raw_extracted = gemini_generate_json(
-                active_settings.gemini_api_key,
-                active_settings.gemini_model,
+            raw_extracted = openrouter_generate_json(
+                active_settings.openrouter_api_key,
+                active_settings.openrouter_model,
                 system_prompt,
                 user_prompt,
                 CORPUS_IE_SCHEMA,
-                timeout=active_settings.gemini_timeout_seconds,
+                timeout=active_settings.openrouter_timeout_seconds,
             )
-            extractor_label = active_settings.gemini_model
+            extractor_label = active_settings.openrouter_model
         except (ModelUnavailableError, ValueError):
             raw_extracted = None
 

@@ -90,29 +90,29 @@ class GeoChatGroundingAdapter(ModelAdapter):
         return GroundingToolOutput(boxes=boxes)
 
 
-class GeminiVisionVqaAdapter(ModelAdapter):
-    tool_name = "vqa-gemini-vision"
-    tool_version = "gemini-v1"
+class OpenRouterVisionVqaAdapter(ModelAdapter):
+    tool_name = "vqa-openrouter-vision"
+    tool_version = "openrouter-v1"
 
     def execute(self, parameters: VqaParameters, context: ToolExecutionContext | None = None):
-        from app.services.gemini import gemini_analyze_image
+        from app.services.openrouter import openrouter_analyze_image
 
         settings = get_settings()
-        if not settings.gemini_api_key:
+        if not settings.openrouter_api_key:
             return NotImplementedToolOutput(
                 tool_name=self.tool_name,
                 tool_version=self.tool_version,
-                message="GEMINI_API_KEY is not configured; Gemini vision inference is unavailable",
+                message="OPENROUTER_API_KEY is not configured; OpenRouter vision inference is unavailable",
             )
         if context is None or len(context.input_paths) != 1:
-            raise ValueError("Gemini Vision VQA requires one resolved input image")
+            raise ValueError("OpenRouter Vision VQA requires one resolved input image")
         try:
-            answer = gemini_analyze_image(
-                settings.gemini_api_key,
-                settings.gemini_model,
+            answer = openrouter_analyze_image(
+                settings.openrouter_api_key,
+                settings.openrouter_model,
                 context.input_paths[0],
                 parameters.question,
-                timeout=settings.gemini_timeout_seconds,
+                timeout=settings.openrouter_timeout_seconds,
             )
         except ModelUnavailableError as error:
             return NotImplementedToolOutput(

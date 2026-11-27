@@ -171,8 +171,8 @@ class OrchestrationController:
             normalized_output = output.model_dump(mode="json")
 
             # If primary registered model (e.g. GeoChat) is unavailable locally/remotely,
-            # fall back to an alternative configured tool (e.g. gemini-vision-vqa) while
-            # updating ModelRun attribution honestly to the actual tool executed.
+            # fall back to an alternative configured tool (e.g. vqa-openrouter-vision) while
+            # updating ModelRun attribution honestly to the actual tool/model executed.
             if normalized_output.get("status") == ToolExecutionStatus.NOT_IMPLEMENTED.value:
                 for alt_tool in candidates[1:]:
                     alt_output = self.registry.execute(alt_tool.name, invocation, context)
@@ -182,7 +182,12 @@ class OrchestrationController:
                         output = alt_output
                         normalized_output = alt_normalized
                         run.tool_name = alt_tool.name
-                        run.model_name = alt_tool.model_name
+                        if alt_tool.name == "vqa-openrouter-vision":
+                            from app.core.config import get_settings
+
+                            run.model_name = get_settings().openrouter_model
+                        else:
+                            run.model_name = alt_tool.model_name
                         run.model_version = alt_tool.version
                         task.payload = {**(task.payload or {}), "selected_tool": alt_tool.name}
                         break
@@ -239,7 +244,7 @@ class OrchestrationController:
                 if isinstance(answer_text, str) and answer_text.strip():
                     result_summary = answer_text.strip()
                 elif isinstance(boxes, list) and boxes:
-                    result_summary = f"Grounded {len(boxes)} target region(s) via {tool.model_name}."
+                    result_summary = f"Grounded {len(boxes)} target region(s) via {run.model_name or tool.model_name}."
                 else:
                     result_summary = "Remote-sensing model output was generated; review provenance for details."
                 evidence = Evidence(
@@ -253,7 +258,7 @@ class OrchestrationController:
                         "task_id": str(task.id),
                         "tool_name": tool.name,
                         "tool_version": tool.version,
-                        "model_name": tool.model_name,
+                        "model_name": run.model_name or tool.model_name,
                         "model_output_artifact": artifact.uri,
                         "confidence_available": normalized_output.get("confidence") is not None,
                         "tool_output": normalized_output,
