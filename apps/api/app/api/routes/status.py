@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 import socket
 from datetime import UTC, datetime
@@ -90,13 +91,31 @@ def system_status(
         )
     )
 
-    if settings.geochat_model_path:
+    if not settings.geochat_model_path:
+        services.append(
+            ServiceStatusResponse(
+                id="model_geochat",
+                label="GeoChat (VQA / grounding)",
+                state="not_configured",
+                detail="GEOCHAT_MODEL_PATH is unset — VQA and grounding tools are unavailable",
+            )
+        )
+    elif not Path(settings.geochat_model_path).exists():
+        services.append(
+            ServiceStatusResponse(
+                id="model_geochat",
+                label="GeoChat (VQA / grounding)",
+                state="not_configured",
+                detail="Configured GEOCHAT_MODEL_PATH was not found on this host — VQA and grounding tools are unavailable",
+            )
+        )
+    elif importlib.util.find_spec("geochat") is None or importlib.util.find_spec("torch") is None:
         services.append(
             ServiceStatusResponse(
                 id="model_geochat",
                 label="GeoChat (VQA / grounding)",
                 state="degraded",
-                detail="model path configured; runtime weights not verified by this probe",
+                detail="Model weights found, but upstream GeoChat/PyTorch runtime is not installed",
             )
         )
     else:
@@ -104,8 +123,8 @@ def system_status(
             ServiceStatusResponse(
                 id="model_geochat",
                 label="GeoChat (VQA / grounding)",
-                state="not_configured",
-                detail="GEOCHAT_MODEL_PATH is unset — VQA and grounding tools are unavailable",
+                state="online",
+                detail="Model weights and GeoChat runtime are ready",
             )
         )
 
