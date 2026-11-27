@@ -42,7 +42,7 @@ export function TopBar({ apiOnline, mobileNavOpen, mobileNavTrigger, onOpenPalet
   const isInvestigation = segments[0] === 'investigations' && segments.length > 1 && segments[1] !== 'new';
 
   return (
-    <header className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-line bg-surface/85 px-4 backdrop-blur-xl">
+    <header className="relative z-30 flex h-14 shrink-0 items-center justify-between gap-4 border-b border-line bg-white/85 px-4 backdrop-blur-xl">
       {/* breadcrumb */}
       <button
         ref={mobileNavTrigger}
@@ -115,7 +115,7 @@ export function TopBar({ apiOnline, mobileNavOpen, mobileNavTrigger, onOpenPalet
           {bellOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} aria-hidden />
-              <div className="absolute right-0 z-50 mt-1.5 w-80 overflow-hidden rounded-xl border border-line-strong bg-elevated/95 shadow-[0_20px_56px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+              <div className="absolute right-0 z-50 mt-1.5 w-80 overflow-hidden rounded-xl border border-line-strong bg-white/95 shadow-[0_20px_56px_rgba(11,12,16,0.16)] backdrop-blur-xl">
                 <div className="flex items-center justify-between border-b border-line px-3 py-2.5">
                   <span className="text-[12px] font-medium text-ink">Notifications</span>
                   <button

@@ -1,22 +1,21 @@
 'use client';
 
-/** Dashboard — mission-control overview. */
+/** Dashboard — clean, human research desk with quick question launch. */
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { Activity, ArrowRight, Database, FileCheck2, Plus, Telescope, Zap } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Compass, Plus, Sparkles, Telescope, Zap } from 'lucide-react';
 
 import {
   Badge,
+  Button,
   ButtonLink,
   EmptyState,
   ErrorState,
-  Metric,
+  Input,
   Reveal,
-  SectionHeader,
   Skeleton,
-  StatusDot,
   TiltCard,
 } from '@/components/ui';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -27,21 +26,30 @@ import { getInvestigationConfig } from '@/lib/investigation-config';
 import { usePageTitle } from '@/components/shell/shell-context';
 import { greeting, timeAgo } from '@/lib/utils';
 
-const STATUS_TONE = {
-  planned: 'neutral',
-  running: 'primary',
-  complete: 'success',
-  blocked: 'danger',
+const STATUS_META = {
+  planned: { label: 'Planned', tone: 'neutral' },
+  running: { label: 'In progress', tone: 'primary' },
+  complete: { label: 'Complete', tone: 'success' },
+  blocked: { label: 'Needs attention', tone: 'danger' },
 } as const;
 
-export default function OverviewPage() {
-  usePageTitle('Overview');
+const QUICK_PROMPTS = [
+  'Why has flooding increased in Kerala between 2022 and 2026?',
+  'How has urban growth changed in Chennai since 2019?',
+  'What changed in the Sundarbans after the cyclone?',
+];
+
+export default function DashboardPage() {
+  usePageTitle('Dashboard');
   const router = useRouter();
   const { user, google, preferences } = useAuth();
-  const name = google?.name ?? user?.display_name ?? user?.email ?? 'Researcher';
+  const [quickQuestion, setQuickQuestion] = useState('');
+
+  const fullName = google?.name ?? user?.display_name ?? user?.email ?? 'there';
+  const firstName = fullName.split(/[@\s]+/)[0] || fullName;
 
   const investigationsQuery = useInvestigations({ page: 1, page_size: 20 });
-  const { stats, evidenceAvailable, isLoading: summariesLoading } = useInvestigationSummaries(
+  const { stats, isLoading: summariesLoading } = useInvestigationSummaries(
     investigationsQuery.data?.items,
     10,
   );
@@ -53,157 +61,138 @@ export default function OverviewPage() {
     const active = items.filter((i) => i.status === 'planned' || i.status === 'running').length;
     const completed = items.filter((i) => i.status === 'complete').length;
     let evidence = 0;
-    let images = 0;
-    let evidenceKnown = false;
-    let imagesKnown = false;
     for (const [, value] of stats) {
-      if (value.evidence !== null) {
-        evidence += value.evidence;
-        evidenceKnown = true;
-      }
-      if (value.images !== null) {
-        images += value.images;
-        imagesKnown = true;
-      }
+      if (value.evidence !== null) evidence += value.evidence;
     }
-    return { active, completed, evidence, images, evidenceKnown, imagesKnown };
+    return { active, completed, evidence };
   }, [items, stats]);
 
+  const handleQuickStart = (e: FormEvent) => {
+    e.preventDefault();
+    const q = quickQuestion.trim();
+    router.push(q ? `/investigations/new?q=${encodeURIComponent(q)}` : '/investigations/new');
+  };
+
   return (
-    <div className="mx-auto max-w-7xl px-6 py-7">
-      {/* header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
-            <Activity className="h-3 w-3 text-success" />
-            {greeting()} · {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date())}
-          </p>
-          <h1 className="mt-2 text-[26px] font-semibold leading-tight text-ink">What would you like to check today?</h1>
-          <p className="mt-1 text-[13px] text-ink-dim">
-            Signed in as {name}
-            {preferences?.research_interest ? ` · Focus: ${preferences.research_interest}` : ''}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <ButtonLink href="/investigations/new" variant="primary" size="lg" icon={<Plus className="h-4 w-4" />}>
-            New Investigation
-          </ButtonLink>
-          <ButtonLink href="/investigations" variant="secondary" size="lg" icon={<Telescope className="h-4 w-4" />}>
+    <div className="mx-auto max-w-6xl px-6 py-8">
+      {/* Welcome & Quick Ask */}
+      <div className="glass-surface rounded-2xl p-6 sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-[12px] font-medium text-ink-faint">
+              {greeting()}, {firstName}
+              {preferences?.research_interest ? ` · ${preferences.research_interest}` : ''}
+            </p>
+            <h1 className="display-font mt-1.5 text-[28px] font-semibold tracking-tight text-ink sm:text-[34px]">
+              What would you like to look into?
+            </h1>
+          </div>
+          <ButtonLink href="/investigations" variant="secondary" size="sm" icon={<Telescope className="h-3.5 w-3.5" />}>
             All investigations
           </ButtonLink>
         </div>
+
+        <form onSubmit={handleQuickStart} className="mt-5 flex flex-col gap-2.5 sm:flex-row">
+          <Input
+            value={quickQuestion}
+            onChange={(e) => setQuickQuestion(e.target.value)}
+            placeholder="Ask a question about any place on Earth…"
+            aria-label="Ask a question"
+            className="h-11 flex-1 rounded-xl px-4 text-[14px]"
+          />
+          <Button type="submit" variant="primary" size="lg" icon={<Plus className="h-4 w-4" />}>
+            Start investigation
+          </Button>
+        </form>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1 text-[11.5px] text-ink-faint">
+            <Sparkles className="h-3 w-3" /> Try:
+          </span>
+          {QUICK_PROMPTS.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              onClick={() => router.push(`/investigations/new?q=${encodeURIComponent(prompt)}`)}
+              className="glass-option rounded-full px-3 py-1 text-[12px] text-ink-dim hover:text-ink"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* stats */}
-      <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Compact stats */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-3">
         {[
           {
             key: 'active',
-            el: (
-              <Metric
-                label="Active investigations"
-                value={investigationsQuery.isPending ? <Skeleton className="h-6 w-10" /> : counts.active}
-                hint={`of ${total} total`}
-                tone="primary"
-                icon={<Telescope className="h-3.5 w-3.5" />}
-              />
-            ),
+            label: 'Open',
+            value: investigationsQuery.isPending ? <Skeleton className="h-6 w-10" /> : counts.active,
+            hint: `${total} total saved`,
+            icon: Compass,
           },
           {
             key: 'completed',
-            el: (
-              <Metric
-                label="Completed"
-                value={investigationsQuery.isPending ? <Skeleton className="h-6 w-10" /> : counts.completed}
-                hint="status = complete"
-                tone="success"
-                icon={<FileCheck2 className="h-3.5 w-3.5" />}
-              />
-            ),
+            label: 'Completed',
+            value: investigationsQuery.isPending ? <Skeleton className="h-6 w-10" /> : counts.completed,
+            hint: 'Finished runs',
+            icon: CheckCircle2,
           },
           {
             key: 'evidence',
-            el: (
-              <Metric
-                label="Evidence collected"
-                value={
-                  summariesLoading && evidenceAvailable ? (
-                    <Skeleton className="h-6 w-10" />
-                  ) : counts.evidenceKnown ? (
-                    counts.evidence
-                  ) : (
-                    <span className="text-[13px] text-ink-faint">NOT AVAILABLE</span>
-                  )
-                }
-                hint="across recent investigations (10)"
-                tone={counts.evidenceKnown ? 'warning' : 'neutral'}
-                icon={<Zap className="h-3.5 w-3.5" />}
-              />
-            ),
+            label: 'Evidence items',
+            value: summariesLoading ? <Skeleton className="h-6 w-10" /> : counts.evidence,
+            hint: 'Across recent work',
+            icon: Zap,
           },
-          {
-            key: 'datasets',
-            el: (
-              <Metric
-                label="Datasets"
-                value={
-                  summariesLoading && evidenceAvailable ? (
-                    <Skeleton className="h-6 w-10" />
-                  ) : counts.imagesKnown ? (
-                    counts.images
-                  ) : (
-                    <span className="text-[13px] text-ink-faint">NOT AVAILABLE</span>
-                  )
-                }
-                hint="ingested scenes (recent)"
-                icon={<Database className="h-3.5 w-3.5" />}
-              />
-            ),
-          },
-        ].map((item, i) => (
-          <Reveal key={item.key} delay={i * 0.06}>
-            <TiltCard maxTilt={5} className="rounded-xl">
-              {item.el}
-            </TiltCard>
-          </Reveal>
-        ))}
+        ].map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <Reveal key={stat.key} delay={i * 0.05}>
+              <div className="glass-option rounded-xl px-4 py-3.5">
+                <div className="flex items-center justify-between text-[12px] text-ink-faint">
+                  <span>{stat.label}</span>
+                  <Icon className="h-4 w-4 text-ink-faint" />
+                </div>
+                <div className="mt-1.5 text-[24px] font-semibold tracking-tight text-ink">{stat.value}</div>
+                <div className="mt-0.5 text-[11.5px] text-ink-faint">{stat.hint}</div>
+              </div>
+            </Reveal>
+          );
+        })}
       </div>
 
-      {/* API offline banner */}
+      {/* API error */}
       {investigationsQuery.isError && (
         <div className="mt-6">
           <ErrorState
             error={errorMessage(investigationsQuery.error)}
-            title="Unable to load investigations"
+            title="Couldn’t load your investigations"
             onRetry={() => investigationsQuery.refetch()}
           />
         </div>
       )}
 
-      {/* recent */}
-      <div className="mt-9">
-        <SectionHeader
-          title="Recent investigations"
-          description="Your latest questions, regions, and evidence status."
-          action={
-            <ButtonLink href="/investigations" variant="ghost" size="sm" icon={<ArrowRight className="h-3.5 w-3.5" />}>
-              View all
-            </ButtonLink>
-          }
-        />
+      {/* Recent investigations */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-[15px] font-semibold text-ink">Recent investigations</h2>
+          {items.length > 0 && (
+            <Link href="/investigations" className="inline-flex items-center gap-1 text-[12.5px] font-medium text-ink-dim hover:text-ink">
+              See all <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          )}
+        </div>
 
         <div className="mt-4">
           {investigationsQuery.isPending ? (
             <div className="grid gap-4 lg:grid-cols-2">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="rounded-xl border border-line bg-card p-4">
+                <div key={i} className="rounded-2xl border border-line bg-white/80 p-5">
                   <Skeleton className="h-4 w-2/3" />
                   <Skeleton className="mt-3 h-3 w-full" />
-                  <Skeleton className="mt-2 h-3 w-4/5" />
-                  <div className="mt-4 flex gap-2">
-                    <Skeleton className="h-5 w-20" />
-                    <Skeleton className="h-5 w-24" />
-                  </div>
+                  <Skeleton className="mt-4 h-5 w-24" />
                 </div>
               ))}
             </div>
@@ -211,9 +200,9 @@ export default function OverviewPage() {
             <EmptyState
               icon={<Telescope className="w-5 h-5" />}
               title="No investigations yet"
-              description="Start your first Earth observation investigation: ask a question, define a region and select a time range."
+              description="Ask a question above or pick one of the examples to open your first workspace."
               action={{
-                label: 'Start investigation',
+                label: 'New investigation',
                 onClick: () => router.push('/investigations/new'),
               }}
             />
@@ -225,19 +214,6 @@ export default function OverviewPage() {
             </div>
           )}
         </div>
-      </div>
-
-      {/* system strip */}
-      <div className="mt-9 flex flex-wrap items-center gap-4 rounded-xl border border-line bg-surface px-4 py-3 text-[12px] text-ink-dim">
-        <span className="flex items-center gap-2">
-          <StatusDot state="online" /> API connected
-        </span>
-        <span className="flex items-center gap-2">
-          <StatusDot state="not_configured" /> Upload satellite scenes directly in your workspace
-        </span>
-        <Link href="/status" className="ml-auto text-primary hover:underline">
-          System status →
-        </Link>
       </div>
     </div>
   );
@@ -253,44 +229,43 @@ function InvestigationCard({
   const config = getInvestigationConfig(investigation.id);
   const serverQuestion = investigation.configuration?.question ?? null;
   const serverRegion = investigation.configuration?.region_name ?? null;
-  const tone = STATUS_TONE[investigation.status] ?? 'neutral';
+  const statusInfo = STATUS_META[investigation.status] ?? STATUS_META.planned;
 
   return (
-    <TiltCard maxTilt={4} className="rounded-xl">
+    <TiltCard maxTilt={4} className="rounded-2xl">
       <Link
         href={`/investigations/${investigation.id}`}
-        className="card block p-4 focus-visible:outline-2 focus-visible:outline-primary"
+        className="card block p-5 focus-visible:outline-2 focus-visible:outline-primary"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate text-[14px] font-medium text-ink">{investigation.title}</h3>
-            <p className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-ink-dim">
-              {config?.question ?? serverQuestion ?? 'Question not recorded on this device — open to inspect server-side queries.'}
+            <h3 className="truncate text-[15px] font-semibold text-ink">{investigation.title}</h3>
+            <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-ink-dim">
+              {config?.question ?? serverQuestion ?? 'Open to view questions and scenes.'}
             </p>
           </div>
-          <Badge tone={tone}>{investigation.status}</Badge>
+          <Badge tone={statusInfo.tone}>{statusInfo.label}</Badge>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 font-mono text-[10.5px] uppercase tracking-wider text-ink-faint">
-          <span>{config?.region.name ?? serverRegion ?? 'REGION NOT SET'}</span>
-          <span>
-            {config ? `${config.timeRange.start} → ${config.timeRange.end}` : 'PERIOD NOT SET'}
-          </span>
-          {config && <span className={config.mode === 'demo' ? 'text-secondary' : 'text-primary/70'}>
-            {config.mode === 'demo' ? 'DEMO DATA' : 'REAL MODE'}
-          </span>}
-        </div>
-
-        <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
-          <div className="flex items-center gap-3 text-[11.5px] text-ink-faint">
-            <span className="flex items-center gap-1.5">
-              <Zap className="h-3 w-3" />
-              {stats?.evidence === null || stats?.evidence === undefined ? 'evidence —' : `${stats.evidence} evidence`}
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-[11.5px] text-ink-dim">
+          {(config?.region.name ?? serverRegion) && (
+            <span className="rounded-md bg-elevated px-2 py-0.5">{config?.region.name ?? serverRegion}</span>
+          )}
+          {config && (
+            <span className="rounded-md bg-elevated px-2 py-0.5 font-mono text-[11px]">
+              {config.timeRange.start} → {config.timeRange.end}
             </span>
-            <span>updated {timeAgo(investigation.updated_at)}</span>
-          </div>
-          <span className="flex items-center gap-1 text-[12px] text-primary">
-            Open <ArrowRight className="h-3 w-3" />
+          )}
+          {config?.mode === 'demo' && <Badge tone="demo">Sample demo</Badge>}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-line pt-3 text-[12px] text-ink-faint">
+          <span>
+            {stats?.evidence ? `${stats.evidence} evidence · ` : ''}
+            Updated {timeAgo(investigation.updated_at)}
+          </span>
+          <span className="inline-flex items-center gap-1 font-medium text-ink">
+            Open <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </div>
       </Link>

@@ -43,26 +43,25 @@ export function buildPipelineStages(
   const succeeded = model.executions.filter((e) => String(e.status) === 'succeeded').length;
 
   return [
-    { id: 'query', label: 'QUERY UNDERSTANDING', state: hasQueries ? 'done' : 'waiting', detail: hasQueries ? `${model.queries.length} recorded` : 'no query recorded' },
-    { id: 'region', label: 'REGION IDENTIFICATION', state: config?.region ? 'done' : 'waiting', detail: config?.region?.name ?? 'region not set on this device' },
-    { id: 'temporal', label: 'TEMPORAL SCOPE', state: config ? 'done' : 'waiting', detail: config ? `${config.timeRange.start} → ${config.timeRange.end}` : 'time range unknown' },
+    { id: 'query', label: 'Question asked', state: hasQueries ? 'done' : 'waiting', detail: hasQueries ? `${model.queries.length} saved` : 'Add a question' },
+    { id: 'region', label: 'Area selected', state: config?.region ? 'done' : 'waiting', detail: config?.region?.name ?? 'Pick a region' },
+    { id: 'temporal', label: 'Time window', state: config ? 'done' : 'waiting', detail: config ? `${config.timeRange.start} → ${config.timeRange.end}` : 'Choose dates' },
     {
       id: 'hypothesis',
-      label: 'HYPOTHESIS GENERATION',
+      label: 'Working ideas',
       state: model.hypotheses.length > 0 ? 'done' : model.demo ? 'active' : 'unavailable',
-      detail: model.hypotheses.length > 0 ? `${model.hypotheses.length} hypotheses` : 'planner not configured on this deployment',
+      detail: model.hypotheses.length > 0 ? `${model.hypotheses.length} listed` : 'Planner not connected',
     },
-    { id: 'planning', label: 'EVIDENCE PROTOCOL', state: config?.evidencePlan?.length ? 'done' : 'waiting', detail: config?.evidencePlan?.length ? `${config.evidencePlan.length} recommended checks` : 'no protocol saved' },
-    { id: 'acquisition', label: 'DATA ACQUISITION', state: model.images.length > 0 ? 'done' : 'waiting', detail: model.images.length > 0 ? `${model.images.length} scene(s) ingested` : 'upload imagery to proceed' },
+    { id: 'acquisition', label: 'Satellite imagery', state: model.images.length > 0 ? 'done' : 'waiting', detail: model.images.length > 0 ? `${model.images.length} uploaded` : 'Upload 1 or 2 scenes' },
     {
       id: 'analysis',
-      label: 'ANALYSIS',
+      label: 'Analysis runs',
       state: hasExecutions ? (succeeded > 0 ? 'done' : 'unavailable') : 'waiting',
-      detail: hasExecutions ? `${succeeded}/${model.executions.length} runs succeeded` : 'no executions yet',
+      detail: hasExecutions ? `${succeeded}/${model.executions.length} completed` : 'Ready to run',
     },
-    { id: 'contradiction', label: 'CONTRADICTION SEARCH', state: model.evidence.length > 0 ? 'done' : 'waiting', detail: model.evidence.length > 0 ? `${model.evidence.filter((e) => e.polarity === 'contradicting').length} contradicting record(s)` : 'awaiting evidence' },
-    { id: 'confidence', label: 'CONFIDENCE', state: model.confidence ? 'done' : 'waiting', detail: model.confidence ? `overall ${Math.round(model.confidence.overall * 100)}%` : 'awaiting evidence' },
-    { id: 'conclusion', label: 'CONCLUSION', state: model.conclusions.length > 0 ? 'done' : 'waiting', detail: model.conclusions.length > 0 ? `${model.conclusions.length} recorded` : 'no conclusion recorded' },
+    { id: 'contradiction', label: 'Conflict check', state: model.evidence.length > 0 ? 'done' : 'waiting', detail: model.evidence.length > 0 ? `${model.evidence.filter((e) => e.polarity === 'contradicting').length} opposing` : 'Waiting for evidence' },
+    { id: 'confidence', label: 'Confidence', state: model.confidence ? 'done' : 'waiting', detail: model.confidence ? `${Math.round(model.confidence.overall * 100)}% overall` : 'Waiting for evidence' },
+    { id: 'conclusion', label: 'Summary', state: model.conclusions.length > 0 ? 'done' : 'waiting', detail: model.conclusions.length > 0 ? `${model.conclusions.length} saved` : 'Pending' },
   ];
 }
 
@@ -198,7 +197,7 @@ export function ControlPanel({
           </div>
         )}
         {model.demo && model.demoNote && (
-          <p className="mt-2 rounded border border-secondary/40 bg-secondary/10 px-2 py-1.5 text-[11px] leading-snug text-[#80513f]">
+          <p className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11.5px] leading-snug text-amber-900">
             {model.demoNote}
           </p>
         )}
@@ -258,11 +257,11 @@ export function ControlPanel({
               <li key={stage.id} className="flex items-start gap-2" title={stage.detail}>
                 <Icon className={cn('mt-0.5 h-3.5 w-3.5 shrink-0', STATE_COLOR[stage.state], stage.state === 'active' && 'animate-spin')} />
                 <div className="min-w-0">
-                  <div className={cn('font-mono text-[10.5px] tracking-wider', stage.state === 'done' ? 'text-ink-dim' : stage.state === 'unavailable' ? 'text-warning' : 'text-ink-faint')}>
+                  <div className={cn('text-[12px] font-medium', stage.state === 'done' ? 'text-ink' : stage.state === 'unavailable' ? 'text-warning' : 'text-ink-dim')}>
                     {stage.label}
                   </div>
-                  <div className="truncate text-[10.5px] text-ink-faint" title={stage.detail}>
-                    {stage.state === 'unavailable' ? 'NOT CONFIGURED' : stage.detail}
+                  <div className="truncate text-[11px] text-ink-faint" title={stage.detail}>
+                    {stage.state === 'unavailable' ? 'Not configured' : stage.detail}
                   </div>
                 </div>
               </li>
@@ -341,8 +340,8 @@ export function ControlPanel({
                   <button
                     onClick={() => toggleImage(img.id)}
                     className={cn(
-                      'flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left transition-all',
-                      selectedImages.includes(img.id) ? 'glass-option-active' : 'glass-option',
+                      'flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-left transition-all',
+                      selectedImages.includes(img.id) ? 'glass-option-active text-white' : 'glass-option',
                     )}
                   >
                     <span className="min-w-0">

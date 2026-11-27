@@ -242,7 +242,7 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
         />
 
         {/* layer controls */}
-        <div className="absolute right-3 top-14 z-10 w-56 rounded-lg border border-line bg-surface/95 p-3 backdrop-blur">
+        <div className="absolute right-3 top-14 z-10 w-56 rounded-xl border border-line bg-white/90 p-3 shadow-sm backdrop-blur-md">
           <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-dim">
             <Layers className="h-3.5 w-3.5" /> Layers
           </div>

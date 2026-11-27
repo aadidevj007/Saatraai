@@ -149,7 +149,7 @@ function SchemaBlock({ title, schema }: { title: string; schema: Record<string, 
   return (
     <div className="min-w-0">
       <div className="mb-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-ink-faint">{title}</div>
-      <pre className="max-h-56 overflow-auto rounded-lg border border-line bg-void p-2.5 font-mono text-[10.5px] leading-relaxed text-ink-dim">
+      <pre className="max-h-56 overflow-auto rounded-lg border border-line bg-elevated p-2.5 font-mono text-[10.5px] leading-relaxed text-ink-dim">
         {JSON.stringify(schema, null, 2)}
       </pre>
     </div>

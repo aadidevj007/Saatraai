@@ -18,18 +18,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary text-[#052018] hover:bg-primary-dim active:bg-primary-dim font-semibold shadow-[0_8px_24px_rgba(53,201,145,0.2)]',
+    'bg-[#0b0c10] text-white hover:bg-[#232530] active:scale-[0.98] font-medium shadow-[0_10px_24px_rgba(11,12,16,0.18)]',
   secondary:
-    'bg-elevated text-ink border border-line-strong hover:border-primary/50 hover:text-primary transition-colors',
+    'glass-option text-ink hover:text-primary active:scale-[0.98] font-medium',
   outline:
-    'border border-line-strong text-ink-dim hover:text-ink hover:border-ink-faint transition-colors',
-  ghost: 'text-ink-dim hover:text-ink hover:bg-elevated transition-colors',
-  danger: 'bg-danger/15 text-danger border border-danger/40 hover:bg-danger/25 transition-colors',
+    'border border-line-strong bg-white/75 text-ink hover:border-[#0b0c10] hover:bg-white backdrop-blur-md active:scale-[0.98]',
+  ghost: 'text-ink-dim hover:text-ink hover:bg-black/[0.05] active:scale-[0.98]',
+  danger: 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/15 active:scale-[0.98]',
 };
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-7 px-2.5 text-[12px] rounded-md gap-1.5',
-  md: 'h-9 px-4 text-[13px] rounded-lg gap-2',
+  sm: 'h-8 px-3 text-[12px] rounded-lg gap-1.5',
+  md: 'h-9 px-4 text-[13px] rounded-xl gap-2',
   lg: 'h-11 px-6 text-[14px] rounded-xl gap-2',
 };
 
@@ -92,10 +92,10 @@ export function IconButton({ label, children, active, className, ...rest }: Icon
       aria-label={label}
       title={label}
       className={cn(
-        'inline-flex items-center justify-center h-8 w-8 rounded-md transition-colors',
-        'text-ink-dim hover:text-ink hover:bg-elevated',
+        'inline-flex items-center justify-center h-8 w-8 rounded-lg transition-all',
+        'text-ink-dim hover:text-ink hover:bg-black/[0.06]',
         'focus-visible:outline-2 focus-visible:outline-primary',
-        active && 'bg-elevated text-primary',
+        active && 'glass-option-active text-white',
         className,
       )}
       {...rest}

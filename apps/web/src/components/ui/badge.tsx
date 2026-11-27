@@ -6,12 +6,12 @@ export type BadgeTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger'
 
 const TONES: Record<BadgeTone, string> = {
   neutral: 'bg-elevated text-ink-dim border-line-strong',
-  primary: 'bg-primary/10 text-primary border-primary/30',
+  primary: 'bg-[#0b0c10] text-white border-[#0b0c10]',
   success: 'bg-success/10 text-success border-success/30',
   warning: 'bg-warning/10 text-warning border-warning/30',
   danger: 'bg-danger/10 text-danger border-danger/30',
-  accent: 'bg-accent/10 text-accent border-accent/30',
-  demo: 'bg-secondary/10 text-[#80513f] border-secondary/35',
+  accent: 'bg-black/[0.06] text-ink border-line-strong',
+  demo: 'bg-amber-500/12 text-amber-800 border-amber-500/35',
 };
 
 export function Badge({

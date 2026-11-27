@@ -418,14 +418,14 @@ export default function SimulationsPage() {
                       key={st.step}
                       className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
                         isCurrent
-                          ? 'border-primary bg-primary/10 shadow-[0_0_15px_rgba(114,227,180,0.15)]'
+                          ? 'glass-option-active text-white'
                           : isDone
-                            ? 'border-line bg-surface/70 text-ink'
-                            : 'border-line/40 bg-void/40 opacity-50'
+                            ? 'border-line bg-white/85 text-ink'
+                            : 'border-line/60 bg-elevated/50 opacity-60'
                       }`}
                     >
                       <div className={`mt-0.5 h-5 w-5 rounded-full flex items-center justify-center shrink-0 font-mono text-[10px] font-bold ${
-                        isDone ? 'bg-primary text-void' : 'bg-elevated text-ink-faint border border-line'
+                        isCurrent ? 'bg-white text-ink' : isDone ? 'bg-primary text-white' : 'bg-elevated text-ink-faint border border-line'
                       }`}>
                         {isDone ? <CheckCircle2 className="h-3.5 w-3.5" /> : st.step}
                       </div>
@@ -447,27 +447,27 @@ export default function SimulationsPage() {
             </div>
 
             {/* Streaming Log Terminal */}
-            <div className="rounded-xl border border-line-strong bg-void p-4 font-mono text-xs">
-              <div className="flex items-center justify-between border-b border-line pb-2 mb-3 text-[10px] text-ink-faint uppercase tracking-wider">
+            <div className="rounded-xl border border-line-strong bg-[#0b0c10] p-4 font-mono text-xs text-white">
+              <div className="flex items-center justify-between border-b border-white/15 pb-2 mb-3 text-[10px] text-white/60 uppercase tracking-wider">
                 <span className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse-soft" />
-                  SIMULATION TELEMETRY STREAM
+                  SIMULATION LOG
                 </span>
-                <span>EXECUTION_ID: SIM-2026-X8</span>
+                <span>RUN: SIM-2026-X8</span>
               </div>
               <div
                 ref={logContainerRef}
-                className="h-44 overflow-y-auto space-y-1.5 text-[11.5px] leading-relaxed text-ink-dim pr-2 font-mono"
+                className="h-44 overflow-y-auto space-y-1.5 text-[11.5px] leading-relaxed text-white/80 pr-2 font-mono"
               >
                 {displayedLogs.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-ink-faint italic">
-                    Press &ldquo;Run Scenario Simulation&rdquo; to launch synthetic sensor execution stream...
+                  <div className="h-full flex items-center justify-center text-white/50 italic">
+                    Click &ldquo;Run Scenario Simulation&rdquo; to start…
                   </div>
                 ) : (
                   displayedLogs.map((log, idx) => (
                     <div key={idx} className="flex gap-2">
-                      <span className="text-primary/70 shrink-0">&gt;</span>
-                      <span className={log.includes('CONTRADICTION') || log.includes('FLAG') ? 'text-warning font-semibold' : log.includes('COMPLETED') ? 'text-primary font-semibold' : 'text-ink-dim'}>
+                      <span className="text-emerald-400 shrink-0">&gt;</span>
+                      <span className={log.includes('CONTRADICTION') || log.includes('FLAG') ? 'text-amber-300 font-semibold' : log.includes('COMPLETED') ? 'text-emerald-300 font-semibold' : 'text-white/85'}>
                         {log}
                       </span>
                     </div>

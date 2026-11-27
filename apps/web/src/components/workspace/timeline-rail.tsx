@@ -75,8 +75,8 @@ export function TimelineRail({
                     onClick={() => onSelect(event)}
                     title={`${formatDate(event.date)} · ${event.title}\n${event.description}`}
                     className={cn(
-                      'flex max-w-56 items-center gap-1.5 rounded-md px-2 py-1 text-left transition-all',
-                      active ? 'glass-option-active' : 'glass-option',
+                      'flex max-w-56 items-center gap-1.5 rounded-lg px-2.5 py-1 text-left transition-all',
+                      active ? 'glass-option-active text-white' : 'glass-option',
                     )}
                   >
                     <Icon className="h-3 w-3 shrink-0" style={{ color: style.color }} />

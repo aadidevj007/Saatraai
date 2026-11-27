@@ -132,7 +132,7 @@ export default function ReportsPage() {
           </div>
 
           {/* report document */}
-          <article className="mt-5 rounded-xl border border-line bg-surface p-6 print:border-0 print:bg-white print:text-black">
+          <article className="mt-5 rounded-2xl border border-line bg-white p-6 shadow-sm print:border-0 print:bg-white print:text-black">
             <header className="border-b border-line pb-4 print:border-black/20">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono text-[10.5px] uppercase tracking-[0.2em] text-primary print:text-black/60">SAATRAAI investigation report</span>

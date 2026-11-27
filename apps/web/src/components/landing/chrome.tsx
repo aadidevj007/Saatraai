@@ -82,13 +82,13 @@ export function LandingHeader() {
       className={cn(
         'sticky top-0 z-40 border-b transition-colors duration-300',
         scrolled
-          ? 'border-line bg-surface/90 shadow-[0_12px_36px_rgba(0,0,0,0.28)] backdrop-blur-2xl'
-          : 'border-line/70 bg-void/45 backdrop-blur-xl',
+          ? 'border-line bg-white/90 shadow-[0_10px_32px_rgba(11,12,16,0.08)] backdrop-blur-2xl'
+          : 'border-line/70 bg-white/65 backdrop-blur-xl',
       )}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-7">
         <Link href="/" className="rounded-sm" aria-label="SAATRAAI home">
-          <BrandLockup symbolClassName="h-8 w-8" wordmarkClassName="text-[13px]" />
+          <BrandLockup symbolClassName="h-9 w-9" wordmarkClassName="text-[13px]" />
         </Link>
 
         <nav className="hidden items-center gap-1.5 md:flex" aria-label="Sections">
@@ -99,10 +99,10 @@ export function LandingHeader() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'rounded-lg px-3 py-1.5 text-[12.5px] transition-all active:scale-[0.97]',
+                  'rounded-xl px-3.5 py-1.5 text-[12.5px] transition-all active:scale-[0.97]',
                   active
-                    ? 'glass-option-active font-medium text-primary'
-                    : 'border border-transparent text-ink-dim hover:border-white/10 hover:bg-white/[0.05] hover:text-ink hover:backdrop-blur-md',
+                    ? 'glass-option-active font-medium text-white'
+                    : 'border border-transparent text-ink-dim hover:border-black/10 hover:bg-white/80 hover:text-ink hover:shadow-sm',
                 )}
               >
                 {item.label}
@@ -163,10 +163,10 @@ export function LandingHeader() {
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={cn(
-                  'rounded-lg px-3 py-2.5 text-[13px] transition-all',
+                  'rounded-xl px-3 py-2.5 text-[13px] transition-all',
                   active
-                    ? 'glass-option-active font-medium text-primary'
-                    : 'text-ink-dim hover:bg-white/[0.05] hover:text-ink',
+                    ? 'glass-option-active font-medium text-white'
+                    : 'text-ink-dim hover:bg-black/[0.05] hover:text-ink',
                 )}
               >
                 {item.label}
@@ -194,7 +194,7 @@ export function LandingFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-6 py-10 md:grid-cols-4">
         <div className="md:col-span-2">
           <div className="flex items-center gap-2.5">
-            <BrandLockup symbolClassName="h-8 w-8" wordmarkClassName="text-[13px]" />
+            <BrandLockup showTagline symbolClassName="h-10 w-10" wordmarkClassName="text-[14px]" />
           </div>
           <p className="mt-3 max-w-sm text-[12.5px] leading-relaxed text-ink-dim">
             Understand how our planet is changing — with real satellite data, clear checks, and honest results.

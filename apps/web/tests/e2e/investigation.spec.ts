@@ -115,14 +115,8 @@ test('creates a project and investigation, uploads a scene, and shows the return
 
   await page.goto('/investigations/new');
   await expect(page.getByLabel('Research question')).toBeVisible();
-  await expect(page.locator('canvas.maplibregl-canvas')).toHaveCount(0);
   await page.getByLabel('Research question').fill('Where did the shoreline change?');
-  await page.getByRole('button', { name: 'Select region' }).click();
   await page.getByLabel('Region presets').selectOption('chennai');
-  await page.getByRole('button', { name: 'Set time range' }).click();
-  await page.getByRole('button', { name: 'Choose data sources' }).click();
-  await page.getByRole('button', { name: 'Configure', exact: true }).click();
-  await page.getByRole('button', { name: 'Review investigation' }).click();
   await expect(page.getByLabel('Project')).toBeVisible();
   await page.getByLabel('Project').selectOption('__new__');
   await expect(page.getByLabel('New project name')).toBeVisible();
@@ -151,13 +145,8 @@ test('shows the API error when project loading fails', async ({ page }) => {
   }, 503));
   await page.goto('/investigations/new');
   await page.getByLabel('Research question').fill('Check an API outage');
-  await page.getByRole('button', { name: 'Select region' }).click();
   await page.getByLabel('Region presets').selectOption('chennai');
-  await page.getByRole('button', { name: 'Set time range' }).click();
-  await page.getByRole('button', { name: 'Choose data sources' }).click();
-  await page.getByRole('button', { name: 'Configure', exact: true }).click();
-  await page.getByRole('button', { name: 'Review investigation' }).click();
-  await expect(page.getByRole('alert').filter({ hasText: 'Could not load your projects' })).toContainText('Project service unavailable');
+  await expect(page.getByRole('alert').filter({ hasText: 'Couldn’t load projects' })).toContainText('Project service unavailable');
   await expect(page.getByRole('button', { name: 'Create investigation' })).toBeDisabled();
 });
 

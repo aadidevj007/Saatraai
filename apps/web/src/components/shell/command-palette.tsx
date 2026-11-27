@@ -115,15 +115,15 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[#02050b]/65 backdrop-blur-[3px]"
+            className="absolute inset-0 bg-black/25 backdrop-blur-[4px]"
             onClick={onClose}
           />
           <motion.div
             initial={{ opacity: 0, y: -12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ duration: 0.16 }}
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-line-strong bg-surface/95 shadow-[0_32px_90px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+            transition={{ type: 'spring', stiffness: 340, damping: 26 }}
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-line-strong bg-white/95 shadow-[0_32px_80px_rgba(11,12,16,0.2)] backdrop-blur-2xl"
           >
             <div className="flex items-center gap-2.5 border-b border-line px-4 py-3">
               <Search className="h-4 w-4 shrink-0 text-ink-faint" />
@@ -153,8 +153,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                     onMouseEnter={() => setIndex(i)}
                     onClick={() => execute(command)}
                     className={cn(
-                      'mx-1.5 flex w-[calc(100%-0.75rem)] items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[13px] transition-all',
-                      active ? 'glass-option-active text-primary' : 'border border-transparent text-ink-dim',
+                      'mx-1.5 flex w-[calc(100%-0.75rem)] items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] transition-all',
+                      active ? 'glass-option-active text-white' : 'border border-transparent text-ink-dim hover:bg-black/[0.04]',
                     )}
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0" />

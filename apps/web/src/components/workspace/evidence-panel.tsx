@@ -194,7 +194,7 @@ export function EvidencePanel({
             </Section>
 
             <Section title="Provenance">
-              <pre className="overflow-x-auto rounded-lg border border-line bg-void p-3 font-mono text-[11px] leading-relaxed text-ink-dim">
+              <pre className="overflow-x-auto rounded-lg border border-line bg-elevated p-3 font-mono text-[11px] leading-relaxed text-ink-dim">
                 {JSON.stringify(selected.provenance, null, 2)}
               </pre>
               {selected.source_uri && (
