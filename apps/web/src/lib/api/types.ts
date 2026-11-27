@@ -52,6 +52,31 @@ export interface Page<T> {
 
 export type InvestigationStatus = 'planned' | 'running' | 'complete' | 'blocked';
 
+export interface ExtractedLocation {
+  name: string;
+  role: string;
+  summary: string;
+  lat: number | null;
+  lng: number | null;
+  polygon: number[][] | null;
+  geocoded: boolean;
+  geo_source: string;
+}
+
+export interface ExtractedTimestamp {
+  label: string;
+  iso_date: string;
+  iso_end?: string | null;
+  event_summary: string;
+  location_name?: string | null;
+}
+
+export interface ExtractedEntity {
+  name: string;
+  category: string;
+  detail: string;
+}
+
 /** Structured wizard configuration persisted server-side (analyst intent, not results). */
 export interface InvestigationConfiguration {
   region_name?: string | null;
@@ -62,6 +87,24 @@ export interface InvestigationConfiguration {
   evidence_sources?: string[] | null;
   evidence_plan?: string[] | null;
   question?: string | null;
+  extracted_locations?: ExtractedLocation[] | null;
+  extracted_timestamps?: ExtractedTimestamp[] | null;
+  extracted_entities?: ExtractedEntity[] | null;
+  extractor_model?: string | null;
+  corpus_excerpt?: string | null;
+}
+
+export interface AutonomousInvestigationResponse {
+  investigation: Investigation;
+  extraction: {
+    extractor: string;
+    locations: ExtractedLocation[];
+    timestamps: ExtractedTimestamp[];
+    entities: ExtractedEntity[];
+    hypotheses_created: number;
+    evidence_created: number;
+    conclusion_created: boolean;
+  };
 }
 
 export interface Investigation {

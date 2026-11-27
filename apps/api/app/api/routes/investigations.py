@@ -10,6 +10,8 @@ from app.db.session import get_db
 from app.models.identity import User
 from app.models.investigation import Investigation, InvestigationStatus, Query as InvestigationQuery
 from app.schemas.projects import (
+    AutonomousInvestigationRequest,
+    AutonomousInvestigationResponse,
     InvestigationConfigurationUpdate,
     InvestigationCreateRequest,
     InvestigationPageResponse,
@@ -19,6 +21,7 @@ from app.schemas.projects import (
     InvestigationResponse,
 )
 from app.services import investigations as investigation_service
+from app.services.corpus_ie import create_or_extract_autonomous_investigation
 
 router = APIRouter()
 
@@ -61,6 +64,59 @@ def create_investigation(
 ) -> InvestigationResponse:
     return serialize_investigation(
         investigation_service.create_investigation(db, current_user, payload)
+    )
+
+
+@router.post(
+    "/investigations/auto",
+    response_model=AutonomousInvestigationResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Auto-create and extract an investigation from raw input corpus",
+    description=(
+        "Uses corpus Information Extraction to detect locations, timestamps, entities, "
+        "hypotheses, evidence claims, and a draft conclusion automatically from raw text."
+    ),
+    responses=ERROR_RESPONSES,
+)
+def auto_create_investigation(
+    payload: AutonomousInvestigationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AutonomousInvestigationResponse:
+    investigation, extraction = create_or_extract_autonomous_investigation(
+        db,
+        current_user,
+        payload.corpus,
+        project_id=payload.project_id,
+    )
+    return AutonomousInvestigationResponse(
+        investigation=serialize_investigation(investigation),
+        extraction=extraction,
+    )
+
+
+@router.post(
+    "/investigations/{investigation_id}/extract",
+    response_model=AutonomousInvestigationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Extract corpus locations, timestamps, hypotheses, and evidence for an owned investigation",
+    responses=ERROR_RESPONSES,
+)
+def extract_for_investigation(
+    investigation_id: UUID,
+    payload: AutonomousInvestigationRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AutonomousInvestigationResponse:
+    investigation, extraction = create_or_extract_autonomous_investigation(
+        db,
+        current_user,
+        payload.corpus,
+        investigation_id=investigation_id,
+    )
+    return AutonomousInvestigationResponse(
+        investigation=serialize_investigation(investigation),
+        extraction=extraction,
     )
 
 

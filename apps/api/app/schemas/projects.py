@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -49,6 +50,29 @@ class InvestigationConfiguration(BaseModel):
     evidence_sources: list[str] | None = None
     evidence_plan: list[str] | None = Field(default=None, max_length=24)
     question: str | None = Field(default=None, max_length=2000)
+    extracted_locations: list[dict[str, Any]] | None = None
+    extracted_timestamps: list[dict[str, Any]] | None = None
+    extracted_entities: list[dict[str, Any]] | None = None
+    extractor_model: str | None = Field(default=None, max_length=128)
+    corpus_excerpt: str | None = Field(default=None, max_length=2000)
+
+
+class AutonomousInvestigationRequest(BaseModel):
+    corpus: str = Field(min_length=5, max_length=30000)
+    project_id: UUID | None = None
+
+    @field_validator("corpus")
+    @classmethod
+    def require_non_whitespace_corpus(cls, value: str) -> str:
+        normalized = value.strip()
+        if len(normalized) < 5:
+            raise ValueError("corpus must contain at least 5 non-whitespace characters")
+        return normalized
+
+
+class AutonomousInvestigationResponse(BaseModel):
+    investigation: InvestigationResponse
+    extraction: dict[str, Any]
 
 
 class InvestigationCreateRequest(BaseModel):

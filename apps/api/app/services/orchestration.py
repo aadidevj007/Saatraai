@@ -161,6 +161,7 @@ class OrchestrationController:
         db.flush()
 
         try:
+            candidates = self.registry.select(TASK_TOOL_TYPES[task_class], invocation)
             context = ToolExecutionContext(
                 input_paths=tuple(storage.materialize(image.metadata_record.storage_location) for image in resolved.images),
                 input_ids=tuple(str(image.id) for image in resolved.images),
@@ -168,6 +169,24 @@ class OrchestrationController:
             )
             output = self.registry.execute(tool.name, invocation, context)
             normalized_output = output.model_dump(mode="json")
+
+            # If primary registered model (e.g. GeoChat) is unavailable locally/remotely,
+            # fall back to an alternative configured tool (e.g. gemini-vision-vqa) while
+            # updating ModelRun attribution honestly to the actual tool executed.
+            if normalized_output.get("status") == ToolExecutionStatus.NOT_IMPLEMENTED.value:
+                for alt_tool in candidates[1:]:
+                    alt_output = self.registry.execute(alt_tool.name, invocation, context)
+                    alt_normalized = alt_output.model_dump(mode="json")
+                    if alt_normalized.get("status") != ToolExecutionStatus.NOT_IMPLEMENTED.value:
+                        tool = alt_tool
+                        output = alt_output
+                        normalized_output = alt_normalized
+                        run.tool_name = alt_tool.name
+                        run.model_name = alt_tool.model_name
+                        run.model_version = alt_tool.version
+                        task.payload = {**(task.payload or {}), "selected_tool": alt_tool.name}
+                        break
+
             artifact = storage.store_bytes(
                 json.dumps(normalized_output, sort_keys=True).encode("utf-8"), ".json"
             )
@@ -215,13 +234,21 @@ class OrchestrationController:
                 run.status = ExecutionStatus.SUCCEEDED
                 task.status = ExecutionStatus.SUCCEEDED
                 investigation.status = InvestigationStatus.COMPLETE
+                answer_text = normalized_output.get("answer")
+                boxes = normalized_output.get("boxes")
+                if isinstance(answer_text, str) and answer_text.strip():
+                    result_summary = answer_text.strip()
+                elif isinstance(boxes, list) and boxes:
+                    result_summary = f"Grounded {len(boxes)} target region(s) via {tool.model_name}."
+                else:
+                    result_summary = "Remote-sensing model output was generated; review provenance for details."
                 evidence = Evidence(
                     investigation_id=investigation.id,
                     query_id=query.id,
                     model_run_id=run.id,
                     image_id=resolved.images[0].id,
                     polarity=EvidencePolarity.NEUTRAL,
-                    summary="Remote-sensing model output was generated; review the stored artifact for its normalized result.",
+                    summary=result_summary,
                     provenance={
                         "task_id": str(task.id),
                         "tool_name": tool.name,
@@ -229,6 +256,7 @@ class OrchestrationController:
                         "model_name": tool.model_name,
                         "model_output_artifact": artifact.uri,
                         "confidence_available": normalized_output.get("confidence") is not None,
+                        "tool_output": normalized_output,
                     },
                     source_uri=artifact.uri,
                 )

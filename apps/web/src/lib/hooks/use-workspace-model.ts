@@ -64,6 +64,8 @@ export function useWorkspaceModel(id: string | undefined): {
       executions,
       evidence,
       hypotheses,
+      extractedLocations: config?.extractedLocations,
+      extractedTimestamps: config?.extractedTimestamps,
     });
 
     const confidence = evidence.length > 0 ? computeConfidence(evidence) : null;

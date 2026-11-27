@@ -151,6 +151,28 @@ def system_status(
             )
         )
 
+    if not settings.gemini_api_key:
+        services.append(
+            ServiceStatusResponse(
+                id="model_gemini",
+                label="Gemini (Corpus IE & Vision)",
+                state="not_configured",
+                detail="GEMINI_API_KEY is unset — using deterministic corpus IE fallback; cloud VLM unavailable",
+            )
+        )
+    else:
+        from app.services.gemini import check_gemini_health
+
+        gem_ok, gem_detail = check_gemini_health(settings.gemini_api_key, settings.gemini_model)
+        services.append(
+            ServiceStatusResponse(
+                id="model_gemini",
+                label="Gemini (Corpus IE & Vision)",
+                state="online" if gem_ok else "degraded",
+                detail=gem_detail,
+            )
+        )
+
     services.extend(
         [
             ServiceStatusResponse(

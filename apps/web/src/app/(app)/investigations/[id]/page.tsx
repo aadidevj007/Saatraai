@@ -217,6 +217,7 @@ export default function InvestigationWorkspacePage() {
           <div className="min-h-0 flex-1">
             <MapPanel
               region={config?.region ?? null}
+              extractedLocations={config?.extractedLocations ?? investigation.configuration?.extracted_locations ?? undefined}
               images={model.images}
               evidence={model.evidence}
               selectedEvent={selectedEvent}

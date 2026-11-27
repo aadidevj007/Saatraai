@@ -1,6 +1,7 @@
 /** Per-investigation wizard configuration, persisted locally and carried into reports. */
 
 import type { LngLat } from '@/lib/utils';
+import type { ExtractedEntity, ExtractedLocation, ExtractedTimestamp } from '@/lib/api/types';
 
 export type EvidenceSourceKind =
   | 'optical'
@@ -28,6 +29,10 @@ export interface InvestigationConfig {
   timeRange: { start: string; end: string };
   sources: EvidenceSourceKind[];
   evidencePlan?: string[];
+  extractedLocations?: ExtractedLocation[];
+  extractedTimestamps?: ExtractedTimestamp[];
+  extractedEntities?: ExtractedEntity[];
+  extractorModel?: string;
   mode: InvestigationMode;
   strictness: EvidenceStrictness;
   depth: AnalysisDepth;

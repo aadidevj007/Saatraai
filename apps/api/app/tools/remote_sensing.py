@@ -88,3 +88,36 @@ class GeoChatGroundingAdapter(ModelAdapter):
                 message=str(error),
             )
         return GroundingToolOutput(boxes=boxes)
+
+
+class GeminiVisionVqaAdapter(ModelAdapter):
+    tool_name = "vqa-gemini-vision"
+    tool_version = "gemini-v1"
+
+    def execute(self, parameters: VqaParameters, context: ToolExecutionContext | None = None):
+        from app.services.gemini import gemini_analyze_image
+
+        settings = get_settings()
+        if not settings.gemini_api_key:
+            return NotImplementedToolOutput(
+                tool_name=self.tool_name,
+                tool_version=self.tool_version,
+                message="GEMINI_API_KEY is not configured; Gemini vision inference is unavailable",
+            )
+        if context is None or len(context.input_paths) != 1:
+            raise ValueError("Gemini Vision VQA requires one resolved input image")
+        try:
+            answer = gemini_analyze_image(
+                settings.gemini_api_key,
+                settings.gemini_model,
+                context.input_paths[0],
+                parameters.question,
+                timeout=settings.gemini_timeout_seconds,
+            )
+        except ModelUnavailableError as error:
+            return NotImplementedToolOutput(
+                tool_name=self.tool_name,
+                tool_version=self.tool_version,
+                message=str(error),
+            )
+        return VqaToolOutput(answer=normalize_answer(answer))

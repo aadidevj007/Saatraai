@@ -3,6 +3,8 @@
 import type {
   EvidenceRecord,
   ExecutionTrace,
+  ExtractedLocation,
+  ExtractedTimestamp,
   HypothesisRecord,
   IngestedImage,
   InvestigationQuery,
@@ -37,10 +39,34 @@ export interface BuildTimelineInput {
   executions?: ExecutionTrace[] | null;
   evidence?: EvidenceRecord[] | null;
   hypotheses?: HypothesisRecord[] | null;
+  extractedLocations?: ExtractedLocation[] | null;
+  extractedTimestamps?: ExtractedTimestamp[] | null;
 }
 
 export function buildTimeline(input: BuildTimelineInput): TimelineEvent[] {
   const events: TimelineEvent[] = [];
+  const locations = (input.extractedLocations ?? []).filter((l) => l.geocoded && l.lat !== null && l.lng !== null);
+  const findCoords = (name?: string | null): [number, number] | undefined => {
+    if (!locations.length) return undefined;
+    if (name) {
+      const needle = name.toLowerCase();
+      const hit = locations.find((l) => l.name.toLowerCase() === needle || l.name.toLowerCase().includes(needle) || needle.includes(l.name.toLowerCase()));
+      if (hit && hit.lng !== null && hit.lat !== null) return [hit.lng, hit.lat];
+    }
+    const first = locations[0];
+    return first.lng !== null && first.lat !== null ? [first.lng, first.lat] : undefined;
+  };
+
+  for (const ts of input.extractedTimestamps ?? []) {
+    events.push({
+      id: `ie-ts-${ts.iso_date}-${ts.label}`,
+      date: ts.iso_date.includes('T') ? ts.iso_date : `${ts.iso_date}T00:00:00Z`,
+      kind: 'evidence',
+      title: `Corpus date · ${ts.label}`,
+      description: ts.event_summary || `Extracted temporal reference (${ts.iso_date})`,
+      coordinates: findCoords(ts.location_name),
+    });
+  }
 
   for (const q of input.queries ?? []) {
     events.push({
@@ -83,12 +109,17 @@ export function buildTimeline(input: BuildTimelineInput): TimelineEvent[] {
   }
 
   for (const e of input.evidence ?? []) {
+    const provCoords = Array.isArray(e.provenance?.coordinates) && e.provenance.coordinates.length === 2
+      ? ([Number(e.provenance.coordinates[0]), Number(e.provenance.coordinates[1])] as [number, number])
+      : undefined;
+    const provTs = typeof e.provenance?.timestamp === 'string' && e.provenance.timestamp ? e.provenance.timestamp : null;
     events.push({
       id: `ev-${e.id}`,
-      date: e.created_at,
+      date: provTs ? (provTs.includes('T') ? provTs : `${provTs}T00:00:00Z`) : e.created_at,
       kind: 'evidence',
       title: `Evidence ${String(e.polarity).toUpperCase()}`,
       description: e.summary,
+      coordinates: provCoords,
       refType: 'evidence',
       refId: e.id,
     });

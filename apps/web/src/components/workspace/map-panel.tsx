@@ -8,7 +8,7 @@ import { Layers, MapPin, SplitSquareHorizontal } from 'lucide-react';
 
 import { BaseMap, upsertGeoJsonLayer } from '@/components/map/base-map';
 import { Badge, Slider } from '@/components/ui';
-import type { EvidenceRecord, IngestedImage } from '@/lib/api/types';
+import type { EvidenceRecord, ExtractedLocation, IngestedImage } from '@/lib/api/types';
 import type { RegionSelection } from '@/lib/investigation-config';
 import type { TimelineEvent } from '@/lib/analysis/timeline';
 import type { BasemapId } from '@/lib/map/styles';
@@ -18,6 +18,7 @@ import { DESIGN_COLORS } from '@/lib/design-tokens';
 
 export interface MapPanelProps {
   region: RegionSelection | null;
+  extractedLocations?: ExtractedLocation[];
   images: IngestedImage[];
   evidence: EvidenceRecord[];
   selectedEvent: TimelineEvent | null;
@@ -62,7 +63,7 @@ function polygonFeature(ring: LngLat[]): GeoJSON.Feature {
   };
 }
 
-export function MapPanel({ region, images, evidence, selectedEvent, selectedEvidence }: MapPanelProps) {
+export function MapPanel({ region, extractedLocations, images, evidence, selectedEvent, selectedEvidence }: MapPanelProps) {
   const mapRef = useRef<MapLibreMap | null>(null);
   const [basemap, setBasemapState] = useState<BasemapId>('satellite');
   const setBasemap = (next: BasemapId) => {
@@ -118,6 +119,47 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
       if (map.getLayer('ws-roi:line')) map.setPaintProperty('ws-roi:line', 'line-opacity', 0);
     }
 
+    // extracted corpus locations (all geocoded places / coordinates)
+    const ieFeatures: GeoJSON.Feature[] = [];
+    const ieMarkerFeatures: GeoJSON.Feature[] = [];
+    for (const loc of extractedLocations ?? []) {
+      if (!loc.geocoded) continue;
+      if (loc.polygon && loc.polygon.length >= 3) {
+        ieFeatures.push(polygonFeature(loc.polygon as LngLat[]));
+      }
+      if (loc.lng !== null && loc.lat !== null) {
+        ieMarkerFeatures.push({
+          type: 'Feature',
+          properties: { name: loc.name, role: loc.role },
+          geometry: { type: 'Point', coordinates: [loc.lng, loc.lat] },
+        });
+      }
+    }
+    const roi = layerState('roi');
+    upsertGeoJsonLayer(map, 'ws-ie-regions', { type: 'FeatureCollection', features: ieFeatures }, {
+      fill: '#0b0c10',
+      line: '#0b0c10',
+      fillOpacity: roi.visible ? 0.08 : 0,
+      lineWidth: 1.5,
+    });
+    const ieMarkerSrc = map.getSource('ws-ie-markers') as { setData: (d: unknown) => void } | undefined;
+    if (ieMarkerSrc) {
+      ieMarkerSrc.setData({ type: 'FeatureCollection', features: ieMarkerFeatures });
+    } else {
+      map.addSource('ws-ie-markers', { type: 'geojson', data: { type: 'FeatureCollection', features: ieMarkerFeatures } });
+      map.addLayer({
+        id: 'ws-ie-markers:circle',
+        type: 'circle',
+        source: 'ws-ie-markers',
+        paint: {
+          'circle-color': '#0b0c10',
+          'circle-radius': 7,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+        },
+      });
+    }
+
     // scene footprints
     const fp = layerState('footprints');
     const footprintFeatures = drawableImages.map(({ bounds }) => polygonFeature(boundsPolygon(bounds as [number, number, number, number])));
@@ -130,11 +172,23 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
     if (map.getLayer('ws-footprints:fill')) map.setPaintProperty('ws-footprints:fill', 'fill-opacity', fp.visible ? fp.opacity : 0);
     if (map.getLayer('ws-footprints:line')) map.setPaintProperty('ws-footprints:line', 'line-opacity', fp.visible ? 0.8 : 0);
 
-    // evidence markers (centroid of the scene each evidence item references)
+    // evidence markers (from provenance.coordinates OR linked image centroid)
     const mk = layerState('markers');
     const imageById = new Map(images.map((i) => [i.id, i]));
     const markerFeatures: GeoJSON.Feature[] = [];
     for (const item of evidence) {
+      const provCoords =
+        Array.isArray(item.provenance?.coordinates) && item.provenance.coordinates.length === 2
+          ? ([Number(item.provenance.coordinates[0]), Number(item.provenance.coordinates[1])] as [number, number])
+          : null;
+      if (provCoords && Number.isFinite(provCoords[0]) && Number.isFinite(provCoords[1])) {
+        markerFeatures.push({
+          type: 'Feature',
+          properties: { id: item.id, polarity: item.polarity, summary: item.summary.slice(0, 120) },
+          geometry: { type: 'Point', coordinates: provCoords },
+        });
+        continue;
+      }
       const image = item.image_id ? imageById.get(item.image_id) : undefined;
       const bounds = image ? readBounds(image) : null;
       if (!bounds) continue;
@@ -197,13 +251,17 @@ export function MapPanel({ region, images, evidence, selectedEvent, selectedEvid
     if (map.getLayer('ws-compare-a:fill')) map.setPaintProperty('ws-compare-a:fill', 'fill-opacity', 0);
     if (map.getLayer('ws-compare-b:fill')) map.setPaintProperty('ws-compare-b:fill', 'fill-opacity', compareOpacity);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [region, drawableImages, evidence, layers, compareA, compareB, compareOpacity, images]);
+  }, [region, extractedLocations, drawableImages, evidence, layers, compareA, compareB, compareOpacity, images]);
 
   /* fly to a selected evidence item / timeline event */
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const focus = (): LngLat | null => {
+      const evCoords = selectedEvidence?.provenance?.coordinates;
+      if (Array.isArray(evCoords) && evCoords.length === 2) {
+        return [Number(evCoords[0]), Number(evCoords[1])];
+      }
       if (selectedEvidence?.image_id) {
         const image = images.find((i) => i.id === selectedEvidence.image_id);
         const bounds = image ? readBounds(image) : null;

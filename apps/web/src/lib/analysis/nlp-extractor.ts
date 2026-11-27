@@ -265,19 +265,8 @@ export async function extractRegion(query: string): Promise<ExtractedRegion | nu
       // Fallback if offline
     }
 
-    // Return inferred entity name
-    return {
-      name: candidate,
-      rawText: candidate,
-      source: 'preset',
-      polygon: [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [0, 1],
-      ],
-      confidence: 0.65,
-    };
+    // Never fabricate a [0, 0]..[1, 1] ocean polygon when geocoding fails or is offline.
+    return null;
   }
 
   return null;

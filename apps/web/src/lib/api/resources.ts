@@ -2,6 +2,7 @@
 
 import { apiBase, apiRequest, API_BASE_CONFIGURED } from './client';
 import type {
+  AutonomousInvestigationResponse,
   ExecutionTrace,
   HealthResponse,
   ImageIngestionResponse,
@@ -49,6 +50,16 @@ export const investigationApi = {
     apiRequest<Investigation>('/investigations', {
       method: 'POST',
       body: { project_id, title, configuration: configuration ?? undefined },
+    }),
+  autoCreate: (corpus: string, project_id?: string) =>
+    apiRequest<AutonomousInvestigationResponse>('/investigations/auto', {
+      method: 'POST',
+      body: { corpus, project_id: project_id ?? undefined },
+    }),
+  extractCorpus: (investigationId: string, corpus: string) =>
+    apiRequest<AutonomousInvestigationResponse>(`/investigations/${investigationId}/extract`, {
+      method: 'POST',
+      body: { corpus },
     }),
   /** Persist region / time range / sources on an existing investigation. */
   updateConfiguration: (id: string, configuration: InvestigationConfiguration) =>

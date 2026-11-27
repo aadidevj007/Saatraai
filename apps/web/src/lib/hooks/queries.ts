@@ -104,14 +104,21 @@ function items<T>(data: { items: T[] } | T[] | null | undefined): T[] | null {
  */
 function configFromServer(inv: Investigation | null): InvestigationConfig | null {
   const c = inv?.configuration;
-  if (!inv || !c || !c.region_polygon || c.region_polygon.length < 3 || !c.time_start || !c.time_end) return null;
+  if (!inv || !c || !c.time_start || !c.time_end) return null;
+  const hasPolygon = Boolean(c.region_polygon && c.region_polygon.length >= 3);
+  if (!hasPolygon && !c.extracted_locations?.length && !c.extracted_timestamps?.length) return null;
+  const rawSource = c.region_source;
+  const validSource: RegionSelection['source'] =
+    rawSource === 'draw' || rawSource === 'search' || rawSource === 'geojson' || rawSource === 'bounding-box'
+      ? rawSource
+      : 'preset';
   return {
     investigationId: inv.id,
     question: c.question ?? inv.title,
     region: {
-      name: c.region_name ?? 'Region from server record',
-      polygon: c.region_polygon as RegionSelection['polygon'],
-      source: (c.region_source as RegionSelection['source'] | undefined) ?? 'preset',
+      name: c.region_name ?? 'Extracted locations',
+      polygon: (hasPolygon ? c.region_polygon : []) as RegionSelection['polygon'],
+      source: validSource,
     },
     timeRange: { start: c.time_start, end: c.time_end },
     sources: (c.evidence_sources ?? []) as EvidenceSourceKind[],
@@ -122,6 +129,10 @@ function configFromServer(inv: Investigation | null): InvestigationConfig | null
         (c.evidence_sources ?? []) as EvidenceSourceKind[],
         { start: c.time_start, end: c.time_end },
       ),
+    extractedLocations: c.extracted_locations ?? undefined,
+    extractedTimestamps: c.extracted_timestamps ?? undefined,
+    extractedEntities: c.extracted_entities ?? undefined,
+    extractorModel: c.extractor_model ?? undefined,
     mode: 'real' as InvestigationMode,
     strictness: 'standard' as EvidenceStrictness,
     depth: 'balanced' as AnalysisDepth,

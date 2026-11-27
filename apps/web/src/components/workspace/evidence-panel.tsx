@@ -145,6 +145,32 @@ export function EvidencePanel({
               <p className="text-[13px] leading-relaxed text-ink">{selected.summary}</p>
             </Section>
 
+            {(typeof selected.provenance?.location_name === 'string' ||
+              typeof selected.provenance?.timestamp === 'string' ||
+              typeof selected.provenance?.source_quote === 'string') && (
+              <Section title="Extracted metadata">
+                <div className="space-y-1.5 rounded-lg border border-line bg-elevated p-3 text-[12px]">
+                  {typeof selected.provenance?.location_name === 'string' && (
+                    <div>
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Location · </span>
+                      <span className="text-ink">{selected.provenance.location_name}</span>
+                    </div>
+                  )}
+                  {typeof selected.provenance?.timestamp === 'string' && (
+                    <div>
+                      <span className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Timestamp · </span>
+                      <span className="text-ink">{selected.provenance.timestamp}</span>
+                    </div>
+                  )}
+                  {typeof selected.provenance?.source_quote === 'string' && selected.provenance.source_quote && (
+                    <blockquote className="border-l-2 border-primary/40 pl-2.5 italic text-ink-dim">
+                      “{selected.provenance.source_quote}”
+                    </blockquote>
+                  )}
+                </div>
+              </Section>
+            )}
+
             <Section title="Classification">
               <div className="grid grid-cols-2 gap-2 font-mono text-[11.5px]">
                 <KV k="Polarity" v={selected.polarity} />

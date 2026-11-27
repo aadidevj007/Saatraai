@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     geochat_remote_url: str | None = None
     geochat_remote_token: str | None = None
     geochat_remote_timeout_seconds: float = 120.0
+    gemini_api_key: str | None = None
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_timeout_seconds: float = 45.0
     firebase_project_id: str | None = None
     firebase_service_account_json: str | None = None
     firebase_service_account_path: str | None = None
@@ -71,9 +74,9 @@ class Settings(BaseSettings):
         normalized = str(value).strip().rstrip("/")
         return normalized or None
 
-    @field_validator("geochat_remote_token", mode="before")
+    @field_validator("geochat_remote_token", "gemini_api_key", mode="before")
     @classmethod
-    def normalize_geochat_remote_token(cls, value: str | None) -> str | None:
+    def normalize_optional_secret(cls, value: str | None) -> str | None:
         if value is None:
             return None
         normalized = str(value).strip()
@@ -84,6 +87,13 @@ class Settings(BaseSettings):
     def validate_geochat_remote_timeout(cls, value: float) -> float:
         if value <= 0 or value > 600:
             raise ValueError("GEOCHAT_REMOTE_TIMEOUT_SECONDS must be between 0 and 600")
+        return value
+
+    @field_validator("gemini_timeout_seconds")
+    @classmethod
+    def validate_gemini_timeout(cls, value: float) -> float:
+        if value <= 0 or value > 300:
+            raise ValueError("GEMINI_TIMEOUT_SECONDS must be between 0 and 300")
         return value
 
     @field_validator("jwt_secret_key")

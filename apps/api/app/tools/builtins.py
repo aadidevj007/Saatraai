@@ -6,6 +6,7 @@ from app.models.eo import ImageModality
 from app.tools.adapters import PlaceholderAdapter
 from app.tools.remote_sensing import (
     BiTemporalEvidencePreflightAdapter,
+    GeminiVisionVqaAdapter,
     GeoChatGroundingAdapter,
     GeoChatVqaAdapter,
 )
@@ -31,6 +32,7 @@ def get_tool_registry() -> ToolRegistry:
     registry = ToolRegistry()
     definitions = [
         ("optical-vqa", "MBZUAI/geochat-7B", "geochat-7B", ToolTaskType.VQA, {ImageModality.OPTICAL, ImageModality.MULTISPECTRAL}, {InputConfiguration.SINGLE_IMAGE}, VqaParameters, VqaToolOutput, GeoChatVqaAdapter()),
+        ("vqa-gemini-vision", "google/gemini-2.5-flash", "gemini-v1", ToolTaskType.VQA, {ImageModality.OPTICAL, ImageModality.MULTISPECTRAL, ImageModality.SAR}, {InputConfiguration.SINGLE_IMAGE}, VqaParameters, VqaToolOutput, GeminiVisionVqaAdapter()),
         ("image-captioning", "unintegrated", "0.1.0-placeholder", ToolTaskType.CAPTIONING, {ImageModality.OPTICAL, ImageModality.MULTISPECTRAL, ImageModality.SAR}, {InputConfiguration.SINGLE_IMAGE}, CaptioningParameters, NotImplementedToolOutput, None),
         ("visual-grounding", "MBZUAI/geochat-7B", "geochat-7B", ToolTaskType.GROUNDING, {ImageModality.OPTICAL, ImageModality.MULTISPECTRAL}, {InputConfiguration.SINGLE_IMAGE}, GroundingParameters, GroundingToolOutput, GeoChatGroundingAdapter()),
         ("bi-temporal-evidence-preflight", "deterministic-raster-preflight", "1.0.0", ToolTaskType.CHANGE_DETECTION, {ImageModality.OPTICAL, ImageModality.MULTISPECTRAL, ImageModality.SAR}, {InputConfiguration.BI_TEMPORAL_PAIR}, EvidencePreflightParameters, BiTemporalEvidenceOutput, BiTemporalEvidencePreflightAdapter()),
