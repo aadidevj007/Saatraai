@@ -88,7 +88,7 @@ export function LandingHeader() {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-7">
         <Link href="/" className="rounded-sm" aria-label="SAATRAAI home">
-          <BrandLockup symbolClassName="h-8 w-8" wordmarkClassName="text-[13px]" />
+          <BrandLockup symbolClassName="h-9 w-9" wordmarkClassName="text-[13px]" />
         </Link>
 
         <nav className="hidden items-center gap-1.5 md:flex" aria-label="Sections">
@@ -194,7 +194,7 @@ export function LandingFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-6 py-10 md:grid-cols-4">
         <div className="md:col-span-2">
           <div className="flex items-center gap-2.5">
-            <BrandLockup symbolClassName="h-8 w-8" wordmarkClassName="text-[13px]" />
+            <BrandLockup showTagline symbolClassName="h-10 w-10" wordmarkClassName="text-[14px]" />
           </div>
           <p className="mt-3 max-w-sm text-[12.5px] leading-relaxed text-ink-dim">
             Understand how our planet is changing — with real satellite data, clear checks, and honest results.

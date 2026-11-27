@@ -81,7 +81,7 @@ export function Sidebar({
       {/* brand */}
       <div className="flex h-14 items-center justify-between border-b border-line px-4">
         <Link href="/dashboard" className="flex items-center overflow-hidden" aria-label="SAATRAAI overview">
-          {compact ? <BrandSymbol className="h-7 w-7" /> : <BrandLockup symbolClassName="h-7 w-7" wordmarkClassName="text-[12px]" />}
+          {compact ? <BrandSymbol className="h-8 w-8" /> : <BrandLockup symbolClassName="h-8 w-8" wordmarkClassName="text-[10.5px]" />}
         </Link>
         <button
           onClick={onToggle}

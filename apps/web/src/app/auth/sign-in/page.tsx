@@ -77,10 +77,7 @@ export default function SignInPage() {
         <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-6 py-16 lg:grid-cols-[1.05fr_0.95fr]">
           <section className="flex flex-col items-center lg:items-start">
             <div className="mb-6 flex flex-col items-center gap-1 lg:items-start">
-              <BrandLockup symbolClassName="h-10 w-10" wordmarkClassName="text-[15px] tracking-[0.26em]" />
-              <div className="pl-1 font-mono text-[9.5px] uppercase tracking-[0.3em] text-ink-faint">
-                Earth Intelligence
-              </div>
+              <BrandLockup showTagline symbolClassName="h-12 w-12" wordmarkClassName="text-[18px]" />
             </div>
 
             <EarthVisual className="mb-6 w-[300px] sm:w-[380px] lg:w-[440px]" />
