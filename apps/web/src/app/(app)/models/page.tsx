@@ -18,57 +18,81 @@ export default function ModelsPage() {
   const statusQuery = useQuery({ queryKey: ['system-status'], queryFn: () => providerApi.status(), retry: false });
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const geochatState = statusQuery.data?.services.find((s) => s.id === 'model_geochat')?.state;
+  const geochatService = statusQuery.data?.services.find((s) => s.id === 'model_geochat');
+  const geochatState = geochatService?.state;
+  const geochatDetail = geochatService?.detail;
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-6">
+    <div className="mx-auto max-w-5xl px-6 py-7">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-[22px] font-semibold text-ink">
+          <h1 className="display-font flex items-center gap-2 text-[24px] font-semibold tracking-tight text-ink">
             <Radar className="h-5 w-5 text-primary" /> Model registry
           </h1>
           <p className="mt-1 text-[13px] text-ink-dim">
-            Registered analysis tools and their live availability.
+            Registered analysis tools and their live runtime availability.
           </p>
         </div>
-        <span className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-wider text-ink-faint">
-          <StatusDot state={geochatState === 'online' ? 'online' : geochatState === 'degraded' ? 'degraded' : 'not_configured'} />
-          geochat · {geochatState ?? 'unknown'}
+        <span className="glass-option inline-flex items-center gap-2 rounded-full px-3 py-1 font-mono text-[10.5px] uppercase tracking-wider text-ink-dim">
+          <StatusDot
+            state={
+              geochatState === 'online'
+                ? 'online'
+                : geochatState === 'degraded'
+                  ? 'degraded'
+                  : 'not_configured'
+            }
+          />
+          geochat · {geochatState ? geochatState.replace('_', ' ') : 'checking'}
         </span>
       </div>
 
-      <div className="mt-5">
+      <div className="mt-6">
         {toolsQuery.isPending ? (
-          <LoadingState label="Reading tool registry…" rows={4} />
+          <LoadingState label="Loading model registry…" rows={4} />
         ) : toolsQuery.isError ? (
           <ErrorState error={errorMessage(toolsQuery.error)} onRetry={() => toolsQuery.refetch()} />
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {toolsQuery.data.map((tool) => {
               const integrated = tool.model_name !== 'unintegrated';
               const isGeoChat = tool.model_name.toLowerCase().includes('geochat');
               const runtimeUnavailable = isGeoChat && geochatState === 'not_configured';
-              const runtimeUnverified = isGeoChat && geochatState === 'degraded';
-              const badgeTone = !integrated || runtimeUnavailable
-                ? 'danger'
-                : runtimeUnverified
-                  ? 'warning'
-                  : 'success';
+              const runtimeDegraded = isGeoChat && geochatState === 'degraded';
+              const badgeTone =
+                !integrated || runtimeUnavailable
+                  ? 'danger'
+                  : runtimeDegraded
+                    ? 'warning'
+                    : 'success';
               const badgeLabel = !integrated
-                ? 'MODEL UNAVAILABLE'
+                ? 'NOT INTEGRATED'
                 : runtimeUnavailable
-                  ? 'MODEL PATH REQUIRED'
-                  : runtimeUnverified
-                    ? 'CONFIGURED · UNVERIFIED'
+                  ? 'NOT CONFIGURED'
+                  : runtimeDegraded
+                    ? 'RUNTIME MISSING'
                     : !isGeoChat || geochatState === 'online'
                       ? 'AVAILABLE'
-                      : 'STATUS UNKNOWN';
+                      : 'CHECKING';
+
+              const runtimeStateText = !integrated
+                ? 'Placeholder slot — returns NOT_IMPLEMENTED until a model adapter is wired'
+                : !isGeoChat
+                  ? 'Built-in deterministic raster preflight ready'
+                  : runtimeUnavailable
+                    ? geochatDetail ?? 'GEOCHAT_MODEL_PATH is not configured on the API host'
+                    : runtimeDegraded
+                      ? geochatDetail ?? 'Weights found, but GeoChat/PyTorch runtime is not installed'
+                      : geochatState === 'online'
+                        ? geochatDetail ?? 'GeoChat weights and runtime ready'
+                        : 'Checking runtime availability…';
+
               const isOpen = expanded === tool.name;
               return (
                 <Panel
                   key={tool.name}
                   title={
-                    <span className="flex items-center gap-2">
+                    <span className="flex flex-wrap items-center gap-2">
                       {tool.name}
                       <Badge tone={badgeTone}>{badgeLabel}</Badge>
                     </span>
@@ -77,45 +101,34 @@ export default function ModelsPage() {
                   actions={
                     <button
                       onClick={() => setExpanded(isOpen ? null : tool.name)}
-                      className="flex items-center gap-1 text-[11.5px] text-ink-dim hover:text-primary"
+                      className="glass-option flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11.5px] text-ink-dim hover:text-ink"
                       aria-expanded={isOpen}
                     >
                       Schemas {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                     </button>
                   }
                 >
-                  <div className="grid gap-x-6 gap-y-2 sm:grid-cols-3">
+                  <div className="grid gap-x-6 gap-y-3 sm:grid-cols-3">
                     <Fact label="Task" value={tool.task_type} />
                     <Fact label="Model" value={tool.model_name} />
                     <Fact label="Version" value={tool.version} />
                     <Fact label="Modalities" value={tool.accepted_modalities.join(', ') || '—'} />
-                    <Fact label="Input configurations" value={tool.accepted_input_configurations.join(', ') || '—'} />
-                    <Fact
-                      label="Runtime state"
-                      value={
-                        !integrated
-                          ? 'placeholder adapter — executes as NOT_IMPLEMENTED'
-                          : runtimeUnavailable
-                            ? 'GEOCHAT_MODEL_PATH unset'
-                            : runtimeUnverified
-                              ? 'path configured; weights not verified by probe'
-                              : geochatState === 'online'
-                                ? 'model ready'
-                                : 'runtime status unavailable'
-                      }
-                    />
+                    <Fact label="Input mode" value={tool.accepted_input_configurations.join(', ') || '—'} />
+                    <Fact label="Runtime state" value={runtimeStateText} />
                   </div>
 
-                  <div className={cn('mt-3 grid gap-3', isOpen ? 'grid-cols-1 md:grid-cols-2' : 'hidden')}>
+                  <div className={cn('mt-4 grid gap-3', isOpen ? 'grid-cols-1 md:grid-cols-2' : 'hidden')}>
                     <SchemaBlock title="Parameter schema" schema={tool.parameter_schema} />
                     <SchemaBlock title="Output schema" schema={tool.output_schema} />
                   </div>
 
-                  {(!integrated || runtimeUnavailable) && (
-                    <p className="mt-3 rounded border border-warning/25 bg-warning/5 px-3 py-2 text-[11.5px] leading-relaxed text-ink-dim">
+                  {(!integrated || runtimeUnavailable || runtimeDegraded) && (
+                    <p className="mt-3.5 rounded-xl border border-warning/25 bg-warning/5 px-3.5 py-2.5 text-[12px] leading-relaxed text-ink-dim">
                       {runtimeUnavailable
-                        ? 'GeoChat is registered, but GEOCHAT_MODEL_PATH is unset. VQA and grounding cannot run until the model weights are configured on the API server.'
-                        : 'This tool is registered but its model is not integrated: executions complete with an INSUFFICIENT evidence record stating that no scientific output was produced. Nothing is faked.'}
+                        ? 'To enable GeoChat VQA & grounding, place the MBZUAI/geochat-7B checkpoint on a GPU API host, install the upstream GeoChat runtime, and set GEOCHAT_MODEL_PATH.'
+                        : runtimeDegraded
+                          ? 'Model weights directory is present, but the upstream GeoChat/PyTorch runtime is not installed in this API environment.'
+                          : 'This task slot is registered in the API contract as a placeholder and safely returns INSUFFICIENT / NOT_IMPLEMENTED instead of synthetic output.'}
                     </p>
                   )}
                 </Panel>
@@ -123,12 +136,6 @@ export default function ModelsPage() {
             })}
           </div>
         )}
-      </div>
-
-      <div className="mt-6 rounded-xl border border-line bg-surface px-4 py-3 text-[12px] leading-relaxed text-ink-dim">
-        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Note · </span>
-        The registry lists what the backend declares, not what a demo would like to show. Model cards appear here only
-        when the API exposes them.
       </div>
     </div>
   );
@@ -138,7 +145,7 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <div className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-ink-faint">{label}</div>
-      <div className="truncate text-[12.5px] text-ink" title={value}>
+      <div className="mt-0.5 break-words text-[12.5px] leading-snug text-ink" title={value}>
         {value}
       </div>
     </div>

@@ -1,3 +1,6 @@
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 from urllib.parse import urlparse
 from uuid import uuid4
 import unittest
@@ -5,7 +8,7 @@ import unittest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.db.session import SessionLocal
 from app.main import app
 from app.models.identity import User
@@ -52,6 +55,40 @@ class StatusApiTests(unittest.TestCase):
         self.assertNotIn(str(database_host), body)
         self.assertNotIn(redis_address, body)
         self.assertNotIn(settings.local_storage_path, body)
+
+    def test_geochat_status_verifies_model_path_existence_and_runtime(self) -> None:
+        headers = self.authenticated_headers()
+        base = get_settings()
+
+        missing_settings = Settings(
+            database_url=base.database_url,
+            redis_url=base.redis_url,
+            jwt_secret_key=base.jwt_secret_key,
+            geochat_model_path="./does-not-exist-geochat",
+        )
+        with patch("app.api.routes.status.get_settings", return_value=missing_settings):
+            resp = self.client.get("/api/v1/status", headers=headers)
+            self.assertEqual(resp.status_code, 200)
+            geochat = next(s for s in resp.json()["services"] if s["id"] == "model_geochat")
+            self.assertEqual(geochat["state"], "not_configured")
+            self.assertNotIn("./does-not-exist-geochat", resp.text)
+
+        with TemporaryDirectory() as tmpdir:
+            present_settings = Settings(
+                database_url=base.database_url,
+                redis_url=base.redis_url,
+                jwt_secret_key=base.jwt_secret_key,
+                geochat_model_path=tmpdir,
+            )
+            with (
+                patch("app.api.routes.status.get_settings", return_value=present_settings),
+                patch("app.api.routes.status.importlib.util.find_spec", return_value=None),
+            ):
+                resp = self.client.get("/api/v1/status", headers=headers)
+                self.assertEqual(resp.status_code, 200)
+                geochat = next(s for s in resp.json()["services"] if s["id"] == "model_geochat")
+                self.assertEqual(geochat["state"], "degraded")
+                self.assertNotIn(Path(tmpdir).name, resp.text)
 
 
 if __name__ == "__main__":
