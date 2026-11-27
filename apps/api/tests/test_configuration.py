@@ -43,6 +43,21 @@ class ProductionSettingsTests(unittest.TestCase):
             with self.subTest(origin=origin), self.assertRaises(ValueError):
                 Settings(_env_file=None, **{**self.production_values(), "cors_allowed_origins": origin})
 
+    def test_geochat_remote_url_validation(self) -> None:
+        for invalid in ("ftp://worker.example.test", "https://user:pass@worker.example.test", "https://worker.example.test?a=1"):
+            with self.subTest(remote=invalid), self.assertRaises(ValueError):
+                Settings(_env_file=None, geochat_remote_url=invalid)
+
+        for prod_invalid in ("http://worker.example.test", "https://localhost:8080", "https://127.0.0.1:8080"):
+            with self.subTest(prod_remote=prod_invalid), self.assertRaises(ValueError):
+                Settings(_env_file=None, **{**self.production_values(), "geochat_remote_url": prod_invalid})
+
+        valid = Settings(
+            _env_file=None,
+            **{**self.production_values(), "geochat_remote_url": "https://gpu-worker.example.test/"},
+        )
+        self.assertEqual(valid.geochat_remote_url, "https://gpu-worker.example.test")
+
     def test_startup_configuration_errors_do_not_echo_secrets(self) -> None:
         fake_secret = "test-only-secret-sentinel-0123456789"
         with patch.dict(

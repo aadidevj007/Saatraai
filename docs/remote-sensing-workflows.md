@@ -6,6 +6,8 @@ Both initial single-image capabilities use [GeoChat](https://github.com/mbzuai-o
 
 The implementation deliberately does not download weights at request time. Obtain the compatible [GeoChat-7B checkpoint](https://huggingface.co/MBZUAI/geochat-7B), set `GEOCHAT_MODEL_PATH`, and install the upstream GeoChat runtime. `GEOCHAT_MODEL_BASE`, `GEOCHAT_DEVICE` (default `cuda`), and `GEOCHAT_MAX_NEW_TOKENS` are configurable. Production deployment should follow the upstream CUDA 11.8+, PyTorch, and FlashAttention requirements and size GPU memory for the full 7B model plus imagery workload. A CPU device may be used for smoke tests if the upstream runtime and host memory permit it, but the 7B model is not a practical production CPU serving configuration.
 
+For CPU-only API hosts (such as Render free tier), run `uvicorn ml.geochat_worker:app` on a separate GPU host with `GEOCHAT_MODEL_PATH` and an optional shared `GEOCHAT_REMOTE_TOKEN`, then configure `GEOCHAT_REMOTE_URL` (HTTPS) and `GEOCHAT_REMOTE_TOKEN` on the API service so all deployed users execute real `MBZUAI/geochat-7B` inference remotely.
+
 ## Preprocessing and outputs
 
 GeoTIFF inputs are deterministically converted to RGB with a per-band 2nd-to-98th percentile stretch. One-band imagery is replicated to RGB; two-band imagery repeats the second channel. PNG and JPEG inputs are converted to RGB. This is display-oriented VLM preprocessing, not radiometric analysis; it should not be used for quantitative remote-sensing measurement.

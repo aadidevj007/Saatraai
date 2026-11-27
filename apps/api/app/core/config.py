@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     geochat_model_base: str | None = None
     geochat_device: str = "cuda"
     geochat_max_new_tokens: int = 300
+    geochat_remote_url: str | None = None
+    geochat_remote_token: str | None = None
+    geochat_remote_timeout_seconds: float = 120.0
     firebase_project_id: str | None = None
     firebase_service_account_json: str | None = None
     firebase_service_account_path: str | None = None
@@ -60,6 +63,29 @@ class Settings(BaseSettings):
             normalized = normalized.replace("postgresql://", "postgresql+psycopg://", 1)
         return normalized
 
+    @field_validator("geochat_remote_url", mode="before")
+    @classmethod
+    def normalize_geochat_remote_url(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = str(value).strip().rstrip("/")
+        return normalized or None
+
+    @field_validator("geochat_remote_token", mode="before")
+    @classmethod
+    def normalize_geochat_remote_token(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = str(value).strip()
+        return normalized or None
+
+    @field_validator("geochat_remote_timeout_seconds")
+    @classmethod
+    def validate_geochat_remote_timeout(cls, value: float) -> float:
+        if value <= 0 or value > 600:
+            raise ValueError("GEOCHAT_REMOTE_TIMEOUT_SECONDS must be between 0 and 600")
+        return value
+
     @field_validator("jwt_secret_key")
     @classmethod
     def normalize_jwt_secret(cls, value: str) -> str:
@@ -77,6 +103,31 @@ class Settings(BaseSettings):
                 "postgresql+psycopg://saatraai:saatraai_dev@localhost:5432/saatraai"
             ):
                 raise ValueError("DATABASE_URL must be explicitly configured in production")
+
+        if self.geochat_remote_url is not None:
+            parsed_remote = urlsplit(self.geochat_remote_url)
+            if (
+                parsed_remote.scheme not in {"http", "https"}
+                or not parsed_remote.netloc
+                or parsed_remote.username is not None
+                or parsed_remote.password is not None
+                or parsed_remote.query
+                or parsed_remote.fragment
+            ):
+                raise ValueError("GEOCHAT_REMOTE_URL must be a valid HTTP(S) URL without credentials or query strings")
+            if self.environment == "production":
+                try:
+                    remote_loopback = ip_address(parsed_remote.hostname or "").is_loopback
+                except ValueError:
+                    remote_loopback = False
+                remote_host = (parsed_remote.hostname or "").lower()
+                if (
+                    parsed_remote.scheme != "https"
+                    or remote_loopback
+                    or remote_host == "localhost"
+                    or remote_host.endswith(".localhost")
+                ):
+                    raise ValueError("GEOCHAT_REMOTE_URL must use HTTPS and cannot target localhost in production")
 
         origins = self.allowed_cors_origins
         if self.environment == "production" and not origins:

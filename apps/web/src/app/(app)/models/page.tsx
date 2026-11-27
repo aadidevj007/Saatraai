@@ -125,9 +125,10 @@ export default function ModelsPage() {
                   {(!integrated || runtimeUnavailable || runtimeDegraded) && (
                     <p className="mt-3.5 rounded-xl border border-warning/25 bg-warning/5 px-3.5 py-2.5 text-[12px] leading-relaxed text-ink-dim">
                       {runtimeUnavailable
-                        ? 'To enable GeoChat VQA & grounding, place the MBZUAI/geochat-7B checkpoint on a GPU API host, install the upstream GeoChat runtime, and set GEOCHAT_MODEL_PATH.'
+                        ? 'To enable GeoChat VQA & grounding, either set GEOCHAT_MODEL_PATH on a GPU API host or point GEOCHAT_REMOTE_URL from the API service to a running GeoChat GPU worker.'
                         : runtimeDegraded
-                          ? 'Model weights directory is present, but the upstream GeoChat/PyTorch runtime is not installed in this API environment.'
+                          ? geochatDetail ??
+                            'GeoChat runtime or remote GPU worker is currently unreachable in this API environment.'
                           : 'This task slot is registered in the API contract as a placeholder and safely returns INSUFFICIENT / NOT_IMPLEMENTED instead of synthetic output.'}
                     </p>
                   )}

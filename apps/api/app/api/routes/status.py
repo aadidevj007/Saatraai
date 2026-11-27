@@ -91,7 +91,39 @@ def system_status(
         )
     )
 
-    if not settings.geochat_model_path:
+    local_geochat_path = Path(settings.geochat_model_path) if settings.geochat_model_path else None
+    local_geochat_ready = (
+        local_geochat_path is not None
+        and local_geochat_path.exists()
+        and importlib.util.find_spec("geochat") is not None
+        and importlib.util.find_spec("torch") is not None
+    )
+
+    if local_geochat_ready:
+        services.append(
+            ServiceStatusResponse(
+                id="model_geochat",
+                label="GeoChat (VQA / grounding)",
+                state="online",
+                detail="Model weights and GeoChat runtime are ready",
+            )
+        )
+    elif settings.geochat_remote_url:
+        from app.services.geochat_remote import check_remote_geochat_health
+
+        remote_ok, remote_detail = check_remote_geochat_health(
+            settings.geochat_remote_url,
+            token=settings.geochat_remote_token,
+        )
+        services.append(
+            ServiceStatusResponse(
+                id="model_geochat",
+                label="GeoChat (VQA / grounding)",
+                state="online" if remote_ok else "degraded",
+                detail=remote_detail,
+            )
+        )
+    elif not settings.geochat_model_path:
         services.append(
             ServiceStatusResponse(
                 id="model_geochat",
@@ -100,7 +132,7 @@ def system_status(
                 detail="GEOCHAT_MODEL_PATH is unset — VQA and grounding tools are unavailable",
             )
         )
-    elif not Path(settings.geochat_model_path).exists():
+    elif not local_geochat_path.exists():
         services.append(
             ServiceStatusResponse(
                 id="model_geochat",
@@ -109,22 +141,13 @@ def system_status(
                 detail="Configured GEOCHAT_MODEL_PATH was not found on this host — VQA and grounding tools are unavailable",
             )
         )
-    elif importlib.util.find_spec("geochat") is None or importlib.util.find_spec("torch") is None:
+    else:
         services.append(
             ServiceStatusResponse(
                 id="model_geochat",
                 label="GeoChat (VQA / grounding)",
                 state="degraded",
                 detail="Model weights found, but upstream GeoChat/PyTorch runtime is not installed",
-            )
-        )
-    else:
-        services.append(
-            ServiceStatusResponse(
-                id="model_geochat",
-                label="GeoChat (VQA / grounding)",
-                state="online",
-                detail="Model weights and GeoChat runtime are ready",
             )
         )
 

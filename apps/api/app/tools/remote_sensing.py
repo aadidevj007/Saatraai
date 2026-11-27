@@ -41,14 +41,10 @@ class GeoChatVqaAdapter(ModelAdapter):
     tool_version = "geochat-7B"
 
     def execute(self, parameters: VqaParameters, context: ToolExecutionContext | None = None):
+        from app.services.geochat_remote import has_geochat_backend, run_geochat_vqa
+
         settings = get_settings()
-        runner = GeoChatVqaRunner(
-            settings.geochat_model_path,
-            settings.geochat_model_base,
-            settings.geochat_device,
-            settings.geochat_max_new_tokens,
-        )
-        if not settings.geochat_model_path or not Path(settings.geochat_model_path).exists():
+        if not has_geochat_backend(settings):
             return NotImplementedToolOutput(
                 tool_name=self.tool_name,
                 tool_version=self.tool_version,
@@ -57,7 +53,7 @@ class GeoChatVqaAdapter(ModelAdapter):
         if context is None or len(context.input_paths) != 1:
             raise ValueError("GeoChat VQA requires one resolved input image")
         try:
-            answer = runner.answer(context.input_paths[0], parameters.question)
+            answer = run_geochat_vqa(settings, context.input_paths[0], parameters.question)
         except ModelUnavailableError as error:
             return NotImplementedToolOutput(
                 tool_name=self.tool_name,
@@ -72,14 +68,10 @@ class GeoChatGroundingAdapter(ModelAdapter):
     tool_version = "geochat-7B"
 
     def execute(self, parameters: GroundingParameters, context: ToolExecutionContext | None = None):
+        from app.services.geochat_remote import has_geochat_backend, run_geochat_grounding
+
         settings = get_settings()
-        runner = GeoChatGroundingRunner(
-            settings.geochat_model_path,
-            settings.geochat_model_base,
-            settings.geochat_device,
-            settings.geochat_max_new_tokens,
-        )
-        if not settings.geochat_model_path or not Path(settings.geochat_model_path).exists():
+        if not has_geochat_backend(settings):
             return NotImplementedToolOutput(
                 tool_name=self.tool_name,
                 tool_version=self.tool_version,
@@ -88,7 +80,7 @@ class GeoChatGroundingAdapter(ModelAdapter):
         if context is None or len(context.input_paths) != 1:
             raise ValueError("GeoChat grounding requires one resolved input image")
         try:
-            boxes = runner.ground(context.input_paths[0], parameters.target)
+            boxes = run_geochat_grounding(settings, context.input_paths[0], parameters.target)
         except ModelUnavailableError as error:
             return NotImplementedToolOutput(
                 tool_name=self.tool_name,

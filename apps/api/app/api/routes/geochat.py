@@ -29,10 +29,11 @@ async def _stage_upload(upload: UploadFile) -> Path:
 
 
 def _require_model() -> None:
-    if not get_settings().geochat_model_path:
+    settings = get_settings()
+    if not settings.geochat_model_path and not settings.geochat_remote_url:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="GEOCHAT_MODEL_PATH is not configured; GeoChat inference is unavailable",
+            detail="Neither GEOCHAT_MODEL_PATH nor GEOCHAT_REMOTE_URL is configured; GeoChat inference is unavailable",
         )
 
 
@@ -44,21 +45,17 @@ async def geochat_vqa(
 ) -> GeoChatVqaResponse:
     del current_user
     _require_model()
+    from app.services.geochat_remote import run_geochat_vqa
     from ml.common import ModelUnavailableError
-    from ml.vqa import GeoChatVqaRunner, normalize_answer
+    from ml.vqa import normalize_answer
 
     image_path = await _stage_upload(image)
     try:
-        settings = get_settings()
-        runner = GeoChatVqaRunner(
-            settings.geochat_model_path,
-            settings.geochat_model_base,
-            settings.geochat_device,
-            settings.geochat_max_new_tokens,
-        )
-        answer = runner.answer(image_path, question.strip())
+        answer = run_geochat_vqa(get_settings(), image_path, question.strip())
     except ModelUnavailableError as error:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
     finally:
         image_path.unlink(missing_ok=True)
     return GeoChatVqaResponse(model="MBZUAI/geochat-7B", version="geochat-7B", answer=normalize_answer(answer))
@@ -72,21 +69,16 @@ async def geochat_grounding(
 ) -> GeoChatGroundingResponse:
     del current_user
     _require_model()
+    from app.services.geochat_remote import run_geochat_grounding
     from ml.common import ModelUnavailableError
-    from ml.grounding import GeoChatGroundingRunner
 
     image_path = await _stage_upload(image)
     try:
-        settings = get_settings()
-        runner = GeoChatGroundingRunner(
-            settings.geochat_model_path,
-            settings.geochat_model_base,
-            settings.geochat_device,
-            settings.geochat_max_new_tokens,
-        )
-        boxes = runner.ground(image_path, target.strip())
+        boxes = run_geochat_grounding(get_settings(), image_path, target.strip())
     except ModelUnavailableError as error:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
     finally:
         image_path.unlink(missing_ok=True)
     return GeoChatGroundingResponse(model="MBZUAI/geochat-7B", version="geochat-7B", boxes=boxes)
