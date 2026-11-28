@@ -107,6 +107,19 @@ export interface AutonomousInvestigationResponse {
   };
 }
 
+export interface FollowUpAskResponse {
+  query_id: string;
+  evidence_id: string;
+  model: string;
+  answer: string;
+}
+
+export interface ImageAnalysisResponse {
+  evidence_id: string;
+  model: string;
+  answer: string;
+}
+
 export interface Investigation {
   id: string;
   project_id: string;

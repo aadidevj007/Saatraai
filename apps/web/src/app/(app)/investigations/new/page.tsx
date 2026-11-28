@@ -181,12 +181,23 @@ export default function NewInvestigationPage() {
         createdAt: new Date().toISOString(),
       });
 
-      // Automatically ingest & analyze optional satellite scenes if dropped alongside corpus.
-      if (attachedScenes.length > 0 && attachedScenes.length <= 2) {
-        setProgressLabel('Ingesting attached imagery & running analysis…');
-        const ingested = await imageApi.upload(inv.id, attachedScenes);
-        const ids = ingested.images.map((img) => img.id);
-        await executionApi.execute(inv.id, cfg?.question ?? inv.title, ids, {});
+      // Automatically analyze attached photos/screenshots OR GeoTIFF rasters without manual selection.
+      if (attachedScenes.length > 0) {
+        const tiffs = attachedScenes.filter((f) => /\.tiff?$/i.test(f.name)).slice(0, 2);
+        const photos = attachedScenes.filter((f) => !/\.tiff?$/i.test(f.name));
+
+        if (photos.length > 0) {
+          setProgressLabel('Analyzing attached photo(s) with AI Vision…');
+          for (const photo of photos) {
+            await investigationApi.analyzeImage(inv.id, photo, cfg?.question ?? inv.title);
+          }
+        }
+        if (tiffs.length > 0) {
+          setProgressLabel('Ingesting GeoTIFF scene(s) & running analysis…');
+          const ingested = await imageApi.upload(inv.id, tiffs);
+          const ids = ingested.images.map((img) => img.id);
+          await executionApi.execute(inv.id, cfg?.question ?? inv.title, ids, {});
+        }
       }
 
       toast({
@@ -272,16 +283,16 @@ export default function NewInvestigationPage() {
               <Upload className="h-4 w-4" />
               <span>
                 {attachedScenes.length > 0
-                  ? `${attachedScenes.length} GeoTIFF scene(s) queued`
-                  : 'Optional: attach 1–2 GeoTIFF scenes'}
+                  ? `${attachedScenes.length} image(s) ready for AI`
+                  : 'Optional: attach photos or GeoTIFFs'}
               </span>
               <input
                 type="file"
-                accept=".tif,.tiff"
+                accept=".png,.jpg,.jpeg,.webp,.tif,.tiff,image/*"
                 multiple
                 className="sr-only"
                 onChange={(e) => {
-                  const files = Array.from(e.target.files ?? []).slice(0, 2);
+                  const files = Array.from(e.target.files ?? []).slice(0, 4);
                   setAttachedScenes(files);
                   e.target.value = '';
                 }}
@@ -326,7 +337,7 @@ export default function NewInvestigationPage() {
               onClick={launchAutonomous}
               icon={<Play className="h-4 w-4" />}
             >
-              Analyze corpus autonomously
+              Start AI investigation
             </Button>
           </div>
         </Panel>

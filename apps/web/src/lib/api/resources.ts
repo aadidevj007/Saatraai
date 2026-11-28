@@ -4,7 +4,9 @@ import { apiBase, apiRequest, API_BASE_CONFIGURED } from './client';
 import type {
   AutonomousInvestigationResponse,
   ExecutionTrace,
+  FollowUpAskResponse,
   HealthResponse,
+  ImageAnalysisResponse,
   ImageIngestionResponse,
   IngestedImage,
   Investigation,
@@ -61,6 +63,24 @@ export const investigationApi = {
       method: 'POST',
       body: { corpus },
     }),
+  ask: (investigationId: string, question: string) =>
+    apiRequest<FollowUpAskResponse>(`/investigations/${investigationId}/ask`, {
+      method: 'POST',
+      body: { question },
+    }),
+  analyzeImage: async (
+    investigationId: string,
+    file: File,
+    question?: string,
+  ): Promise<ImageAnalysisResponse> => {
+    const form = new FormData();
+    form.append('image', file);
+    if (question && question.trim()) form.append('question', question.trim());
+    return apiRequest<ImageAnalysisResponse>(`/investigations/${investigationId}/analyze-image`, {
+      method: 'POST',
+      body: form,
+    });
+  },
   /** Persist region / time range / sources on an existing investigation. */
   updateConfiguration: (id: string, configuration: InvestigationConfiguration) =>
     apiRequest<Investigation>(`/investigations/${id}/configuration`, {

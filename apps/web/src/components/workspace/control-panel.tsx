@@ -16,7 +16,7 @@ import {
   Upload,
 } from 'lucide-react';
 
-import { Badge, Button, EmptyState, Input, Modal, NotConfiguredState } from '@/components/ui';
+import { Badge, Button, Input, Modal } from '@/components/ui';
 import { errorMessage, executionApi, imageApi, investigationApi } from '@/lib/api';
 import type { ExecutionTrace, IngestedImage } from '@/lib/api/types';
 import type { WorkspaceModel } from '@/lib/hooks/use-workspace-model';
@@ -40,28 +40,39 @@ export function buildPipelineStages(
 ): PipelineStage[] {
   const hasQueries = model.queries.length > 0;
   const hasExecutions = model.executions.length > 0;
+  const visionChecks = model.evidence.filter((e) => e.provenance?.source_kind === 'vision_qa').length;
   const succeeded = model.executions.filter((e) => String(e.status) === 'succeeded').length;
+  const totalVisual = model.images.length + visionChecks;
 
   return [
-    { id: 'query', label: 'Question asked', state: hasQueries ? 'done' : 'waiting', detail: hasQueries ? `${model.queries.length} saved` : 'Add a question' },
-    { id: 'region', label: 'Area selected', state: config?.region ? 'done' : 'waiting', detail: config?.region?.name ?? 'Pick a region' },
-    { id: 'temporal', label: 'Time window', state: config ? 'done' : 'waiting', detail: config ? `${config.timeRange.start} → ${config.timeRange.end}` : 'Choose dates' },
+    { id: 'query', label: 'Topic understood', state: hasQueries ? 'done' : 'waiting', detail: hasQueries ? 'Question & corpus saved' : 'Add a question' },
+    { id: 'region', label: 'Locations mapped', state: config?.region ? 'done' : 'waiting', detail: config?.region?.name ?? 'Detecting places' },
+    { id: 'temporal', label: 'Timeframe detected', state: config ? 'done' : 'waiting', detail: config ? `${config.timeRange.start} → ${config.timeRange.end}` : 'Detecting dates' },
     {
       id: 'hypothesis',
-      label: 'Working ideas',
-      state: model.hypotheses.length > 0 ? 'done' : model.demo ? 'active' : 'unavailable',
-      detail: model.hypotheses.length > 0 ? `${model.hypotheses.length} listed` : 'Planner not connected',
+      label: 'Key takeaways',
+      state: model.hypotheses.length > 0 ? 'done' : model.demo ? 'active' : 'waiting',
+      detail: model.hypotheses.length > 0 ? `${model.hypotheses.length} identified` : 'Ready after extraction',
     },
-    { id: 'acquisition', label: 'Satellite imagery', state: model.images.length > 0 ? 'done' : 'waiting', detail: model.images.length > 0 ? `${model.images.length} uploaded` : 'Upload 1 or 2 scenes' },
     {
-      id: 'analysis',
-      label: 'Analysis runs',
-      state: hasExecutions ? (succeeded > 0 ? 'done' : 'unavailable') : 'waiting',
-      detail: hasExecutions ? `${succeeded}/${model.executions.length} completed` : 'Ready to run',
+      id: 'acquisition',
+      label: 'Image analysis (optional)',
+      state: totalVisual > 0 ? 'done' : 'waiting',
+      detail: totalVisual > 0 ? `${totalVisual} image(s) checked` : 'Upload any photo or GeoTIFF',
     },
-    { id: 'contradiction', label: 'Conflict check', state: model.evidence.length > 0 ? 'done' : 'waiting', detail: model.evidence.length > 0 ? `${model.evidence.filter((e) => e.polarity === 'contradicting').length} opposing` : 'Waiting for evidence' },
-    { id: 'confidence', label: 'Confidence', state: model.confidence ? 'done' : 'waiting', detail: model.confidence ? `${Math.round(model.confidence.overall * 100)}% overall` : 'Waiting for evidence' },
-    { id: 'conclusion', label: 'Summary', state: model.conclusions.length > 0 ? 'done' : 'waiting', detail: model.conclusions.length > 0 ? `${model.conclusions.length} saved` : 'Pending' },
+    ...(hasExecutions
+      ? [
+          {
+            id: 'analysis',
+            label: 'Geo-model runs',
+            state: (succeeded > 0 ? 'done' : 'unavailable') as StageState,
+            detail: `${succeeded}/${model.executions.length} completed`,
+          },
+        ]
+      : []),
+    { id: 'contradiction', label: 'Conflict check', state: model.evidence.length > 0 ? 'done' : 'waiting', detail: model.evidence.length > 0 ? `${model.evidence.filter((e) => e.polarity === 'contradicting').length} conflicts found` : 'Waiting for findings' },
+    { id: 'confidence', label: 'Reliability score', state: model.confidence ? 'done' : 'waiting', detail: model.confidence ? `${Math.round(model.confidence.overall * 100)}% overall` : 'Waiting for findings' },
+    { id: 'conclusion', label: 'Final summary', state: model.conclusions.length > 0 ? 'done' : 'waiting', detail: model.conclusions.length > 0 ? 'Ready to review' : 'Pending' },
   ];
 }
 
@@ -111,41 +122,67 @@ export function ControlPanel({
 
   const submitFollowUp = async () => {
     const text = followUp.trim();
-    if (!text) return;
+    if (text.length < 2) return;
     setSubmitting(true);
     try {
-      await investigationApi.addQuery(investigationId, text);
+      const res = await investigationApi.ask(investigationId, text);
       setFollowUp('');
       invalidate();
-      toast({ variant: 'success', title: 'Query recorded', description: 'Stored server-side on your investigation.' });
+      toast({
+        variant: 'success',
+        title: 'AI answered your question',
+        description: res.answer.length > 120 ? `${res.answer.slice(0, 117)}…` : res.answer,
+        durationMs: 7000,
+      });
     } catch (error) {
-      toast({ variant: 'error', title: 'Could not record query', description: errorMessage(error) });
+      toast({ variant: 'error', title: 'Could not get an answer', description: errorMessage(error) });
     } finally {
       setSubmitting(false);
     }
   };
 
   const uploadFiles = async (files: File[]) => {
-    if (files.length === 0 || files.length > 2) {
-      toast({ variant: 'warning', title: 'Select 1 or 2 scenes', description: 'The orchestrator accepts a single scene or a validated pair.' });
-      return;
-    }
+    if (files.length === 0) return;
+    const tiffs = files.filter((f) => /\.tiff?$/i.test(f.name));
+    const photos = files.filter((f) => !/\.tiff?$/i.test(f.name));
+
     try {
-      const response = await imageApi.upload(investigationId, files);
+      for (const photo of photos) {
+        const res = await investigationApi.analyzeImage(investigationId, photo, question);
+        toast({
+          variant: 'success',
+          title: `AI checked ${photo.name}`,
+          description: res.answer.length > 110 ? `${res.answer.slice(0, 107)}…` : res.answer,
+          durationMs: 7000,
+        });
+      }
+
+      if (tiffs.length > 0) {
+        const batch = tiffs.slice(0, 2);
+        const response = await imageApi.upload(investigationId, batch);
+        toast({
+          variant: 'success',
+          title: `${response.images.length} GeoTIFF uploaded`,
+          description: 'Running AI visual check automatically…',
+        });
+        await executionApi.execute(
+          investigationId,
+          question,
+          response.images.map((img) => img.id),
+          {},
+        );
+      }
+
       invalidate();
-      toast({
-        variant: 'success',
-        title: `${response.images.length} scene(s) ingested`,
-        description: `Input configuration: ${response.input_configuration}`,
-      });
+      onRunStarted();
       push({
         kind: 'info',
-        title: 'Scenes ingested',
-        description: `${response.images.length} image(s) added to the investigation`,
+        title: 'Images analyzed',
+        description: `${files.length} image(s) checked by AI`,
         href: `/investigations/${investigationId}`,
       });
     } catch (error) {
-      toast({ variant: 'error', title: 'Upload failed', description: errorMessage(error) });
+      toast({ variant: 'error', title: 'Image check failed', description: errorMessage(error) });
     }
   };
 
@@ -185,15 +222,14 @@ export function ControlPanel({
       {/* question */}
       <div className="shrink-0 border-b border-line p-3.5">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Research question</span>
-          {model.demo ? <Badge tone="demo">DEMO DATA</Badge> : <Badge tone="primary">REAL</Badge>}
+          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Your question</span>
+          {model.demo ? <Badge tone="demo">Sample data</Badge> : <Badge tone="primary">Live AI</Badge>}
         </div>
         <p className="mt-1.5 text-[13px] leading-relaxed text-ink">{question}</p>
         {config && (
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[9.5px] uppercase tracking-wider text-ink-faint">
             <span>{config.region.name}</span>
             <span>{config.timeRange.start} → {config.timeRange.end}</span>
-            <span>{config.strictness} · {config.depth}</span>
           </div>
         )}
         {model.demo && model.demoNote && (
@@ -208,11 +244,11 @@ export function ControlPanel({
             value={followUp}
             onChange={(e) => setFollowUp(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submitFollowUp()}
-            placeholder="Record a follow-up question…"
+            placeholder="Ask AI a follow-up question…"
             aria-label="Follow-up question"
           />
           <Button size="sm" variant="secondary" loading={submitting} onClick={submitFollowUp} icon={<Send className="h-3.5 w-3.5" />}>
-            Add
+            Ask AI
           </Button>
         </div>
       </div>
@@ -222,7 +258,7 @@ export function ControlPanel({
         <label className="flex-1">
           <input
             type="file"
-            accept=".tif,.tiff,.png,.jpg,.jpeg,GeoTIFF"
+            accept=".tif,.tiff,.png,.jpg,.jpeg,.webp,image/*"
             multiple
             className="sr-only"
             onChange={(e) => {
@@ -232,19 +268,20 @@ export function ControlPanel({
             }}
           />
           <span className="flex h-8 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-line-strong text-[12px] text-ink-dim transition-colors hover:border-primary/50 hover:text-primary">
-            <Upload className="h-3.5 w-3.5" /> Attach imagery
+            <Upload className="h-3.5 w-3.5" /> Add image to check
           </span>
         </label>
-        <Button
-          size="sm"
-          variant="primary"
-          className="flex-1"
-          icon={<Play className="h-3.5 w-3.5" />}
-          onClick={() => setRunOpen(true)}
-          disabled={model.images.length === 0}
-        >
-          Run analysis
-        </Button>
+        {model.images.length > 0 && (
+          <Button
+            size="sm"
+            variant="primary"
+            className="flex-1"
+            icon={<Play className="h-3.5 w-3.5" />}
+            onClick={() => setRunOpen(true)}
+          >
+            Re-run image
+          </Button>
+        )}
       </div>
 
       {/* pipeline */}
@@ -273,9 +310,9 @@ export function ControlPanel({
       {config?.evidencePlan && config.evidencePlan.length > 0 && (
         <details className="shrink-0 border-b border-line px-3.5 py-2.5">
           <summary className="cursor-pointer text-[11px] font-semibold tracking-wide text-ink">
-            Suggested evidence protocol <span className="font-mono text-secondary">· {config.evidencePlan.length} checks</span>
+            Verification checklist <span className="font-mono text-secondary">· {config.evidencePlan.length} steps</span>
           </summary>
-          <p className="mt-2 text-[10.5px] leading-relaxed text-ink-faint">Planning guidance only. No imagery was acquired and no result is implied.</p>
+          <p className="mt-2 text-[10.5px] leading-relaxed text-ink-faint">Helpful guide for checking satellite or field evidence.</p>
           <ol className="mt-2 space-y-2">
             {config.evidencePlan.map((item, index) => (
               <li key={`${index}-${item}`} className="flex gap-2 text-[10.5px] leading-relaxed text-ink-dim">
@@ -287,20 +324,10 @@ export function ControlPanel({
         </details>
       )}
 
-      {/* executions */}
-      <div className="min-h-0 flex-1 overflow-y-auto p-3.5">
-        <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Execution traces</div>
-        {model.executions.length === 0 ? (
-          model.unavailable.has('executions') ? (
-            <NotConfiguredState title="Execution list unavailable" description="This backend does not expose execution traces." />
-          ) : (
-            <EmptyState
-              title="No executions yet"
-              description="Attach one or two scenes and run an analysis — every run records a full trace."
-              action={model.images.length > 0 ? { label: 'Run analysis', onClick: () => setRunOpen(true) } : undefined}
-            />
-          )
-        ) : (
+      {/* activity log */}
+      {model.executions.length > 0 && (
+        <div className="min-h-0 flex-1 overflow-y-auto p-3.5">
+          <div className="mb-2 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">Image analysis log</div>
           <ul className="space-y-2">
             {model.executions.map((trace) => (
               <TraceCard
@@ -311,8 +338,8 @@ export function ControlPanel({
               />
             ))}
           </ul>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* run modal */}
       <Modal

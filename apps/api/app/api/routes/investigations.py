@@ -1,17 +1,23 @@
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies import get_current_user
 from app.api.errors import ERROR_RESPONSES
+from app.core.config import get_settings
 from app.db.session import get_db
 from app.models.identity import User
 from app.models.investigation import Investigation, InvestigationStatus, Query as InvestigationQuery
 from app.schemas.projects import (
     AutonomousInvestigationRequest,
     AutonomousInvestigationResponse,
+    FollowUpAskRequest,
+    FollowUpAskResponse,
+    ImageAnalysisResponse,
     InvestigationConfigurationUpdate,
     InvestigationCreateRequest,
     InvestigationPageResponse,
@@ -21,7 +27,12 @@ from app.schemas.projects import (
     InvestigationResponse,
 )
 from app.services import investigations as investigation_service
-from app.services.corpus_ie import create_or_extract_autonomous_investigation
+from app.services.corpus_ie import (
+    analyze_investigation_image,
+    answer_follow_up_question,
+    create_or_extract_autonomous_investigation,
+)
+from ml.common import ModelUnavailableError
 
 router = APIRouter()
 
@@ -118,6 +129,73 @@ def extract_for_investigation(
         investigation=serialize_investigation(investigation),
         extraction=extraction,
     )
+
+
+@router.post(
+    "/investigations/{investigation_id}/ask",
+    response_model=FollowUpAskResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Ask AI a follow-up question grounded in an owned investigation",
+    responses=ERROR_RESPONSES,
+)
+def ask_investigation(
+    investigation_id: UUID,
+    payload: FollowUpAskRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> FollowUpAskResponse:
+    result = answer_follow_up_question(db, current_user, investigation_id, payload.question)
+    return FollowUpAskResponse(**result)
+
+
+@router.post(
+    "/investigations/{investigation_id}/analyze-image",
+    response_model=ImageAnalysisResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Analyze any photo, screenshot, or GeoTIFF with AI and save as an investigation finding",
+    responses=ERROR_RESPONSES,
+)
+async def analyze_image_for_investigation(
+    investigation_id: UUID,
+    image: Annotated[UploadFile, File(description="PNG, JPEG, WebP, or GeoTIFF image")],
+    question: Annotated[str, Form(max_length=2000)] = "Describe what is visible in this image and note any hazards or changes.",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ImageAnalysisResponse:
+    settings = get_settings()
+    content = await image.read(settings.max_upload_bytes + 1)
+    if len(content) > settings.max_upload_bytes:
+        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Image exceeds upload limit")
+    if not content:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Uploaded image is empty")
+
+    suffix = Path(image.filename or "scene.png").suffix.lower()
+    if suffix not in {".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff"}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Supported image types are PNG, JPEG, WebP, and GeoTIFF (.tif/.tiff)",
+        )
+
+    temp = NamedTemporaryFile(prefix="saatraai-vision-", suffix=suffix, delete=False)
+    temp.write(content)
+    temp.close()
+    staged_path = Path(temp.name)
+    try:
+        result = analyze_investigation_image(
+            db,
+            current_user,
+            investigation_id,
+            staged_path,
+            question,
+            Path(image.filename or "image").name,
+        )
+        return ImageAnalysisResponse(**result)
+    except ModelUnavailableError as error:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(error)) from error
+    except ValueError as error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(error)) from error
+    finally:
+        staged_path.unlink(missing_ok=True)
 
 
 @router.get(

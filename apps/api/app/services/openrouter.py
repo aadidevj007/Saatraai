@@ -103,6 +103,44 @@ def _post_chat(api_key: str, body: dict[str, Any], timeout: float) -> dict[str, 
     return data
 
 
+def _candidate_models(model: str) -> list[str]:
+    clean = model.strip()
+    candidates = [clean]
+    if clean == "openrouter/free":
+        candidates.append("nvidia/nemotron-3.5-super-vl:free")
+    return candidates
+
+
+def openrouter_chat_text(
+    api_key: str,
+    model: str,
+    system_instruction: str,
+    user_prompt: str,
+    *,
+    timeout: float = 45.0,
+) -> str:
+    """Request a plain-text completion from OpenRouter with automatic free-model retry."""
+    last_error: Exception | None = None
+    for candidate_model in _candidate_models(model):
+        body: dict[str, Any] = {
+            "model": candidate_model,
+            "temperature": 0.2,
+            "messages": [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": user_prompt},
+            ],
+        }
+        try:
+            payload = _post_chat(api_key, body, timeout)
+            return _extract_message_text(payload)
+        except (ModelUnavailableError, ValueError) as error:
+            last_error = error
+
+    if isinstance(last_error, ModelUnavailableError):
+        raise last_error
+    raise ModelUnavailableError("OpenRouter API failed to return a text answer") from last_error
+
+
 def openrouter_generate_json(
     api_key: str,
     model: str,
@@ -118,12 +156,9 @@ def openrouter_generate_json(
         "(no markdown prose outside JSON):\n"
         f"{json.dumps(response_schema)}"
     )
-    models_to_try = [model.strip()]
-    if model.strip() == "openrouter/free":
-        models_to_try.append("nvidia/nemotron-3.5-super-vl:free")
 
     last_error: Exception | None = None
-    for candidate_model in models_to_try:
+    for candidate_model in _candidate_models(model):
         base_body: dict[str, Any] = {
             "model": candidate_model,
             "temperature": 0.1,
@@ -165,29 +200,35 @@ def openrouter_analyze_image(
         prepared = prepare_rgb_image(image_path, workspace)
         encoded = base64.b64encode(prepared.path.read_bytes()).decode("ascii")
 
-    body: dict[str, Any] = {
-        "model": model.strip(),
-        "temperature": 0.1,
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are a cautious remote-sensing analyst. Describe only clearly visible features "
-                    "in the provided Earth-observation or aerial scene, explicitly note ambiguity or "
-                    "missing radiometric/calibration context, and avoid overclaiming causation."
-                ),
-            },
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": question.strip()},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded}"}},
-                ],
-            },
-        ],
-    }
-    payload = _post_chat(api_key, body, timeout)
-    try:
-        return _extract_message_text(payload)
-    except ValueError as error:
-        raise ModelUnavailableError("OpenRouter vision returned an unreadable response") from error
+    last_error: Exception | None = None
+    for candidate_model in _candidate_models(model):
+        body: dict[str, Any] = {
+            "model": candidate_model,
+            "temperature": 0.1,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful Earth-observation analyst writing for everyday users. "
+                        "Describe clearly what is visible in the image in plain, simple language, note any uncertainty "
+                        "or things you cannot confirm from a single picture alone, and never invent measurements."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": question.strip()},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded}"}},
+                    ],
+                },
+            ],
+        }
+        try:
+            payload = _post_chat(api_key, body, timeout)
+            return _extract_message_text(payload)
+        except (ModelUnavailableError, ValueError) as error:
+            last_error = error
+
+    if isinstance(last_error, ModelUnavailableError):
+        raise last_error
+    raise ModelUnavailableError("OpenRouter vision returned an unreadable response") from last_error

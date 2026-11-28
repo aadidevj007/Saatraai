@@ -22,7 +22,7 @@ import type { ConfidenceReport } from '@/lib/analysis/confidence';
 import type { ConclusionRecord, EvidenceRecord, HypothesisRecord } from '@/lib/api/types';
 import type { MissingEvidenceItem } from '@/lib/hooks/use-workspace-model';
 import { DESIGN_COLORS } from '@/lib/design-tokens';
-import { formatDateTime, shortId } from '@/lib/utils';
+import { formatDateTime } from '@/lib/utils';
 
 const PIE_COLORS = { supporting: DESIGN_COLORS.success, contradicting: DESIGN_COLORS.danger, neutral: DESIGN_COLORS.neutral, insufficient: DESIGN_COLORS.warning };
 
@@ -284,7 +284,6 @@ export function ConclusionPanel({
   return (
     <div className="space-y-4 p-4">
       {conclusions.map((conclusion) => {
-        const hypothesis = conclusion.hypothesis_id;
         return (
           <article key={conclusion.id} className="rounded-xl border border-line bg-card p-4">
             <div className="flex items-center justify-between gap-2">
@@ -305,13 +304,15 @@ export function ConclusionPanel({
               </div>
             )}
             <div className="mt-2 font-mono text-[10px] uppercase tracking-wider text-ink-faint">
-              hypothesis: {hypothesis ? shortId(hypothesis) : 'unlinked'}
-              {confidence && ` · overall ${Math.round(confidence.overall * 100)}%`}
+              {confidence ? `Overall reliability ${Math.round(confidence.overall * 100)}%` : 'Draft summary'}
             </div>
             {conclusion.rationale && (
-              <pre className="mt-2 overflow-x-auto rounded border border-line bg-elevated p-2 font-mono text-[10.5px] text-ink-dim">
-                {JSON.stringify(conclusion.rationale, null, 2)}
-              </pre>
+              <details className="mt-2.5 text-[11px] text-ink-dim">
+                <summary className="cursor-pointer font-medium hover:text-ink">Technical breakdown</summary>
+                <pre className="mt-2 overflow-x-auto rounded border border-line bg-elevated p-2 font-mono text-[10.5px] text-ink-dim">
+                  {JSON.stringify(conclusion.rationale, null, 2)}
+                </pre>
+              </details>
             )}
           </article>
         );

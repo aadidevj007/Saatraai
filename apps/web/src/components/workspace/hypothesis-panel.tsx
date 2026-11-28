@@ -19,6 +19,15 @@ const STATUS_TONE = {
   INSUFFICIENT_EVIDENCE: 'warning',
 } as const;
 
+const STATUS_LABEL: Record<keyof typeof STATUS_TONE, string> = {
+  UNTESTED: 'Pending check',
+  TESTING: 'Under review',
+  SUPPORTED: 'Supported',
+  WEAKENED: 'Mixed evidence',
+  CONTRADICTED: 'Unlikely',
+  INSUFFICIENT_EVIDENCE: 'Needs more evidence',
+};
+
 export function HypothesisPanel({
   hypotheses,
   demo,
@@ -73,20 +82,19 @@ export function HypothesisPanel({
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone={STATUS_TONE[assessment.displayStatus]}>{assessment.displayStatus}</Badge>
-                  {demo && <Badge tone="demo">DEMO DATA</Badge>}
+                  <Badge tone={STATUS_TONE[assessment.displayStatus]}>{STATUS_LABEL[assessment.displayStatus]}</Badge>
+                  {demo && <Badge tone="demo">Sample data</Badge>}
                   {hypothesis.confidence !== null && (
                     <span className="font-mono text-[10.5px] text-ink-faint">
-                      backend confidence {Math.round(hypothesis.confidence * 100)}%
+                      Confidence {Math.round(hypothesis.confidence * 100)}%
                     </span>
                   )}
                 </div>
                 <p className="mt-1.5 text-[13px] leading-relaxed text-ink">{hypothesis.statement}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-3 font-mono text-[10px] uppercase tracking-wider">
                   <span className="text-success">{support} supporting</span>
-                  <span className="text-danger">{contradict} contradicting</span>
-                  <span className="text-warning">{assessment.insufficient.length} insufficient</span>
-                  <span className="text-ink-faint">{hypothesis.evidence.length} total</span>
+                  <span className="text-danger">{contradict} conflicting</span>
+                  <span className="text-ink-faint">{hypothesis.evidence.length} total findings</span>
                 </div>
                 <div className="mt-2">
                   <ProgressBar

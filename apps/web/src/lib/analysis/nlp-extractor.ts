@@ -107,12 +107,13 @@ export function extractTimeRange(query: string): ExtractedTimeRange | null {
     }
   }
 
-  // Pattern 3: Year to Year, e.g. "between 2022 and 2026", "from 2015 to 2025"
-  const yearRangePattern = /\b(?:between|from|during)?\s*(\b20\d{2}|19\d{2}\b)\s*(?:and|to|through|until|–|-)\s*(\b20\d{2}|19\d{2}\b)\b/i;
+  // Pattern 3: Year to Year, e.g. "between 2022 and 2026", "from 2018 to 20"
+  const yearRangePattern = /\b(?:between|from|during)?\s*(20\d{2}|19\d{2})\s*(?:and|to|through|until|–|-)\s*(20\d{2}|19\d{2}|\d{2})\b/i;
   const yearMatch = yearRangePattern.exec(text);
   if (yearMatch) {
     const y1 = parseInt(yearMatch[1], 10);
-    const y2 = parseInt(yearMatch[2], 10);
+    const raw2 = parseInt(yearMatch[2], 10);
+    const y2 = yearMatch[2].length === 2 ? Math.floor(y1 / 100) * 100 + raw2 : raw2;
     const startY = Math.min(y1, y2);
     const endY = Math.max(y1, y2);
     return {

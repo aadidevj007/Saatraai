@@ -4,10 +4,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Map as MapLibreMap } from 'maplibre-gl';
-import { Layers, MapPin, SplitSquareHorizontal } from 'lucide-react';
+import { Layers, SplitSquareHorizontal } from 'lucide-react';
 
 import { BaseMap, upsertGeoJsonLayer } from '@/components/map/base-map';
-import { Badge, Slider } from '@/components/ui';
+import { Slider } from '@/components/ui';
 import type { EvidenceRecord, ExtractedLocation, IngestedImage } from '@/lib/api/types';
 import type { RegionSelection } from '@/lib/investigation-config';
 import type { TimelineEvent } from '@/lib/analysis/timeline';
@@ -339,82 +339,75 @@ export function MapPanel({ region, extractedLocations, images, evidence, selecte
             ))}
           </div>
           <div className="mt-3 border-t border-line pt-2 font-mono text-[9.5px] uppercase tracking-wider text-ink-faint">
-            {drawableImages.length} scene footprint{drawableImages.length === 1 ? '' : 's'} ·{' '}
+            {(extractedLocations ?? []).filter((l) => l.geocoded).length} locations pinned ·{' '}
             {evidence.filter((e) => Boolean(e.image_id || (Array.isArray(e.provenance?.coordinates) && e.provenance.coordinates.length === 2))).length}{' '}
-            evidence markers · {(extractedLocations ?? []).filter((l) => l.geocoded).length} extracted pins
+            findings mapped
+            {drawableImages.length > 0 ? ` · ${drawableImages.length} images` : ''}
           </div>
         </div>
       </div>
 
-      {/* scene comparison strip */}
-      <div className="shrink-0 border-t border-line bg-surface px-4 py-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-dim">
-            <SplitSquareHorizontal className="h-3.5 w-3.5" /> Temporal comparison
-          </span>
-
-          <select
-            value={compareA}
-            onChange={(e) => setCompareAOverride(e.target.value)}
-            className="h-7 rounded-md border border-line bg-inputbg px-2 text-[12px] text-ink"
-            aria-label="Scene A (before)"
-          >
-            <option value="">Scene A (before)…</option>
-            {drawableImages.map(({ img }) => (
-              <option key={img.id} value={img.id}>
-                {img.acquisition_at?.slice(0, 10) ?? 'no date'} · {img.original_filename}
-              </option>
-            ))}
-          </select>
-
-          <span className="font-mono text-[10px] uppercase tracking-wider text-primary">vs</span>
-
-          <select
-            value={compareB}
-            onChange={(e) => setCompareBOverride(e.target.value)}
-            className="h-7 rounded-md border border-line bg-inputbg px-2 text-[12px] text-ink"
-            aria-label="Scene B (after)"
-          >
-            <option value="">Scene B (after)…</option>
-            {drawableImages.map(({ img }) => (
-              <option key={img.id} value={img.id}>
-                {img.acquisition_at?.slice(0, 10) ?? 'no date'} · {img.original_filename}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex min-w-40 items-center gap-2">
-            <span className="font-mono text-[9.5px] uppercase text-ink-faint">B opacity</span>
-            <Slider value={compareOpacity} onChange={setCompareOpacity} ariaLabel="Scene B opacity" />
-            <span className="w-8 font-mono text-[10px] text-ink-dim">{Math.round(compareOpacity * 100)}%</span>
-          </div>
-
-          {aImage && bImage && (
-            <span className="font-mono text-[10px] text-ink-faint">
-              Δ days = {Math.abs(Math.round((Date.parse(bImage.acquisition_at ?? '') - Date.parse(aImage.acquisition_at ?? '')) / 86_400_000)) || '?'}
+      {/* scene comparison strip — only shown when 2+ georeferenced scenes exist */}
+      {drawableImages.length >= 2 && (
+        <div className="shrink-0 border-t border-line bg-surface px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-dim">
+              <SplitSquareHorizontal className="h-3.5 w-3.5" /> Image comparison
             </span>
-          )}
-          <Badge tone="primary">CHANGE: footprints only</Badge>
-        </div>
 
-        {drawableImages.length < 2 ? (
-          <p className="mt-2 flex items-center gap-1.5 text-[11.5px] text-ink-faint">
-            <MapPin className="h-3 w-3" />
-            Scene raster comparison requires at least two ingested scenes — scene rasters are not served by this
-            deployment, so footprints and metadata drive the comparison.
-          </p>
-        ) : (
-          <div className="mt-2 flex flex-wrap gap-4 font-mono text-[10.5px] text-ink-faint">
-            <span className="text-primary">A · {aImage?.original_filename} {aImage ? `(${aImage.width}×${aImage.height} · ${aImage.modality})` : ''}</span>
-            <span className="text-warning">B · {bImage?.original_filename} {bImage ? `(${bImage.width}×${bImage.height} · ${bImage.modality})` : ''}</span>
-            {aImage && (
-              <span>
-                A centroid {formatCoord([(readBounds(aImage)![0] + readBounds(aImage)![2]) / 2, (readBounds(aImage)![1] + readBounds(aImage)![3]) / 2])}
+            <select
+              value={compareA}
+              onChange={(e) => setCompareAOverride(e.target.value)}
+              className="h-7 rounded-md border border-line bg-inputbg px-2 text-[12px] text-ink"
+              aria-label="Scene A (before)"
+            >
+              <option value="">Before image…</option>
+              {drawableImages.map(({ img }) => (
+                <option key={img.id} value={img.id}>
+                  {img.acquisition_at?.slice(0, 10) ?? 'no date'} · {img.original_filename}
+                </option>
+              ))}
+            </select>
+
+            <span className="font-mono text-[10px] uppercase tracking-wider text-primary">vs</span>
+
+            <select
+              value={compareB}
+              onChange={(e) => setCompareBOverride(e.target.value)}
+              className="h-7 rounded-md border border-line bg-inputbg px-2 text-[12px] text-ink"
+              aria-label="Scene B (after)"
+            >
+              <option value="">After image…</option>
+              {drawableImages.map(({ img }) => (
+                <option key={img.id} value={img.id}>
+                  {img.acquisition_at?.slice(0, 10) ?? 'no date'} · {img.original_filename}
+                </option>
+              ))}
+            </select>
+
+            <div className="flex min-w-40 items-center gap-2">
+              <span className="font-mono text-[9.5px] uppercase text-ink-faint">Overlay</span>
+              <Slider value={compareOpacity} onChange={setCompareOpacity} ariaLabel="Scene B opacity" />
+              <span className="w-8 font-mono text-[10px] text-ink-dim">{Math.round(compareOpacity * 100)}%</span>
+            </div>
+
+            {aImage && bImage && (
+              <span className="font-mono text-[10px] text-ink-faint">
+                {Math.abs(Math.round((Date.parse(bImage.acquisition_at ?? '') - Date.parse(aImage.acquisition_at ?? '')) / 86_400_000)) || '?'} days apart
               </span>
             )}
           </div>
-        )}
-      </div>
+          <div className="mt-2 flex flex-wrap gap-4 font-mono text-[10.5px] text-ink-faint">
+            <span className="text-primary">A · {aImage?.original_filename} {aImage ? `(${aImage.width}×${aImage.height})` : ''}</span>
+            <span className="text-warning">B · {bImage?.original_filename} {bImage ? `(${bImage.width}×${bImage.height})` : ''}</span>
+            {aImage && (
+              <span>
+                Center {formatCoord([(readBounds(aImage)![0] + readBounds(aImage)![2]) / 2, (readBounds(aImage)![1] + readBounds(aImage)![3]) / 2])}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

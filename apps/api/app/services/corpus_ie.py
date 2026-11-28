@@ -11,12 +11,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 import re
 from typing import Any
 from uuid import UUID
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
@@ -25,7 +26,7 @@ from app.models.investigation import Investigation, InvestigationStatus, Query
 from app.models.reasoning import AssessmentState, Evidence, EvidencePolarity, Hypothesis
 from app.models.results import Conclusion, ConclusionState
 from app.services.authorization import get_owned_investigation, get_owned_project
-from app.services.openrouter import openrouter_generate_json
+from app.services.openrouter import openrouter_analyze_image, openrouter_chat_text, openrouter_generate_json
 from ml.common import ModelUnavailableError
 
 NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/search"
@@ -328,6 +329,16 @@ def _deterministic_ie(corpus: str) -> dict[str, Any]:
             seen_dates.add(iso)
             timestamps.append({"label": str(year), "iso_date": iso, "iso_end": f"{year:04d}-12-31", "event_summary": f"Mentioned year {year}"})
 
+    # Support shorthand year ranges like "2018 to 20" -> 2018 to 2020
+    for match in re.finditer(r"\b(19\d{2}|20\d{2})\s*(?:to|until|through|-|–)\s*(\d{2})\b", text, flags=re.IGNORECASE):
+        start_y = int(match.group(1))
+        end_y = (start_y // 100) * 100 + int(match.group(2))
+        if end_y >= start_y:
+            end_iso = f"{end_y:04d}-12-31"
+            if not any(d.startswith(f"{end_y:04d}-") for d in seen_dates):
+                seen_dates.add(f"{end_y:04d}-01-01")
+                timestamps.append({"label": str(end_y), "iso_date": f"{end_y:04d}-01-01", "iso_end": end_iso, "event_summary": f"End of {start_y}-{end_y} period"})
+
     timestamps.sort(key=lambda item: item["iso_date"])
 
     # Coordinates & place mentions
@@ -440,8 +451,8 @@ def _deterministic_ie(corpus: str) -> dict[str, Any]:
         "hypotheses": hypotheses,
         "claims": claims,
         "conclusion_summary": (
-            f"Deterministic Information Extraction parsed {len(locations)} location candidate(s) and "
-            f"{len(timestamps)} timestamp(s) from the input corpus. Satellite imagery validation has not yet run."
+            f"Found {len(locations)} location(s) and {len(timestamps)} date(s) in your input. "
+            "Upload an image below if you'd like AI to check visual evidence too."
         ),
     }
 
@@ -459,12 +470,11 @@ def extract_corpus_intelligence(corpus: str, settings: Settings | None = None) -
 
     if active_settings.openrouter_api_key:
         system_prompt = (
-            "You are an expert Geospatial & Earth-Observation Information Extraction engine. "
-            "Given a raw user corpus (article, report, field note, or research prompt), extract ALL "
-            "factual details explicitly present in the text without inventing measurements, dates, or places. "
-            "Identify every geographic place/region/coordinate, every date/timestamp/event period, key physical "
-            "or hazard entities, candidate scientific hypotheses grounded in the corpus, atomic corpus claims, "
-            "and a cautious conclusion explicitly distinguishing text-reported claims from satellite verification."
+            "You are a friendly, clear Earth-observation analyst writing for everyday users. "
+            "Extract ALL geographic places/coordinates, dates/time spans, key events/hazards, "
+            "testable takeaways (hypotheses), key facts (claims), and a short clear summary strictly from "
+            "the provided text. Write in plain, simple, human-readable English with zero technical jargon. "
+            "Never invent satellite measurements; clearly note if image/satellite verification has not run yet."
         )
         user_prompt = (
             f"Current UTC date: {datetime.now(UTC).strftime('%Y-%m-%d')}.\n"
@@ -781,4 +791,161 @@ def create_or_extract_autonomous_investigation(
         "hypotheses_created": len(created_hypotheses),
         "evidence_created": created_evidence_count,
         "conclusion_created": True,
+    }
+
+
+def answer_follow_up_question(
+    db: Session,
+    user: User,
+    investigation_id: UUID,
+    question: str,
+    *,
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    """Answer a user's follow-up question in plain English grounded in investigation records."""
+    active_settings = settings or get_settings()
+    investigation = get_owned_investigation(db, investigation_id, user)
+    clean_question = question.strip()
+
+    next_seq = db.scalar(
+        select(func.coalesce(func.max(Query.sequence), 0) + 1).where(Query.investigation_id == investigation_id)
+    ) or 1
+    query = Query(investigation_id=investigation_id, text=clean_question, sequence=next_seq)
+    db.add(query)
+    db.flush()
+
+    cfg = investigation.configuration or {}
+    hypotheses = db.scalars(
+        select(Hypothesis).where(Hypothesis.investigation_id == investigation_id).order_by(Hypothesis.created_at.asc())
+    ).all()
+    evidences = db.scalars(
+        select(Evidence).where(Evidence.investigation_id == investigation_id).order_by(Evidence.created_at.desc()).limit(15)
+    ).all()
+
+    context_blob = (
+        f"Title: {investigation.title}\n"
+        f"Original Question: {cfg.get('question', investigation.title)}\n"
+        f"Region: {cfg.get('region_name', 'Unspecified')}\n"
+        f"Time Window: {cfg.get('time_start', '?')} to {cfg.get('time_end', '?')}\n"
+        f"Corpus Excerpt: {str(cfg.get('corpus_excerpt', ''))[:1200]}\n"
+        f"Key Takeaways:\n" + "\n".join(f"- {h.statement}" for h in hypotheses[:5]) + "\n"
+        f"Recorded Findings:\n" + "\n".join(f"- [{e.polarity.value}] {e.summary}" for e in evidences)
+    )
+
+    used_model = "deterministic-summary"
+    answer_text: str
+    if active_settings.openrouter_api_key:
+        try:
+            answer_text = openrouter_chat_text(
+                active_settings.openrouter_api_key,
+                active_settings.openrouter_model,
+                (
+                    "You are a helpful AI research assistant explaining things in clear, everyday English. "
+                    "Answer the user's question concisely using the provided investigation records and general "
+                    "geographic context when helpful, while clearly noting if something isn't verified by imagery yet."
+                ),
+                f"{context_blob}\n\nUser follow-up question: {clean_question}",
+                timeout=active_settings.openrouter_timeout_seconds,
+            )
+            used_model = active_settings.openrouter_model
+        except (ModelUnavailableError, ValueError):
+            answer_text = (
+                f"Based on {len(evidences)} saved finding(s) for {cfg.get('region_name', 'this investigation')} "
+                f"({cfg.get('time_start', '')}–{cfg.get('time_end', '')}): "
+                + (evidences[0].summary if evidences else "no detailed records have been extracted yet.")
+            )
+    else:
+        answer_text = (
+            f"Based on {len(evidences)} saved finding(s) for {cfg.get('region_name', 'this investigation')}: "
+            + (evidences[0].summary if evidences else "add a text report or image to analyze.")
+        )
+
+    evidence = Evidence(
+        investigation_id=investigation_id,
+        hypothesis_id=hypotheses[0].id if hypotheses else None,
+        query_id=query.id,
+        polarity=EvidencePolarity.NEUTRAL,
+        summary=answer_text.strip(),
+        provenance={
+            "source_kind": "ai_follow_up_answer",
+            "tool_name": "ai-assistant",
+            "tool_version": used_model,
+            "model_name": used_model,
+            "location_name": cfg.get("region_name"),
+            "timestamp": cfg.get("time_end") or cfg.get("time_start"),
+        },
+    )
+    db.add(evidence)
+    db.commit()
+    db.refresh(evidence)
+    return {
+        "query_id": query.id,
+        "evidence_id": evidence.id,
+        "model": used_model,
+        "answer": evidence.summary,
+    }
+
+
+def analyze_investigation_image(
+    db: Session,
+    user: User,
+    investigation_id: UUID,
+    image_path: Path,
+    question: str,
+    original_filename: str,
+    *,
+    settings: Settings | None = None,
+) -> dict[str, Any]:
+    """Run AI visual analysis on any photo, map screenshot, or GeoTIFF and record the finding."""
+    active_settings = settings or get_settings()
+    investigation = get_owned_investigation(db, investigation_id, user)
+    clean_question = question.strip() or "What is visible in this image?"
+
+    cfg = investigation.configuration or {}
+    used_model: str
+    answer_text: str
+
+    if active_settings.openrouter_api_key:
+        answer_text = openrouter_analyze_image(
+            active_settings.openrouter_api_key,
+            active_settings.openrouter_model,
+            image_path,
+            clean_question,
+            timeout=active_settings.openrouter_timeout_seconds,
+        )
+        used_model = active_settings.openrouter_model
+    else:
+        from app.services.geochat_remote import has_geochat_backend, run_geochat_vqa
+
+        if not has_geochat_backend(active_settings):
+            raise ModelUnavailableError("No vision AI provider is configured (set OPENROUTER_API_KEY or GEOCHAT_REMOTE_URL)")
+        answer_text = run_geochat_vqa(active_settings, image_path, clean_question)
+        used_model = "MBZUAI/geochat-7B"
+
+    first_hyp = db.scalar(
+        select(Hypothesis).where(Hypothesis.investigation_id == investigation_id).order_by(Hypothesis.created_at.asc())
+    )
+    evidence = Evidence(
+        investigation_id=investigation_id,
+        hypothesis_id=first_hyp.id if first_hyp else None,
+        polarity=EvidencePolarity.NEUTRAL,
+        summary=answer_text.strip(),
+        provenance={
+            "source_kind": "vision_qa",
+            "tool_name": "ai-vision",
+            "tool_version": used_model,
+            "model_name": used_model,
+            "filename": original_filename,
+            "question": clean_question,
+            "location_name": cfg.get("region_name"),
+            "timestamp": cfg.get("time_end") or cfg.get("time_start"),
+        },
+    )
+    db.add(evidence)
+    db.commit()
+    db.refresh(evidence)
+    return {
+        "evidence_id": evidence.id,
+        "model": used_model,
+        "answer": evidence.summary,
     }

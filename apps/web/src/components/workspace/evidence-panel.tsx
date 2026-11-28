@@ -11,11 +11,18 @@ import { formatDateTime, shortId } from '@/lib/utils';
 
 const POLARITY_TABS = [
   { id: 'all', label: 'All' },
-  { id: 'supporting', label: 'Supporting' },
-  { id: 'contradicting', label: 'Contradicting' },
-  { id: 'neutral', label: 'Neutral' },
-  { id: 'insufficient', label: 'Insufficient' },
+  { id: 'supporting', label: 'Supports' },
+  { id: 'contradicting', label: 'Conflicts' },
+  { id: 'neutral', label: 'Findings' },
+  { id: 'insufficient', label: 'Unverified' },
 ];
+
+const POLARITY_LABEL: Record<string, string> = {
+  supporting: 'Supports',
+  contradicting: 'Conflict',
+  neutral: 'Finding',
+  insufficient: 'Unverified',
+};
 
 const POLARITY_TONE = {
   supporting: 'success',
@@ -23,6 +30,24 @@ const POLARITY_TONE = {
   neutral: 'neutral',
   insufficient: 'warning',
 } as const;
+
+function readableSource(item: EvidenceRecord): string {
+  const kind = String(item.provenance?.source_kind ?? '');
+  if (kind === 'corpus_text_extraction') {
+    const loc = typeof item.provenance?.location_name === 'string' ? item.provenance.location_name : null;
+    const ts = typeof item.provenance?.timestamp === 'string' ? item.provenance.timestamp : null;
+    return ['From your text', loc, ts].filter(Boolean).join(' · ');
+  }
+  if (kind === 'vision_qa') {
+    const file = typeof item.provenance?.filename === 'string' ? item.provenance.filename : 'uploaded image';
+    return `AI visual check · ${file}`;
+  }
+  if (kind === 'ai_follow_up_answer') {
+    return 'AI answer to your follow-up question';
+  }
+  const toolName = String(item.provenance?.tool_name ?? '').trim();
+  return toolName ? `Analysis · ${toolName}` : 'Recorded observation';
+}
 
 export function EvidencePanel({
   evidence,
@@ -101,17 +126,14 @@ export function EvidencePanel({
               <li key={item.id} className="card p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <Badge tone={POLARITY_TONE[item.polarity]}>{item.polarity}</Badge>
-                    <span className="font-mono text-[9.5px] text-ink-faint">{shortId(item.id)}</span>
-                    {demo && <Badge tone="demo">DEMO</Badge>}
+                    <Badge tone={POLARITY_TONE[item.polarity]}>{POLARITY_LABEL[item.polarity] ?? item.polarity}</Badge>
+                    {demo && <Badge tone="demo">Sample</Badge>}
                   </div>
                   <span className="font-mono text-[9.5px] text-ink-faint">{formatDateTime(item.created_at)}</span>
                 </div>
                 <p className="mt-1.5 text-[12.5px] leading-relaxed text-ink">{item.summary}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-wider text-ink-faint">
-                  <span>tool: {String(item.provenance?.tool_name ?? '—')}</span>
-                  <span>ver: {String(item.provenance?.tool_version ?? '—')}</span>
-                  {item.image_id && <span>scene: {shortId(item.image_id)}</span>}
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-faint">
+                  <span>{readableSource(item)}</span>
                 </div>
                 <div className="mt-2.5 flex gap-2">
                   <button
@@ -219,16 +241,19 @@ export function EvidencePanel({
               )}
             </Section>
 
-            <Section title="Provenance">
-              <pre className="overflow-x-auto rounded-lg border border-line bg-elevated p-3 font-mono text-[11px] leading-relaxed text-ink-dim">
-                {JSON.stringify(selected.provenance, null, 2)}
-              </pre>
-              {selected.source_uri && (
-                <p className="mt-2 break-all font-mono text-[11px] text-primary">{selected.source_uri}</p>
-              )}
-              {selected.source_reference && (
-                <p className="mt-1 font-mono text-[11px] text-ink-faint">ref: {selected.source_reference}</p>
-              )}
+            <Section title="Technical details">
+              <details className="rounded-lg border border-line bg-elevated p-3 text-[11.5px] text-ink-dim">
+                <summary className="cursor-pointer font-medium hover:text-ink">Show raw source &amp; model metadata</summary>
+                <pre className="mt-2 overflow-x-auto font-mono text-[11px] leading-relaxed">
+                  {JSON.stringify(selected.provenance, null, 2)}
+                </pre>
+                {selected.source_uri && (
+                  <p className="mt-2 break-all font-mono text-[11px] text-primary">{selected.source_uri}</p>
+                )}
+                {selected.source_reference && (
+                  <p className="mt-1 font-mono text-[11px] text-ink-faint">ref: {selected.source_reference}</p>
+                )}
+              </details>
             </Section>
 
             <p className="text-[11.5px] leading-relaxed text-ink-faint">

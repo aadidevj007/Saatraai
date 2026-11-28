@@ -174,11 +174,9 @@ export default function InvestigationWorkspacePage() {
               {model.demo && <Badge tone="demo">DEMO DATA</Badge>}
             </div>
             <div className="flex flex-wrap gap-x-3 font-mono text-[9.5px] uppercase tracking-wider text-ink-faint">
-              <span>id {investigation.id.slice(0, 8)}</span>
-              <span>{model.evidence.length} evidence</span>
-              <span>{model.hypotheses.length} hypotheses</span>
-              <span>{model.images.length} scenes</span>
-              <span>{model.executions.length} executions</span>
+              <span>{model.evidence.length} findings</span>
+              <span>{model.hypotheses.length} takeaways</span>
+              {model.images.length > 0 && <span>{model.images.length} images</span>}
               {preferences?.organization && <span>{preferences.organization}</span>}
             </div>
           </div>
@@ -247,10 +245,10 @@ export default function InvestigationWorkspacePage() {
               value={rightTab}
               onChange={(id) => setRightTab(id as RightTab)}
               tabs={[
-                { id: 'hypotheses', label: 'Hypotheses', count: model.hypotheses.length },
-                { id: 'evidence', label: 'Evidence', count: model.evidence.length },
-                { id: 'confidence', label: 'Confidence' },
-                { id: 'conclusion', label: 'Conclusion', count: model.conclusions.length },
+                { id: 'hypotheses', label: 'Takeaways', count: model.hypotheses.length },
+                { id: 'evidence', label: 'Findings', count: model.evidence.length },
+                { id: 'confidence', label: 'Reliability' },
+                { id: 'conclusion', label: 'Summary', count: model.conclusions.length },
               ]}
             />
           </div>

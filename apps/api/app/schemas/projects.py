@@ -75,6 +75,31 @@ class AutonomousInvestigationResponse(BaseModel):
     extraction: dict[str, Any]
 
 
+class FollowUpAskRequest(BaseModel):
+    question: str = Field(min_length=2, max_length=4000)
+
+    @field_validator("question")
+    @classmethod
+    def require_non_whitespace_question(cls, value: str) -> str:
+        normalized = value.strip()
+        if len(normalized) < 2:
+            raise ValueError("question must contain at least 2 non-whitespace characters")
+        return normalized
+
+
+class FollowUpAskResponse(BaseModel):
+    query_id: UUID
+    evidence_id: UUID
+    model: str
+    answer: str
+
+
+class ImageAnalysisResponse(BaseModel):
+    evidence_id: UUID
+    model: str
+    answer: str
+
+
 class InvestigationCreateRequest(BaseModel):
     project_id: UUID
     title: str = Field(min_length=1, max_length=255)

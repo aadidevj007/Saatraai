@@ -233,6 +233,81 @@ class CorpusIeAndOpenRouterTests(unittest.TestCase):
         self.assertEqual(or_status["state"], "online")
         self.assertNotIn("sk-or-secret-token", status_resp.text)
 
+    def test_shorthand_year_range_follow_up_ask_and_direct_image_analysis(self) -> None:
+        settings = Settings(
+            _env_file=None,
+            openrouter_api_key="sk-or-test-ask-key",
+            openrouter_model="openrouter/free",
+        )
+        extracted, _ = extract_corpus_intelligence(
+            "flood in kerala from 2018 to 20",
+            settings=Settings(_env_file=None, openrouter_api_key=None),
+        )
+        self.assertEqual(extracted["time_start"], "2018-01-01")
+        self.assertEqual(extracted["time_end"], "2020-12-31")
+        self.assertTrue(any("kerala" in loc["name"].lower() for loc in extracted["locations"]))
+
+        app = create_app(settings)
+
+        def override_db():
+            db = self.SessionLocal()
+            try:
+                yield db
+            finally:
+                db.close()
+
+        app.dependency_overrides[get_db] = override_db
+        app.dependency_overrides[get_current_user] = lambda: self.user
+        client = TestClient(app)
+
+        with patch("app.services.corpus_ie.get_settings", return_value=Settings(_env_file=None, openrouter_api_key=None)):
+            created = client.post(
+                "/api/v1/investigations/auto",
+                json={"corpus": "Flooding impacted Kerala from 2018 to 20."},
+            )
+        self.assertEqual(created.status_code, 201)
+        inv_id = created.json()["investigation"]["id"]
+
+        with (
+            patch("app.services.corpus_ie.get_settings", return_value=settings),
+            patch(
+                "app.services.openrouter.httpx.post",
+                return_value=_FakeResponse(
+                    200,
+                    {"choices": [{"message": {"content": "Heavy August monsoon rain and dam releases drove the 2018 floods."}}]},
+                ),
+            ),
+        ):
+            ask_resp = client.post(
+                f"/api/v1/investigations/{inv_id}/ask",
+                json={"question": "Why did the 2018 floods happen?"},
+            )
+        self.assertEqual(ask_resp.status_code, 201, ask_resp.text)
+        self.assertIn("monsoon rain", ask_resp.json()["answer"])
+
+        with (
+            patch("app.services.corpus_ie.get_settings", return_value=settings),
+            patch(
+                "app.services.openrouter.httpx.post",
+                return_value=_FakeResponse(
+                    200,
+                    {"choices": [{"message": {"content": "Standing water visible along low-lying fields."}}]},
+                ),
+            ),
+        ):
+            img_resp = client.post(
+                f"/api/v1/investigations/{inv_id}/analyze-image",
+                data={"question": "Any water visible?"},
+                files={"image": ("flood.tif", geotiff_fixture(bands=3, acquisition_at=datetime(2020, 8, 6, tzinfo=UTC)), "image/tiff")},
+            )
+        self.assertEqual(img_resp.status_code, 201, img_resp.text)
+        self.assertIn("Standing water", img_resp.json()["answer"])
+
+        # Cross-user access on /ask must return 404
+        app.dependency_overrides[get_current_user] = lambda: self.other_user
+        denied = client.post(f"/api/v1/investigations/{inv_id}/ask", json={"question": "Any leaks?"})
+        self.assertEqual(denied.status_code, 404)
+
 
 if __name__ == "__main__":
     unittest.main()
