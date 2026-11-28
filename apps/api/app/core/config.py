@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     geochat_remote_token: str | None = None
     geochat_remote_timeout_seconds: float = 120.0
     openrouter_api_key: str | None = None
-    openrouter_model: str = "google/gemini-2.5-flash"
+    openrouter_model: str = "openrouter/free"
     openrouter_timeout_seconds: float = 45.0
     firebase_project_id: str | None = None
     firebase_service_account_json: str | None = None
