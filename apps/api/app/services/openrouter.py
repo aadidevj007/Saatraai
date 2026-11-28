@@ -118,30 +118,38 @@ def openrouter_generate_json(
         "(no markdown prose outside JSON):\n"
         f"{json.dumps(response_schema)}"
     )
-    base_body: dict[str, Any] = {
-        "model": model.strip(),
-        "temperature": 0.1,
-        "messages": [
-            {"role": "system", "content": f"{system_instruction}\n\n{schema_hint}"},
-            {"role": "user", "content": user_prompt},
-        ],
-    }
+    models_to_try = [model.strip()]
+    if model.strip() == "openrouter/free":
+        models_to_try.append("nvidia/nemotron-3.5-super-vl:free")
 
-    try:
-        payload = _post_chat(api_key, {**base_body, "response_format": {"type": "json_object"}}, timeout)
-    except ValueError:
-        # Some community/free OpenRouter models disallow response_format; retry plain JSON-prompted chat.
-        payload = _post_chat(api_key, base_body, timeout)
+    last_error: Exception | None = None
+    for candidate_model in models_to_try:
+        base_body: dict[str, Any] = {
+            "model": candidate_model,
+            "temperature": 0.1,
+            "messages": [
+                {"role": "system", "content": f"{system_instruction}\n\n{schema_hint}"},
+                {"role": "user", "content": user_prompt},
+            ],
+        }
+        try:
+            try:
+                payload = _post_chat(api_key, {**base_body, "response_format": {"type": "json_object"}}, timeout)
+            except ValueError:
+                # Some community/free OpenRouter models disallow response_format; retry plain JSON-prompted chat.
+                payload = _post_chat(api_key, base_body, timeout)
 
-    try:
-        raw_text = _extract_message_text(payload)
-        parsed = json.loads(_strip_json_fences(raw_text))
-    except (ValueError, json.JSONDecodeError) as error:
-        raise ModelUnavailableError("OpenRouter API returned malformed JSON output") from error
+            raw_text = _extract_message_text(payload)
+            parsed = json.loads(_strip_json_fences(raw_text))
+            if isinstance(parsed, dict):
+                return parsed
+            last_error = ModelUnavailableError("OpenRouter JSON response must be an object")
+        except (ModelUnavailableError, ValueError, json.JSONDecodeError) as error:
+            last_error = error
 
-    if not isinstance(parsed, dict):
-        raise ModelUnavailableError("OpenRouter JSON response must be an object")
-    return parsed
+    if isinstance(last_error, ModelUnavailableError):
+        raise last_error
+    raise ModelUnavailableError("OpenRouter API returned malformed JSON output") from last_error
 
 
 def openrouter_analyze_image(

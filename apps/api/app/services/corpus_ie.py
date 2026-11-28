@@ -49,8 +49,24 @@ MONTH_NUMBERS: dict[str, int] = {
 KNOWN_PLACES: dict[str, tuple[str, float, float, float, float]] = {
     "kerala": ("Kerala, India", 76.27, 10.16, 0.9, 1.4),
     "kochi": ("Kochi, Kerala", 76.26, 9.93, 0.35, 0.35),
-    "chennai": ("Chennai, Tamil Nadu", 80.27, 13.08, 0.4, 0.38),
+    "ernakulam": ("Ernakulam, Kerala", 76.29, 9.98, 0.4, 0.4),
+    "wayanad": ("Wayanad, Kerala", 76.13, 11.68, 0.35, 0.35),
+    "mananthavady": ("Mananthavady, Wayanad", 76.0044, 11.8014, 0.2, 0.2),
+    "vythiri": ("Vythiri, Wayanad", 76.04, 11.55, 0.2, 0.2),
+    "puthumala": ("Puthumala, Wayanad", 76.1610, 11.5542, 0.15, 0.15),
+    "idukki": ("Idukki, Kerala", 76.9762, 9.8435, 0.45, 0.45),
+    "munnar": ("Munnar, Idukki", 77.0595, 10.0889, 0.25, 0.25),
+    "pettimudi": ("Pettimudi, Idukki", 77.0185, 10.1726, 0.15, 0.15),
+    "peermade": ("Peermade, Idukki", 76.98, 9.57, 0.2, 0.2),
+    "malappuram": ("Malappuram, Kerala", 76.07, 11.05, 0.35, 0.35),
+    "kavalappara": ("Kavalappara, Malappuram", 76.2414, 11.4188, 0.15, 0.15),
+    "kozhikode": ("Kozhikode, Kerala", 75.78, 11.25, 0.3, 0.3),
+    "kannur": ("Kannur, Kerala", 75.37, 11.87, 0.3, 0.3),
+    "kottayam": ("Kottayam, Kerala", 76.52, 9.59, 0.3, 0.3),
+    "alappuzha": ("Alappuzha, Kerala", 76.33, 9.49, 0.3, 0.3),
+    "kuttanad": ("Kuttanad, Kerala", 76.45, 9.42, 0.25, 0.25),
     "virudhunagar": ("Virudhunagar District, Tamil Nadu", 77.55, 9.17, 0.45, 0.45),
+    "chennai": ("Chennai, Tamil Nadu", 80.27, 13.08, 0.4, 0.38),
     "sundarbans": ("Sundarbans Delta, West Bengal", 88.90, 21.94, 0.65, 0.5),
     "brahmaputra": ("Brahmaputra Valley, Assam", 91.74, 26.14, 1.1, 0.45),
     "assam": ("Assam, India", 92.93, 26.20, 1.2, 0.7),
@@ -381,17 +397,37 @@ def _deterministic_ie(corpus: str) -> dict[str, Any]:
             }
         )
 
-    claims = [
-        {
-            "summary": sent[:280],
-            "polarity": "neutral",
-            "hypothesis_index": 0 if idx == 0 else min(idx, len(hypotheses) - 1),
-            "location_name": locations[0]["name"] if locations else None,
-            "timestamp": timestamps[min(idx, len(timestamps) - 1)]["iso_date"] if timestamps else None,
-            "source_quote": sent[:240],
-        }
-        for idx, sent in enumerate(sentences[:5])
-    ]
+    claims: list[dict[str, Any]] = []
+    for idx, sent in enumerate(sentences[:15]):
+        sent_coords = _extract_coordinates_from_text(sent)
+        sent_lower = sent.lower()
+        sent_loc = sent_coords[0]["name"] if sent_coords else next(
+            (label for key, (label, *_) in KNOWN_PLACES.items() if re.search(rf"\b{re.escape(key)}\b", sent_lower)),
+            locations[0]["name"] if locations else None,
+        )
+        sent_iso_match = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", sent)
+        sent_month_match = re.search(r"\b([A-Za-z]+)\s+(\d{1,2}),?\s+(19\d{2}|20\d{2})\b", sent)
+        sent_year_match = re.search(r"\b(19\d{2}|20\d{2})\b", sent)
+        sent_ts: str | None = None
+        if sent_iso_match:
+            sent_ts = sent_iso_match.group(1)
+        elif sent_month_match and MONTH_NUMBERS.get(sent_month_match.group(1).lower()):
+            m_num = MONTH_NUMBERS[sent_month_match.group(1).lower()]
+            d_num = min(max(int(sent_month_match.group(2)), 1), 28)
+            sent_ts = f"{int(sent_month_match.group(3)):04d}-{m_num:02d}-{d_num:02d}"
+        elif sent_year_match:
+            sent_ts = f"{sent_year_match.group(1)}-01-01"
+
+        claims.append(
+            {
+                "summary": sent[:320],
+                "polarity": "neutral",
+                "hypothesis_index": 0 if idx == 0 else min(idx, len(hypotheses) - 1),
+                "location_name": sent_loc,
+                "timestamp": sent_ts,
+                "source_quote": sent[:260],
+            }
+        )
 
     return {
         "title": (first_sentence[:68] + "...") if len(first_sentence) > 70 else first_sentence,
@@ -418,6 +454,7 @@ def extract_corpus_intelligence(corpus: str, settings: Settings | None = None) -
         raise ValueError("Input corpus must contain at least 5 non-whitespace characters")
 
     extractor_label = "deterministic-ie-fallback"
+    fallback_reason: str | None = None
     raw_extracted: dict[str, Any] | None = None
 
     if active_settings.openrouter_api_key:
@@ -444,8 +481,9 @@ def extract_corpus_intelligence(corpus: str, settings: Settings | None = None) -
                 timeout=active_settings.openrouter_timeout_seconds,
             )
             extractor_label = active_settings.openrouter_model
-        except (ModelUnavailableError, ValueError):
+        except (ModelUnavailableError, ValueError) as error:
             raw_extracted = None
+            fallback_reason = str(error)[:180]
 
     if raw_extracted is None:
         raw_extracted = _deterministic_ie(cleaned)
@@ -568,6 +606,7 @@ def extract_corpus_intelligence(corpus: str, settings: Settings | None = None) -
             "hypotheses": list(raw_extracted.get("hypotheses") or []),
             "claims": list(raw_extracted.get("claims") or []),
             "conclusion_summary": str(raw_extracted.get("conclusion_summary") or "").strip(),
+            "fallback_reason": fallback_reason,
         },
         extractor_label,
     )
@@ -721,6 +760,7 @@ def create_or_extract_autonomous_investigation(
         confidence=created_hypotheses[0].confidence if created_hypotheses else None,
         rationale={
             "extractor": extractor_label,
+            **({"fallback_reason": extracted["fallback_reason"]} if extracted.get("fallback_reason") else {}),
             "location_count": len(extracted["locations"]),
             "geocoded_count": sum(1 for loc in extracted["locations"] if loc["geocoded"]),
             "timestamp_count": len(extracted["timestamps"]),

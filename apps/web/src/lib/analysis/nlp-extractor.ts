@@ -190,18 +190,26 @@ export function extractTimeRange(query: string): ExtractedTimeRange | null {
 /**
  * Searches REGION_PRESETS for matches in the user's text.
  */
+const GENERIC_PRESET_TOKENS = new Set([
+  'district', 'region', 'valley', 'delta', 'metropolitan', 'coastal',
+  'urban', 'global', 'view', 'india', 'tamil', 'nadu', 'west', 'bengal',
+  'andhra', 'pradesh', 'maharashtra', 'vietnam', 'egypt',
+]);
+
 function findPresetMatch(query: string): RegionPreset | null {
   const lower = query.toLowerCase();
+  if (/\bkerala\b/.test(lower)) {
+    return REGION_PRESETS.find((p) => p.id === 'kochi') ?? null;
+  }
   for (const preset of REGION_PRESETS) {
-    // Check main id or name tokens
+    if (new RegExp(`\\b${preset.id.toLowerCase()}\\b`).test(lower)) {
+      return preset;
+    }
     const tokens = preset.name.toLowerCase().split(/[\s,·/]+/);
     for (const token of tokens) {
-      if (token.length >= 4 && lower.includes(token)) {
+      if (token.length >= 4 && !GENERIC_PRESET_TOKENS.has(token) && new RegExp(`\\b${token}\\b`).test(lower)) {
         return preset;
       }
-    }
-    if (lower.includes(preset.id.toLowerCase())) {
-      return preset;
     }
   }
   return null;

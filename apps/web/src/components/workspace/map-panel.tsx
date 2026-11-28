@@ -339,7 +339,9 @@ export function MapPanel({ region, extractedLocations, images, evidence, selecte
             ))}
           </div>
           <div className="mt-3 border-t border-line pt-2 font-mono text-[9.5px] uppercase tracking-wider text-ink-faint">
-            {drawableImages.length} scene footprint{drawableImages.length === 1 ? '' : 's'} · {evidence.filter((e) => e.image_id).length} evidence markers
+            {drawableImages.length} scene footprint{drawableImages.length === 1 ? '' : 's'} ·{' '}
+            {evidence.filter((e) => Boolean(e.image_id || (Array.isArray(e.provenance?.coordinates) && e.provenance.coordinates.length === 2))).length}{' '}
+            evidence markers · {(extractedLocations ?? []).filter((l) => l.geocoded).length} extracted pins
           </div>
         </div>
       </div>
